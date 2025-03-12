@@ -1,4 +1,4 @@
-# trakit-ww
+# Trak-iT API Synchronization
 
 This library provides a full suite of tools to keep a local copy of objects from Trak-iT's APIs in-sync. Other Trak-iT API libraries are available on GitHub. https://github.com/trakitwireless
 
