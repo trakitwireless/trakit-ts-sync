@@ -1,8 +1,8 @@
 {
-  "name": "trakit-ts-sync",
+  "name": "@trakit/sync",
   "type": "module",
-  "version": "1.0.0",
-  "main": "sync.ts",
+  "version": "0.0.1",
+  "main": "sync.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,14 +10,16 @@
     "type": "git",
     "url": "git+https://github.com/trakitwireless/trakit-ts-sync.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "trakit"
+  ],
+  "author": "Alex Lein",
   "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/trakitwireless/trakit-ts-sync/issues"
   },
   "homepage": "https://github.com/trakitwireless/trakit-ts-sync#readme",
-  "description": "",
+  "description": "Trak-iT uses these object definitions to interact with all our APIs.",
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.4",
     "rollup": "^4.35.0",
