@@ -4,7 +4,17 @@ This library provides a full suite of tools to keep a local copy of objects from
 
 ### Prerequisites
 
-The `trakit-ts.objects` package is required as since this library sends requests to the APIs. The `trakit-ts.commands` package is required as most Response classes will contain an object from that library.
+The `@trakit/objects` package is required as since this library sends requests to the APIs. The `@trakit/commands` package is required as most Response classes will contain an object from that library.
+
+In order to build this project, you need to install the RollupJS, and plugins for TypeScript and Minifying.
+```
+npm i rollup rollup-plugin-typescript2 @rollup/plugin-terser
+```
+After those have been installed, build the project normally.
+```
+rollup --config client/rollup.config.js
+rollup --config worker/rollup.config.js
+```
 
 ## Questions and Feedback
 

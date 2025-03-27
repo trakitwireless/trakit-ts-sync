@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "outDir": "_publish",
+        "composite": true,
+        "sourceMap": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "noImplicitOverride": true,
+        "noImplicitUseStrict": false,
+        "strictNullChecks": true,
+    },
+    "references": [
+        {"path": "../trakit-ts-objects" },
+        {"path": "../trakit-ts-commands" },
+    ]
+}
