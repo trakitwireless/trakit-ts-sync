@@ -33,6 +33,11 @@ function TrakitSocket_NOOP(kraken: TrakitSocket) {
     return kraken.send("noop");
 }
 
+
+export const TrakitSocket_cmd_connection = "connection";
+export const TrakitSocket_cmd_disconnection = "disconnection";
+
+
 /**
  * Handler for when the underlying WebSocket connection opens.
  * This handler will reset the keep-alive and re-connect timers, as well as bind message and error handlers (the socket only has open/close hadlers when constructed)
@@ -146,7 +151,7 @@ function TrakitSocket_onMessage(this: TrakitSocket, event: MessageEvent) {
      * The JSON parsed from the message received by the underlying WebSocket.
      * @type {!Object}
      **/
-    const msgContent = JSON_PARSE(event["data"].after(" ")) as Reply;
+    const msgContent = JSON_PARSE(event["data"].after(" "));
 
     // first, set this value
     this.lastMessageName = msgName;
@@ -155,7 +160,7 @@ function TrakitSocket_onMessage(this: TrakitSocket, event: MessageEvent) {
             this.__ready = true;
             this.ghostId = (msgContent as RepSelfGet).ghostId || "";
             this.__operable = msgContent["errorCode"] === 0;
-            this.__settlers.get("connection")?.apply(msgContent);	// Promise is settled here, not below
+            this.__settlers.get(TrakitSocket_cmd_connection)?.apply(msgContent);	// Promise is settled here, not below
             this.onOpen?.(msgContent);		// then we fire event here, not below
             msgEvent = false;	// because we are firing the "connection" event instead of the "message" event at the end.
             break;
@@ -186,10 +191,7 @@ function TrakitSocket_onMessage(this: TrakitSocket, event: MessageEvent) {
 
     // fire event
     if (msgEvent) {
-        this.fire("message", {
-            "kind": msgName,
-            "content": msgContent,
-        });
+        this.onMessage?.(msgName, msgContent);
     }
 
     // lastly, reset keep-alive process
@@ -341,7 +343,7 @@ export class TrakitSocket {
     /**
      * Gets invoked any time a message is received from the WebSocket.
      */
-    onMessage: ((this: TrakitSocket, message: Reply) => any) | null = null;
+    onMessage: ((this: TrakitSocket, name: string, message: any) => any) | null = null;
     /**
      * Gets invoked any time an error occurs on the WebSocket.
      */
@@ -354,8 +356,8 @@ export class TrakitSocket {
         this.__settlers = new Map();
         this.__onOpen = TrakitSocket_onOpen.bind(this);
         this.__onError = TrakitSocket_onError.bind(this);
-        this.__onClose = TrakitSocket_onClose.bind(this);
         this.__onMessage = TrakitSocket_onMessage.bind(this);
+        this.__onClose = TrakitSocket_onClose.bind(this);
     }
     /**
      * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
@@ -385,7 +387,7 @@ export class TrakitSocket {
             const state = kraken.state;
             switch (state) {
                 case TrakitSocketState.closed:
-                    const reqId = "connection",	// not a reqId
+                    const reqId = TrakitSocket_cmd_connection,	// not a reqId
                         settler = function (response: Reply) {
                             kraken.__settlers.delete(reqId);
                             (response["errorCode"] === 0 ? resolve : reject)(response);

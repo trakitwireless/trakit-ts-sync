@@ -14,12 +14,12 @@ export abstract class SyncBase {
 	 * @expose
 	 * @type {!number}
 	 **/
-	id: number = -1;
+	id!: number;
 	/**
 	 * Each synchronization message is sent to the {@link Worker},
 	 * and it is returned to the main {@link Window} with the response populated.
 	 **/
-	response: Reply;
+	response!: Reply;
     
 	constructor(kind: SyncType) {
 		this.kind = kind;

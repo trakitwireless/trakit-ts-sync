@@ -1,6 +1,6 @@
 ﻿import { SyncMessage } from "common/SyncMessage";
 import { SubscribedRegions } from "./Socket/SubscribedRegions";
-import { TrakitSocket, TrakitSocketState } from "./Socket/TrakitSocket";
+import { TrakitSocket, TrakitSocket_cmd_connection, TrakitSocket_cmd_disconnection, TrakitSocketState } from "./Socket/TrakitSocket";
 import { SyncBase } from "common/SyncBase";
 import { ulong } from "@objects/API/Types";
 import { SyncInit } from "common/SyncInit";
@@ -9,20 +9,23 @@ import { SyncType } from "common/SyncType";
 import { SyncSubscriptions } from "common/SyncSubscriptions";
 import { SyncMindflayer } from "common/SyncMindflayer";
 import { SyncKraken } from "common/SyncKraken";
-import { JSON_STRINGIFY, SET_TIMER } from "@objects/API/Constants";
+import { CLEAR_TIMER, JSON_STRINGIFY, SET_TIMER } from "@objects/API/Constants";
 
 /**
  * The amount of time (in milliseconds) to wait between intervals checking for expired subscriptions.
  * @const {!number}
  **/
 const SyncWorker_subscriptionExpirer_TIMEOUT = 10 * 1000;	// 10 seconds
+
+
+
 /**
  * Callback used to clear expired subscriptions from the dictionary.
  * Also resets the timer after sending unsubscribe Promise to Kraken is resolved.
  * @param {!SyncWorker} peasant
  **/
 function SyncWorker_subscriptionExpirer(peasant:SyncWorker) {
-    const expirations: Promise<SyncBase>[] = [];
+    const expirations: Promise<Reply>[] = [];
 	if (peasant.__kraken.state === TrakitSocketState.open) {
 		peasant.__subscriptions.forEach(function(subscribed, company) {
 			const expired = subscribed.expiredRegions(true);
@@ -47,21 +50,20 @@ function SyncWorker_subscriptionExpirer(peasant:SyncWorker) {
  * @param {!trakit.fleetfreedom.MVCEvent} event
  * @param {!trakit.json.RespSelfDetails} sessionDetails
  **/
-function SyncWorker_krakenConnect(event, sessionDetails) {
-	SESSION_ID = this.__kraken.ghostId;
-	this.__post(new SyncMessage(event.type, sessionDetails));
-	this.__subscriptions.forEach(function(subscribed, company) {
-		// remove all regions from in-sync list; ALL OF THEM.
-		// but, re-sync to the ones that were not going to expire
-		// this will also auto-get lists of objects
-		this.sync(new SyncSubscriptions(
-			true,
-			company,
-			subscribed.reset()
-		));
-	}, this);
-	// start expired subscription timer
-	SyncWorker_subscriptionExpirer(this);
+function SyncWorker_krakenConnect(this: SyncWorker, sessionDetails: Reply) {
+    this.__post(new SyncMessage(TrakitSocket_cmd_connection, sessionDetails));
+    this.__subscriptions.forEach((subscribed, company) => {
+        // remove all regions from in-sync list; ALL OF THEM.
+        // but, re-sync to the ones that were not going to expire
+        // this will also auto-get lists of objects
+        this.sync(new SyncSubscriptions(
+            true,
+            company,
+            subscribed.reset()
+        ));
+    });
+    // start expired subscription timer
+    SyncWorker_subscriptionExpirer(this);
 }
 /**
  * Handles the "disconnection" event from Kraken.
@@ -71,10 +73,11 @@ function SyncWorker_krakenConnect(event, sessionDetails) {
  * @param {!trakit.fleetfreedom.MVCEvent} event
  * @param {!trakit.json.BaseResponse} details
  **/
-function SyncWorker_krakenDisconnect(this:SyncWorker,event, details) {
-	this.__post(new SyncMessage(event.type, details));
-	// stop trying to remove expired subscriptions
-	this.__subscriptionTimer = CLEAR_TIMER(this.__subscriptionTimer) || 0;
+function SyncWorker_krakenDisconnect(this: SyncWorker, details: Reply) {
+    this.__post(new SyncMessage(TrakitSocket_cmd_disconnection, details));
+    // stop trying to remove expired subscriptions
+    CLEAR_TIMER(this.__subscriptionTimer);
+    this.__subscriptionTimer = 0;
 }
 /**
  * Handles message events from Kraken.
@@ -85,23 +88,20 @@ function SyncWorker_krakenDisconnect(this:SyncWorker,event, details) {
  * @param {any} event
  * @param {!{kind:string,content:Object}} payload
  **/
-function SyncWorker_krakenMessage(event, payload) {
-	var kind = payload.kind,
-		content = payload.content;
-	switch (kind) {
-		//case "connectionResponse": => won't fire because connectionResponse triggers the "connection" event instead
-		case "loginResponse":
-		case "getSessionDetailsResponse":
-			SESSION_ID = this.__kraken.ghostId;
-			break;
-		case "subscribeResponse":
-		case "unsubscribeResponse":
-			// check kind and update subscriptions based on if it is a (un)subscribeResponse message
-			// instead of doing it in the Promise resolver within {@link SyncWorker#sync}.
-			// this may not work because we don't know the temporary sync regions
-			break;
-	}
-	this.__post(new SyncMessage(kind, content));
+function SyncWorker_krakenMessage(this: SyncWorker, kind: string, content: any) {
+    switch (kind) {
+        //case "connectionResponse": => won't fire because connectionResponse triggers the "connection" event instead
+        case "loginResponse":
+        case "getSessionDetailsResponse":
+            break;
+        case "subscribeResponse":
+        case "unsubscribeResponse":
+            // check kind and update subscriptions based on if it is a (un)subscribeResponse message
+            // instead of doing it in the Promise resolver within {@link SyncWorker#sync}.
+            // this may not work because we don't know the temporary sync regions
+            break;
+    }
+    this.__post(new SyncMessage(kind, content));
 }
 /**
  * Handles the "error" event from Kraken.
@@ -110,8 +110,8 @@ function SyncWorker_krakenMessage(event, payload) {
  * @param {!trakit.fleetfreedom.MVCEvent} event
  * @param {!trakit.json.BaseResponse} error
  **/
-function SyncWorker_krakenError(event, error) {
-	this.__post(new SyncMessage(event.type, error));
+function SyncWorker_krakenError(this: SyncWorker, error: Reply) {
+	this.__post(new SyncMessage("error", error));
 }
 
 /**
@@ -150,15 +150,14 @@ export class SyncWorker {
      * @override
      **/
     dispose() {
-        var peasant = this;
-        //	databaseClose();
-        peasant.__kraken.close().next(function (response) {
+        const action = (response: Reply) => {
             var msg = new SyncBase(SyncType.dispose);
             msg.response = response;
-            peasant.__post(msg);
-            peasant.__kraken.dispose();
-            (peasant.__kraken as TrakitSocket | null) = null;
-        });
+            this.__post(msg);
+            this.__kraken.dispose();
+            (this.__kraken as TrakitSocket | null) = null;
+        };
+        this.__kraken.close().then(action, action);
     }
 
     /**
