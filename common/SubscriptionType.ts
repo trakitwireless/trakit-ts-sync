@@ -12,218 +12,218 @@ export enum SubscriptionType {
      * {@link VehicleGeneral}
      * {@link TrailerGeneral}
      */
-    assetGeneral,
+    assetGeneral = "assetGeneral",
     /**
      * Assets' {@link AssetAdvanced|advanced properties} such as position, attributes, and status tags.
      * {@link AssetAdvanced}
      * {@link VehicleAdvanced}
      */
-    assetAdvanced,
+    assetAdvanced = "assetAdvanced",
     /**
      * {@link AssetMessage}s between {@link Asset}s and {@link User}s.
      * {@link AssetMessage}
      */
-    assetMessage,
+    assetMessage = "assetMessage",
     /**
      * Assets' {@link AssetDispatch|current dispatch} such as  {@link DispatchJob}s and route progress.
      * {@link AssetDispatch}
      */
-    assetDispatch,
+    assetDispatch = "assetDispatch",
 
     /**
      * Assets' {@link DispatchTask} information.
      * {@link DispatchTask}
      */
-    dispatchTask,
+    dispatchTask = "dispatchTask",
     /**
      * Some work that needs to be done by performing one or more {@link DispatchStep}s.
      * {@link DispatchJob}
      */
-    dispatchJob,
+    dispatchJob = "dispatchJob",
 
     /**
      * Customized {@link FormTemplate|forms} to be filled.
      * {@link FormTemplate}
      */
-    formTemplate,
+    formTemplate = "formTemplate",
     /**
      * {@link FormResult|Forms} that are completed and fully filled out.
      * {@link FormResult}
      */
-    formResult,
+    formResult = "formResult",
 
     /**
      * {@link Place} information.
      * {@link PlaceGeneral}
      */
-    placeGeneral,
+    placeGeneral = "placeGeneral",
 
     /**
      * Providers' (device) {@link ProviderGeneral|general properties} such as name, notes, and selected {@link Asset}.
      * {@link ProviderGeneral}
      */
-    providerGeneral,
+    providerGeneral = "providerGeneral",
     /**
      * Raw provider (device) {@link ProviderAdvanced|data} like GPS coordinates and parsed ODB-II values.
      * {@link ProviderAdvanced}
      */
-    providerAdvanced,
+    providerAdvanced = "providerAdvanced",
     /**
      * Provider (device) configurations.
      * {@link ProviderConfiguration}
      * @deprecated Use {@link providerConfig} instead.
      */
-	providerConfiguration,
+    providerConfiguration = "providerConfiguration",
     /**
      * Provider (device) script logic.
      * {@link ProviderScript}
      */
-    providerScript,
+    providerScript = "providerScript",
     /**
      * Provider (device) configurations.
      */
-    providerConfig,
+    providerConfig = "providerConfig",
     /**
      * Provider (device) comamnds.
      * {@link ProviderControl}
      */
-    providerControl,
+    providerControl = "providerControl",
     /**
      * Pending Providers (devices) that have not yet been configured or provisioned.
      * {@link ProviderRegistration}
      */
-    providerRegistration,
+    providerRegistration = "providerRegistration",
 
     /**
      * Recurring maintenance work for {@link Vehicle}s and {@link Trailer}s.
      * {@link MaintenanceSchedule}
      */
-    maintenanceSchedule,
+    maintenanceSchedule = "maintenanceSchedule",
     /**
      * Historical {@link Vehicle} and {@link Trailer} maintenance work.
      * {@link MaintenanceJob}
      */
-    maintenanceJob,
+    maintenanceJob = "maintenanceJob",
 
     /**
      * Behaviour script logic.
      * {@link BehaviourScript}
      */
-    behaviourScript,
+    behaviourScript = "behaviourScript",
     /**
      * Configured behaviours.
      * {@link Behaviour}
      */
-    behaviour,
+    behaviour = "behaviour",
     /**
      * Behaviour log messages to help developers debug their {@link BehaviourScript}.
      * {@link BehaviourLog}
      */
-    behaviourLog,
+    behaviourLog = "behaviourLog",
 
     /**
      * Renaming and changing the nodes of a company.
      * {@link CompanyGeneral}
      */
-    companyGeneral,
+    companyGeneral = "companyGeneral",
     /**
      * Company's label and tag styles.
      * {@link CompanyStyles}
      */
-    companyLabels,
+    companyLabels = "companyLabels",
     /**
      * Company's {@link SessionPolicy} and {@link PasswordPolicy}.
      * {@link CompanyPolicies}
      */
-    companyPolicies,
+    companyPolicies = "companyPolicies",
     /**
      * A {@link Company}'s white-labelling details.
      * {@link CompanyReseller}
      */
-    companyReseller,
+    companyReseller = "companyReseller",
 
     /**
      * Profiles used to generate {@link BillingReport} for a customer.
      * {@link BillingProfile}
      */
-    billingProfile,
+    billingProfile = "billingProfile",
     /**
      * Billing rules for {@link Asset}s.
      * {@link BillableHostingRule}
      */
-    billingHosting,
+    billingHosting = "billingHosting",
     /**
      * Discount rules for {@link Asset}s.
      * {@link BillableHostingDiscount}
      */
-    billingDiscount,
+    billingDiscount = "billingDiscount",
     /**
      * Hardware licenses for {@link Provider}s.
      * {@link BillableHostingLicense}
      */
-    billingLicense,
+    billingLicense = "billingLicense",
     /**
      * Reports generated for a billee {@link Company}.
      * {@link BillingReport}
      */
-    billingReport,
+    billingReport = "billingReport",
 
     /**
      * Contact information used by {@link Asset}s and {@link User}s.
      * {@link Contact}
      */
-    contact,
+    contact = "contact",
 
     /**
      * Synchronizes icon information.
      * {@link Icon}
      */
-    icon,
+    icon = "icon",
     /**
      * Synchronizes picture information.
      * {@link Picture}
      */
-    picture,
+    picture = "picture",
     /**
      * Hosted document information.
      * {@link Document}
      */
-    document,
+    document = "document",
 
     /**
      * Report configurations.
      * {@link ReportTemplate}
      */
-    reportTemplate,
+    reportTemplate = "reportTemplate",
     /**
      * Schedules for reports that run automatically.
      * {@link ReportSchedule}
      */
-    reportSchedule,
+    reportSchedule = "reportSchedule",
     /**
      * Historical asset details like breadcrumb trails.
      * {@link ReportResult}
      */
-    reportResult,
+    reportResult = "reportResult",
 
     /**
      * General user information such as name, contact information, and preferences.
      * {@link UserGeneral}
      */
-    userGeneral,
+    userGeneral = "userGeneral",
     /**
      * User information such as permissions and group membership.
      * {@link UserAdvanced}
      */
-    userAdvanced,
+    userAdvanced = "userAdvanced",
     /**
      * Group information for easy access control.
      * {@link UserGroup}
      */
-    userGroup,
+    userGroup = "userGroup",
     /**
      * API Credentials information and permissions.
      * {@link Machine}
      */
-    machine,
+    machine = "machine",
 }
