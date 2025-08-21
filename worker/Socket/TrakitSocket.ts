@@ -1,8 +1,9 @@
+import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
 import { Payload } from "@commands/API/Requests/Payload";
 import { ErrorDetail } from "@commands/API/Responses/Errors/ErrorDetail";
 import { Reply } from "@commands/API/Responses/Reply";
 import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, SET_TIMER } from "@objects/API/Constants";
-import { ID, IS_AN } from "@objects/API/Functions";
+import { ID } from "@objects/API/Functions";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -50,10 +51,10 @@ function KrakenSocket_onOpen(this:TrakitSocket,event:Event) {
  * @param {Event} event
  **/
 function KrakenSocket_onError(this: TrakitSocket, event: Event | { "message": string }) {
-    this.fire("error", {
+    this.onError?.({
         "errorCode": 2,// ErrorCode.service
         "message": (event as { message: string }).message || "WebSocket error",
-    });
+    } as Reply);
 }
 /**
  * Handler for when the underlyng WebSocket connection is severed.
@@ -79,23 +80,25 @@ function KrakenSocket_onClose(this: TrakitSocket, event: CloseEvent) {
             "wasClean": event.wasClean,
             "reconnect": this.reconnectEnabled,
             "retry": new Date().valueOf() + reconnectTimeout,
+        },
+        response: Reply = {
+            "reqId": undefined,
+            "errorCode": 1,    // ErrorCode.unknown
+            "message": "Disconnected",
+            "errorDetails": errorDetails,
         };
 
     // cancel all commands
     this.__settlers.forEach((settler, key) => {
-        var reqId = ID(key),
-            response: Reply = {
-                "errorCode": key === "disconnection"
-                    ? 0	// ErrorCode.success
-                    : 1,	// ErrorCode.unknown
-                "message": "Disconnected",
-                "errorDetails": errorDetails,
-            };
-        if (IS_AN(reqId)) response["reqId"] = reqId;
+        response.errorCode = key === "disconnection" ? 0 : 1;
+        if (key = ID(key)) response["reqId"] = key;
+        else delete response["reqId"];
         settler(response);
     });
 
-    this.fire("disconnection", errorDetails);
+    response.errorCode = 1;
+    delete response["reqId"];
+    this.onClose?.(response);
 
     // start reconnect timer
     this.__timerReconnect = this.reconnectEnabled
@@ -130,38 +133,38 @@ function KrakenSocket_onMessage(this: TrakitSocket, event: MessageEvent) {
 	 * This value is only set to false for "noopResponse".
 	 * @type {!boolean}
 	 **/
-	var msgEvent = true;
+	let msgEvent = true;
 	/**
 	 * The name of the message received by the underlying WebSocket.
 	 * This value is only changed for the "connectionResponse" to "connection" to properly fire that event.
 	 * @type {!string}
 	 **/
-	var msgName = event["data"].before(" ");
+	const msgName = event["data"].before(" ");
 	/**
 	 * The JSON parsed from the message received by the underlying WebSocket.
 	 * @type {!Object}
 	 **/
-	var msgContent = JSON_PARSE(event["data"].after(" "));
+	const msgContent = JSON_PARSE(event["data"].after(" ")) as Reply;
 
 	// first, set this value
 	this.lastMessageName = msgName;
 	switch (msgName) {
 		case "connectionResponse":
 			this.__ready = true;
-			this.ghostId = msgContent["ghostId"] || "";
+            this.ghostId = (msgContent as RepSelfGet).ghostId || "";
 			this.__operable = msgContent["errorCode"] === 0;
-			this.__settlers.set("connection",msgContent);	// Promise is settled here, not below
-			this.fire("connection", msgContent);		// then we fire event here, not below
+			this.__settlers.get("connection")?.apply(msgContent);	// Promise is settled here, not below
+			this.onOpen?.(msgContent);		// then we fire event here, not below
 			msgEvent = false;	// because we are firing the "connection" event instead of the "message" event at the end.
 			break;
 		case "loginResponse":
 		case "getSessionDetailsResponse":
-			this.ghostId = msgContent["ghostId"] || "";
-			this.__operable = msgContent["errorCode"] === 0
-				&& msgContent["user"]["passwordExpired"] === false;
+            this.ghostId = (msgContent as RepSelfGet).ghostId || "";
+			this.__operable = msgContent.errorCode === 0
+				&& (msgContent as RepSelfGet).user.passwordExpired === false;
 			break;
 		case "updateOwnPasswordResponse":
-			this.__operable = msgContent["errorCode"] === 0;
+			this.__operable = msgContent.errorCode === 0;
 			break;
 		case "noopResponse":
 			msgEvent = false;
@@ -261,7 +264,7 @@ export class TrakitSocket {
      * Dictionary{reqId, function(trakit.json.BaseResponse)}
      * @type {!Object.<string, Function>}
      **/
-    __settlers!: Map<string | number, Function> ;
+    __settlers!: Map<string | number, Function>;
     /**
      * Counter used to correlate requests to responses.
      * @type {!number}
@@ -274,13 +277,9 @@ export class TrakitSocket {
      * @type {!trakit.fleetfreedom.SocketState}
      **/
     get state(): number {
-        var state = this.__wss
-            ? this.__wss.readyState
-            : 3;
-        if (state === 1 && !this.__ready) state = 0;
-        switch (state) {
+        switch (this.__wss?.readyState ?? 3) {
             case 0: return TrakitSocketState.opening;
-            case 1: return TrakitSocketState.open;
+            case 1: return !this.__ready ? TrakitSocketState.opening : TrakitSocketState.open;
             case 2: return TrakitSocketState.closing;
             case 3: return TrakitSocketState.closed;
             default: return TrakitSocketState.unknown;
@@ -332,19 +331,19 @@ export class TrakitSocket {
     /**
      * Gets invoked any time the WebSocket connection is opened.
      */
-    onOpen: ((this: TrakitSocket, message:Reply) => any) | null;
+    onOpen: ((this: TrakitSocket, message: Reply) => any) | null = null;
     /**
      * Gets invoked any time the WebSocket connection is closed.
      */
-    onClose: ((this: TrakitSocket, message:Reply) => any) | null;
+    onClose: ((this: TrakitSocket, message: Reply) => any) | null = null;
     /**
      * Gets invoked any time a message is received from the WebSocket.
      */
-    onMessage: ((this: TrakitSocket, message:Reply) => any) | null;
+    onMessage: ((this: TrakitSocket, message: Reply) => any) | null = null;
     /**
      * Gets invoked any time an error occurs on the WebSocket.
      */
-    onError: ((this: TrakitSocket, message:Reply) => any) | null;
+    onError: ((this: TrakitSocket, message: Reply) => any) | null = null;
 
     constructor(url: string, ghostId: string) {
         this.url = url;
@@ -364,9 +363,9 @@ export class TrakitSocket {
         kraken.__operable = false;	// prevent re-connect
         kraken.close().finally(function () {
             // MVCObject_prototype.dispose.call(kraken);
-        kraken.__wss =
-        kraken.__settlers = undefined;
-            kraken.__onOpen =
+            (kraken.__wss as WebSocket | null) =
+                (kraken.__settlers as Map<string | number, Function> | null) =
+                kraken.__onOpen =
                 kraken.__onClose =
                 kraken.__onError =
                 kraken.__onMessage = null;
@@ -480,9 +479,12 @@ export class TrakitSocket {
                     break;
                 default:
                     if (attempt > 0) {
-                        kraken.once("connection", function () {
+                        const onOpen = kraken.onOpen;
+                        kraken.onOpen = function (message) {
+                            kraken.onOpen = onOpen; // restore the original handler
+                            kraken.onOpen?.(message);
                             kraken.send(command, params, attempt).then(resolve, reject);
-                        });
+                        };
                         if (state === TrakitSocketState.closed) kraken.open();
                         attempt--;
                     } else {
