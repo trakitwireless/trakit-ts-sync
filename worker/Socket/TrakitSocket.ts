@@ -345,7 +345,7 @@ export class TrakitSocket {
      */
     onError: ((this: TrakitSocket, message: Reply) => any) | null = null;
 
-    constructor(url: string, ghostId: string) {
+    constructor(url: string, ghostId?: string | null) {
         this.url = url;
         this.ghostId = ghostId || "";
 
