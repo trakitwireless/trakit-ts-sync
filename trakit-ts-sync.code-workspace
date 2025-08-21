@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../trakit-ts-commands"
+		},
+		{
+			"path": "../trakit-ts-objects"
+		}
+	],
+	"settings": {}
+}
