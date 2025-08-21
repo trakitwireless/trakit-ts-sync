@@ -1,15 +1,15 @@
 ﻿import { SyncMessage } from "common/SyncMessage";
 import { SubscribedRegions } from "./Socket/SubscribedRegions";
-import { TrakitSocket } from "./Socket/TrakitSocket";
+import { TrakitSocket, TrakitSocketState } from "./Socket/TrakitSocket";
 import { SyncBase } from "common/SyncBase";
-import { ulong } from "@objects/objects/API/Types";
+import { ulong } from "@objects/API/Types";
 import { SyncInit } from "common/SyncInit";
 import { Reply } from "@commands/API/Responses/Reply";
 import { SyncType } from "common/SyncType";
 import { SyncSubscriptions } from "common/SyncSubscriptions";
 import { SyncMindflayer } from "common/SyncMindflayer";
 import { SyncKraken } from "common/SyncKraken";
-import { JSON_STRINGIFY } from "@objects/objects/API/Constants";
+import { JSON_STRINGIFY, SET_TIMER } from "@objects/API/Constants";
 
 /**
  * The amount of time (in milliseconds) to wait between intervals checking for expired subscriptions.
@@ -22,14 +22,14 @@ const SyncWorker_subscriptionExpirer_TIMEOUT = 10 * 1000;	// 10 seconds
  * @param {!SyncWorker} peasant
  **/
 function SyncWorker_subscriptionExpirer(peasant:SyncWorker) {
-	var expirations = [];
-	if (peasant.__kraken.state === SocketState.open) {
+    const expirations: Promise<SyncBase>[] = [];
+	if (peasant.__kraken.state === TrakitSocketState.open) {
 		peasant.__subscriptions.forEach(function(subscribed, company) {
-			var expired = subscribed.expiredRegions(true);
+			const expired = subscribed.expiredRegions(true);
 			if (expired.length) expirations.push(peasant.__subscribe(false, company, expired));
 		});
 	}
-	Promise.allSettled(expirations).next(function() {
+	Promise.allSettled(expirations).finally(function() {
 		peasant.__subscriptionTimer = SET_TIMER(
 			SyncWorker_subscriptionExpirer,
 			SyncWorker_subscriptionExpirer_TIMEOUT,
