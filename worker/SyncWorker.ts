@@ -1,6 +1,6 @@
 ﻿import { SyncMessage } from "common/SyncMessage";
 import { SubscribedRegions } from "./Socket/SubscribedRegions";
-import { TrakitSocket, TrakitSocket_cmd_connection, TrakitSocket_cmd_disconnection, TrakitSocketState } from "./Socket/TrakitSocket";
+import { TrakitSocket, TrakitSocket_CONNECTION, TrakitSocket_DISCONNECTION, TrakitSocketState } from "./Socket/TrakitSocket";
 import { SyncBase } from "common/SyncBase";
 import { ulong } from "@objects/API/Types";
 import { SyncInit } from "common/SyncInit";
@@ -16,8 +16,6 @@ import { CLEAR_TIMER, JSON_STRINGIFY, SET_TIMER } from "@objects/API/Constants";
  * @const {!number}
  **/
 const SyncWorker_subscriptionExpirer_TIMEOUT = 10 * 1000;	// 10 seconds
-
-
 
 /**
  * Callback used to clear expired subscriptions from the dictionary.
@@ -51,7 +49,7 @@ function SyncWorker_subscriptionExpirer(peasant:SyncWorker) {
  * @param {!trakit.json.RespSelfDetails} sessionDetails
  **/
 function SyncWorker_krakenConnect(this: SyncWorker, sessionDetails: Reply) {
-    this.__post(new SyncMessage(TrakitSocket_cmd_connection, sessionDetails));
+    this.__post(new SyncMessage(TrakitSocket_CONNECTION, sessionDetails));
     this.__subscriptions.forEach((subscribed, company) => {
         // remove all regions from in-sync list; ALL OF THEM.
         // but, re-sync to the ones that were not going to expire
@@ -74,7 +72,7 @@ function SyncWorker_krakenConnect(this: SyncWorker, sessionDetails: Reply) {
  * @param {!trakit.json.BaseResponse} details
  **/
 function SyncWorker_krakenDisconnect(this: SyncWorker, details: Reply) {
-    this.__post(new SyncMessage(TrakitSocket_cmd_disconnection, details));
+    this.__post(new SyncMessage(TrakitSocket_DISCONNECTION, details));
     // stop trying to remove expired subscriptions
     CLEAR_TIMER(this.__subscriptionTimer);
     this.__subscriptionTimer = 0;
@@ -133,15 +131,7 @@ export class SyncWorker {
     /**
      * The Kraken main connection.
      **/
-    __kraken: TrakitSocket;
-
-    constructor(url: string) {
-        this.__kraken = new TrakitSocket(url);
-        this.__kraken.onOpen = SyncWorker_krakenConnect.bind(this);
-        this.__kraken.onClose = SyncWorker_krakenDisconnect.bind(this);
-        this.__kraken.onMessage = SyncWorker_krakenMessage.bind(this);
-        this.__kraken.onError = SyncWorker_krakenError.bind(this);
-    }
+    __kraken!: TrakitSocket;
 
     /**
      * Disconnects Kraken then sends a message to the {@link SyncClient} about it, and dies.
@@ -169,12 +159,7 @@ export class SyncWorker {
      * @param {SyncBase=} msg
      **/
     __post(msg: SyncBase) {
-        //if (msg) this.__postQueue.push(msg);
-        //if (this.__postNext) {
-        //	msg = this.__postQueue.shift();
-        //	this.__postNext = !msg;
-        if (msg) SELF.postMessage(msg);
-        //}
+        if (msg) self.postMessage(msg);
     }
     /**
      * Sends a (un)subscribe command to Kraken for the given company and regions.
@@ -211,12 +196,16 @@ export class SyncWorker {
      * @param {!SyncInit} msg
      **/
     init(msg: SyncInit) {
-        var peasant = this;
-        peasant.__kraken.ghostId = msg.ghostId;
-        peasant.__kraken.open().finally(function (response: Reply) {
+        this.__kraken = new TrakitSocket(msg.socket, msg.ghostId);
+        this.__kraken.onOpen = SyncWorker_krakenConnect.bind(this);
+        this.__kraken.onClose = SyncWorker_krakenDisconnect.bind(this);
+        this.__kraken.onMessage = SyncWorker_krakenMessage.bind(this);
+        this.__kraken.onError = SyncWorker_krakenError.bind(this);
+        const action = (response: Reply) => {
             msg.response = response;
-            peasant.__post(msg);
-        });
+            this.__post(msg);
+        };
+        this.__kraken.open().then(action, action);
     }
     /**
      * Immediately posts the current {@link Worker} state and variables, ignoring the queue and going "righ now".
@@ -231,9 +220,9 @@ export class SyncWorker {
             "kraken": {
                 "ghostId": this.__kraken.ghostId,
                 "state": this.__kraken.state,
-                "reqId": this.__kraken.reqId,
-                "ready": this.__kraken.__ready,
-                "operable": this.__kraken.__operable,
+                "reqId": this.__kraken.#reqId,
+                "ready": this.__kraken.#ready,
+                "operable": this.__kraken.#operable,
                 "reconnectEnabled": this.__kraken.reconnectEnabled,
                 "keepAliveEnabled": this.__kraken.keepAliveEnabled,
                 "lastReceived": this.__kraken.lastReceived,

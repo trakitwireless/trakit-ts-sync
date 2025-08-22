@@ -10,10 +10,6 @@ export enum SyncType {
      **/
     init = "init",
     /**
-     * Sent by the {@link Window} meaning it is ready to accept a new message.
-     **/
-    next = "next",
-    /**
      * Sent by the {@link Window} requesting the immediate {@link Worker} state and variables.
      **/
     variables = "variables",
@@ -45,8 +41,4 @@ export enum SyncType {
      * For the {@link Window}, it means it is ready to accept a new message.
      **/
     dispose = "dispose",
-    /**
-     * A message type to control the instance of Medusa.
-     **/
-    instance = "instance",
 }
