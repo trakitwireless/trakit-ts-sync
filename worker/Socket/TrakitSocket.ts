@@ -35,16 +35,16 @@ const TIMEOUT_NOOP = 300 * 1000;
 /**
  * Maximum time (in milliseconds) to wait before trying to re-connect to Trak-iT's WebSocket.
  **/
-const MAXWAIT_RECONNECT = 300 * 1000;
+const TIMEOUT_MAX_RECONNECT = 300 * 1000;
 
 /**
  * 
  */
-const TrakitSocket_CONNECTION = "connection";
+export const CMD_CONNECTION = "connection";
 /**
  * 
  */
-const TrakitSocket_DISCONNECTION = "dis" + TrakitSocket_CONNECTION;
+export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
  * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
@@ -173,7 +173,7 @@ export class TrakitSocket {
             : this.lastReceived
                 ? new Date().valueOf() - this.lastReceived.valueOf()
                 : 5000;
-        const reconnectTimeout = MIN(this.#delayReconnect, MAXWAIT_RECONNECT),
+        const reconnectTimeout = MIN(this.#delayReconnect, TIMEOUT_MAX_RECONNECT),
             errorDetails = {
                 "code": event.code,
                 "reason": event.reason,
@@ -189,7 +189,7 @@ export class TrakitSocket {
 
         // cancel all commands
         this.#requests.forEach((settler, key) => {
-            response.errorCode = key === TrakitSocket_DISCONNECTION ? 0 : 1;
+            response.errorCode = key === CMD_DISCONNECTION ? 0 : 1;
             if (key = ID(key)) response["reqId"] = key;
             settler(response);
         });
@@ -247,7 +247,7 @@ export class TrakitSocket {
                 this.#socketOperable = msgContent["errorCode"] === 0;
                 this.#socketReady = true;
                 // Promise is settled here, not below
-                this.#requests.get(TrakitSocket_CONNECTION)?.(msgContent);
+                this.#requests.get(CMD_CONNECTION)?.(msgContent);
                 // then we fire event here, not below
                 this.onOpen?.(msgContent);
                 // because we are firing the "connection" event instead of the "message" event at the end.
@@ -308,7 +308,7 @@ export class TrakitSocket {
     reconnectEnabled: boolean = true;
     /**
      * The amount of time (in milliseconds) to wait before trying to re-connect.
-     * This time doubles with every attempt, and maxes out at {@link MAXWAIT_RECONNECT}.
+     * This time doubles with every attempt, and maxes out at {@link TIMEOUT_MAX_RECONNECT}.
      **/
     #delayReconnect: number = 0;
     /**
@@ -348,14 +348,14 @@ export class TrakitSocket {
      * Creates a new underlying WebSocket and returns a Promise that resolves when the connectionResponse message is received.
      * If the underlying WebSocket is not closed (as in, any state of openning or being closed), the returned Promise will be rejected.
      **/
-    open(): Promise<Reply> {
+    open() {
         CLEAR_TIMER(this.#timerReconnect);
         this.#timerReconnect = 0;
         return new Promise<Reply>((resolve, reject) => {
             const state = this.state;
             switch (state) {
                 case TrakitSocketStatus.closed:
-                    const reqId = TrakitSocket_CONNECTION;
+                    const reqId = CMD_CONNECTION;
                     this.#socket = new WebSocket(this.url.replace(/\/+$/, '') + "/?ghostId=" + this.ghostId);
                     this.#socket.onopen = (ev) => this.#socketOpen(ev);
                     this.#socket.onclose = (ev) => this.#socketClose(ev);
@@ -382,8 +382,8 @@ export class TrakitSocket {
      * @this {TrakitSocket}
      * @return {Promise}
      **/
-    close(): Promise<Reply> {
-        return new Promise((resolve, reject) => {
+    close() {
+        return new Promise<Reply>((resolve, reject) => {
             const state = this.state;
             switch (state) {
                 case TrakitSocketStatus.open:
@@ -410,15 +410,11 @@ export class TrakitSocket {
     /**
      * Sends a command and parameters to Trak-iT's WebSocket.
      * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
-     * @this {TrakitSocket}
-     * @param {!string} command		The name of the command to send.
-     * @param {Object=} params		Optional object or value for the command.
-     * @param {number=} retries		Optional number of attempts to resend this command upon reconnection.
-     * @return {Promise}
+     * @param command		The name of the command to send.
+     * @param params		Optional object or value for the command.
      **/
-    send(command: string, params?: Payload, retries?: number): Promise<Reply> {
-        let attempts = Number(retries) || 0;
-        return new Promise((resolve, reject) => {
+    send(command: string, params?: Payload) {
+        return new Promise<Reply>((resolve, reject) => {
             // get the socket state inside the resolver because it could be invoked multiple times.
             const state = this.state;
             switch (state) {
@@ -445,28 +441,16 @@ export class TrakitSocket {
                     this.resetKeepAlive();
                     break;
                 case TrakitSocketStatus.closed:
-                    if (attempts-- > 0) {
-                        const onOpen = this.onOpen;
-                        this.onOpen = function (message) {
-                            this.onOpen = onOpen; // restore the original handler
-                            this.onOpen?.(message);
-                            this.send(command, params, attempts).then(resolve, reject);
-                        };
-                        this.open();
-                    }
-                // no break, fall through
+                    this.open().then(() => this.send(command, params).then(resolve, reject), reject);
+                    break;
                 default:
-                    // compare less-than zero, not less-than one because the above case falls-through
-                    if (attempts < 0) {
-                        reject({
-                            "errorCode": ErrorCode.unknown,
-                            "message": "Not connected",
-                            "errorDetails": {
-                                "connection": state,
-                                "retries": retries || 0,
-                            },
-                        });
-                    }
+                    reject({
+                        "errorCode": ErrorCode.unknown,
+                        "message": "Not connected",
+                        "errorDetails": {
+                            "connection": state,
+                        },
+                    });
                     break;
             }
         });
@@ -474,7 +458,7 @@ export class TrakitSocket {
     /**
      * Resets the keep-alive timer (to try and keep the firewall from disconnecting the underlying WebSocket).
      **/
-    resetKeepAlive(): Promise<boolean> {
+    resetKeepAlive() {
         CLEAR_TIMER(this.#timerKeepAlive);
         this.#timerKeepAlive = this.keepAliveEnabled
             && this.#socketOperable
