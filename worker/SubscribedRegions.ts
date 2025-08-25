@@ -1,4 +1,4 @@
-import { SubscriptionType } from "../../common/SubscriptionType";
+import { SubscriptionType } from "../common/SubscriptionType";
 
 /**
  * The amount of time (in milliseconds) to wait before automatically removing a region subscription.

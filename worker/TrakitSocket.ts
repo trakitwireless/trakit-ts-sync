@@ -19,7 +19,8 @@ import { SelfUser } from "@commands/Accounts/Self/Responses/Content/SelfUser";
 export const URI_PROD = "wss://socket.trakit.ca/";  
 /**
  * Testing or beta {@link WebSocket} service URL.
- * This service is covered by the SLA and should be used for serices and code running in your own production environment.
+ * This service is not covered by the SLA and should be used to test your own code before deployment.
+ * Throttling of connections and commands is tighter to help you diagnose issues before switching to production.
  * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
  */
 export const URI_BETA = "wss://kraken.trakit.ca/";  

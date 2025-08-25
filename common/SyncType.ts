@@ -1,4 +1,4 @@
-import { TrakitSocket } from "../worker/Socket/TrakitSocket";
+import { TrakitSocket } from "../worker/TrakitSocket";
 
 /**
  * The types of subscriptions available using {@link TrakitSocket#subscribe}/{@link TrakitSocket#unsubscribe}.
@@ -12,7 +12,7 @@ export enum SyncType {
     /**
      * Sent by the {@link Window} requesting the immediate {@link Worker} state and variables.
      **/
-    variables = "variables",
+    status = "status",
     /**
      * Sent by the {@link Window} requesting a region be synchronized, and all objects in that region returned.
      * Sent by the {@link Worker} with a list (with rank) of all objects in the region.
