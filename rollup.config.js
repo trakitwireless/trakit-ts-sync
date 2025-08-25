@@ -12,20 +12,35 @@ const obfuscate = {
   //   toplevel: true,
   // },
   sourceMap: {
-    filename: '../_publish/trakit-sync-client.min.js',
+    filename: '_publish/trakit-sync-worker.min.js',
   },
 };
 
 export default [
   {
-    input: 'client.ts',
+    input: 'worker/worker.ts',
+    output: [
+      // {
+      //   file: '../_publish/trakit-sync-worker.js',
+      //   format: 'es',
+      // },
+      {
+        file: '_publish/trakit-sync-worker.min.js',
+        format: 'es',
+        plugins: [terser(obfuscate)]
+      }
+    ],
+    plugins: [typescript()],
+  },
+  {
+    input: 'client/client.ts',
     output: [
       // {
       //   file: '../_publish/trakit-sync-client.js',
       //   format: 'es',
       // },
       {
-        file: '../_publish/trakit-sync-client.min.js',
+        file: '_publish/trakit-sync-client.min.js',
         format: 'es',
         plugins: [terser(obfuscate)]
       }
