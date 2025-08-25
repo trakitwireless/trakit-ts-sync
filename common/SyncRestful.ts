@@ -6,7 +6,7 @@ import { SyncType } from "./SyncType";
  * For creating a call directly to Mindflayer (like a merge or delete object).
  * Can also send to Medusa.
  **/
-export class SyncMindflayer extends SyncBase {
+export class SyncRestful extends SyncBase {
 	/**
 	 * The full path for this direct call.
 	 * Does not include the Mindflayer domain or "https://" prefix.
