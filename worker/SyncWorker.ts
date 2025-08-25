@@ -5,14 +5,20 @@ import { ulong } from "@objects/API/Types";
 import { SyncBase } from "common/SyncBase";
 import { SyncDispose } from "common/SyncDispose";
 import { SyncInit } from "common/SyncInit";
-import { SyncKraken } from "common/SyncKraken";
+import { SyncSocket } from "common/SyncSocket";
 import { SyncMessage } from "common/SyncMessage";
-import { SyncMindflayer } from "common/SyncMindflayer";
+import { SyncRestful } from "common/SyncRestful";
 import { SyncSubscriptions } from "common/SyncSubscriptions";
 import { SyncType } from "common/SyncType";
-import { SubscribedRegions } from "./Socket/SubscribedRegions";
-import { CMD_CONNECTION, CMD_DISCONNECTION, TrakitSocket } from "./Socket/TrakitSocket";
-import { TrakitSocketStatus } from "./Socket/TrakitSocketStatus";
+import { SubscribedRegions } from "./SubscribedRegions";
+import { CMD_CONNECTION, CMD_DISCONNECTION, TrakitSocket } from "./TrakitSocket";
+import { TrakitSocketStatus } from "./TrakitSocketStatus";
+import { PaySubscriptionMerge } from "@commands/WebSocket/Requests/PaySubscriptionMerge";
+import { SubscriptionType } from "common/SubscriptionType";
+import { SyncStatus } from "common/SyncStatus";
+import { version } from "./worker";
+import { RepSubscription } from "@commands/WebSocket/Responses/RepSubscription";
+import { SUBSCRIPTION_LIST_BY_COMPANY, SUBSCRIPTION_SPLITS } from "common/Subscriptions";
 
 /**
  * The amount of time (in milliseconds) to wait between intervals checking for expired subscriptions.
@@ -142,7 +148,7 @@ export class SyncWorker {
     /**
      * Sends a (un)subscribe command to Kraken for the given company and regions.
      **/
-    #subscribe(add: boolean, company: ulong, regions: string[]) {
+    #subscribe(add: boolean, company: ulong, regions: SubscriptionType[]) {
         return this.#tws.send(
             add
                 ? "subscribe"
@@ -152,8 +158,7 @@ export class SyncWorker {
                     "id": company,
                 },
                 "subscriptionTypes": regions,
-            },
-            SyncKraken_DEFAULT_RETRIES
+            } as PaySubscriptionMerge
         );
     }
     /**
@@ -186,12 +191,12 @@ export class SyncWorker {
      * Immediately posts the current {@link Worker} state and variables, ignoring the queue and going "right now".
      * @param msg
      **/
-    variables(msg: SyncBase) {
-        self.postMessage({
+    status(msg: SyncStatus) {
+        msg.response = {
             "id": (msg || {}).id || null,
-            "v": [trakit_fleetfreedom.version, ns.version/*, DATABASE_VERSION*/],
-            "kind": SyncType.variables,
-            "kraken": {
+            "v": [version],
+            "kind": SyncType.status,
+            "socket": {
                 "ghostId": this.#tws.ghostId,
                 "state": this.#tws.state,
                 "ready": this.#tws.ready,
@@ -200,19 +205,20 @@ export class SyncWorker {
                 "lastReceived": this.#tws.lastReceived,
                 "lastMessageName": this.#tws.lastMessageName,
             },
-            "subscriptions": this.#subscriptions.toObject(function (subscribed, company) {
-                var current = [],
-                    expiring = [];
-                subscribed.__regions.forEach(function (expiry, region) {
-                    (expiry ? expiring : current).push(region);
-                });
-                return {
-                    "company": company,
-                    "current": current,
-                    "expiring": expiring,
-                };
-            }),
-        });
+            "subscriptions": {
+                // key is a company id
+                // value is an array of `SubscriptionType`s
+            },
+        } as any;
+        for (let [company, subscribed] of this.#subscriptions) {
+            const regions = subscribed.regions,
+                expiring = subscribed.expiringRegions();
+            (msg.response as any).subscriptions[company] = {
+                current: regions.filter(r => !expiring.includes(r)),
+                expiring: expiring,
+            };
+        }
+        self.postMessage(msg);
     }
     /**
      * Begins synchronizing the given regions.
@@ -222,51 +228,93 @@ export class SyncWorker {
     sync(msg: SyncSubscriptions) {
         const subscribed = this.#currentSubscriptions(msg.company),
             alreadySubscribed = subscribed.regions,
-            requestedSubscriptions = msg.subs.map((region) => {
+            requestedSubscriptions: SubscriptionType[] = msg.subs.map((region) => {
                 return SUBSCRIPTION_SPLITS[region] || [region];
             }).reduce((acc, val) => acc.concat(val), []),
-            temporarySubscriptions = OBJECT_EACH(
-                SUBSCRIPTION_LIST_BY_COMPANY,
-                function ( url, sub) {
-                    // here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
-                    // example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
-                    // but the assetAdvanced must be temporary since we didn't ask for it
-                    // it can expire using the regular expiration timeout
-                    return this.includes(url)
-                        ? sub
-                        : "";
-                },
-                requestedSubscriptions.map((sub) => {
-                    // for mindflayer requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
-                    // build a list of all URL templates for every subscription type being requested
-                    return SUBSCRIPTION_LIST_BY_COMPANY[sub] || "";
-                })
-            )
-                .remove("")
-                .unique()
-                .without(requestedSubscriptions),
-            newSubscriptions = requestedSubscriptions.concat(temporarySubscriptions)
-                .without(alreadySubscribed);
+            subscriptionUrls = requestedSubscriptions.map(s => SUBSCRIPTION_LIST_BY_COMPANY[s] || ""),
+            temporarySubscriptions: SubscriptionType[] = [],
+            newSubscriptions: SubscriptionType[] = [];
+        
+        for (let subType of SUBSCRIPTION_LIST_BY_COMPANY) {
+            // here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
+            // example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
+            // but the assetAdvanced must be temporary since we didn't ask for it
+            // it can expire using the regular expiration timeout
+            if (subscriptionUrls.includes(SUBSCRIPTION_LIST_BY_COMPANY[subType])) {
+                temporarySubscriptions.push(subType);
+            }
+        }
+        for (let subType of requestedSubscriptions.concat(temporarySubscriptions)) {
+            // for mindflayer requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
+            // build a list of all URL templates for every subscription type being requested
+            if (!alreadySubscribed.includes(subType) && !newSubscriptions.includes(subType)) {
+                newSubscriptions.push(subType);
+            }
+        }
+        
+        
+        
+        
+        
         (newSubscriptions.length
             // if there are new subscriptions to make, do so and when the Promise is resolved pass the response (normal KraknSocket behaviour)
-            ? this.#subscribe(true, msg.company, newSubscriptions)
+            ? this.#subscribe(true, msg.company, newSubscriptions) as Promise<RepSubscription>
             // otherwise, return a fulfilled Promise with a response of no "merged", and errorCode=0
             : Promise.resolve({
                 "errorCode": 0,
                 "company": { "id": msg.company },
                 "merged": [],
-            })
+            } as unknown as RepSubscription)
         ).then(
             // subscriptions succeeded (at least partially)
-            function (response) {
+            function (response: RepSubscription) {
                 // remove expiration from any new subscriptions
                 subscribed.removeExpiries(requestedSubscriptions.without(temporarySubscriptions));
                 // once subscriptions are made, set the expiry of the temporary ones
                 subscribed.addExpiries(temporarySubscriptions);
+
+
+
+
+                const requestUrls = response.merged
+                    .map((sub) => (SUBSCRIPTION_LIST_BY_COMPANY[sub]?.replace("{companyId}", msg.company) || ""))
+                    .filter((url) => url !== "")
+                    .reduce((acc, val) => acc.concat(val), [])
+                    .map((url: string) => new Promise((resolve, reject) => {
+                        // Make the request
+                        var xhr = new XMLHttpRequest;
+                        xhr.onload =
+                            xhr.onerror = function (event) {
+                                var error = {},
+                                    response = JSON_PARSE_SAFE(xhr.responseText, error) || {
+                                        "errorCode": 2,	// internal service error
+                                        "message": error["message"] || "JSON parse error",
+                                        "errorDetails": error,
+                                    };
+                                (response.errorCode === 0 ? resolve : reject)(response);
+                            };
+                        xhr.open("GET", url, true);
+                        xhr.send();
+                    }));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 // now load all the data
                 return Promise.allSettled(
-                    response["merged"]
-                        .map(function (sub) {
+                    response.merged                        .map(function (sub) {
                             return SUBSCRIPTION_LIST_BY_COMPANY[sub] || "";
                         })
                         .unique()
@@ -356,7 +404,7 @@ export class SyncWorker {
      * the response is added to the message and add to the queue to go back to the main {@link Window}.
      * @param msg
      **/
-    mindflayer(msg: SyncMindflayer) {
+    mindflayer(msg: SyncRestful) {
         // if the socket is not open, we would miss sync events
         // so if the socket is not open, we should open it and then send the mindflayer command
         // but we also don't need to worry about that for GET requests; which are got getting an object or a list of them
@@ -385,7 +433,7 @@ export class SyncWorker {
      * the response is added to the message and add to the queue to go back to the main {@link Window}.
      * @param msg
      **/
-    kraken(msg: SyncKraken) {
+    kraken(msg: SyncSocket) {
         const action = (response: Reply) => {
             msg.response = response;
             self.postMessage(msg);

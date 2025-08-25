@@ -4,16 +4,24 @@
  * Last updated on Thu Feb 27 2025 11:59:01 
  * @copyright Trak-iT Wireless Inc. 2025
  */
-import { SyncType } from "common/SyncType";
-import { SyncWorker } from "./SyncWorker";
 import { SyncBase } from "common/SyncBase";
 import { SyncInit } from "common/SyncInit";
+import { SyncSocket } from "common/SyncSocket";
+import { SyncRestful } from "common/SyncRestful";
+import { SyncSubscriptions } from "common/SyncSubscriptions";
+import { SyncType } from "common/SyncType";
+import { SyncWorker } from "./SyncWorker";
+
+/**
+ * Version number for this release.
+ */
+export const version = 5.0;
 
 /**
  * Instance of the peasant that will do the work.
  * @const {!SyncWorker}
  **/
-var PEASANT = new SyncWorker;
+const PEASANT = new SyncWorker;
 
 /**
  * Main thread command handler.
@@ -29,20 +37,20 @@ self.onmessage = function (event: MessageEvent<SyncBase>) {
         case SyncType.dispose:
             PEASANT.dispose();
             break;
-        case SyncType.variables:
-            PEASANT.variables(msg);
+        case SyncType.status:
+            PEASANT.status(msg);
             break;
         case SyncType.sync:
-            PEASANT.sync(msg);
+            PEASANT.sync(msg as SyncSubscriptions);
             break;
         case SyncType.desync:
-            PEASANT.desync(msg);
+            PEASANT.desync(msg as SyncSubscriptions);
             break;
         case SyncType.rest:
-            PEASANT.mindflayer(msg);
+            PEASANT.mindflayer(msg as SyncRestful);
             break;
         case SyncType.socket:
-            PEASANT.kraken(msg);
+            PEASANT.kraken(msg as SyncSocket);
             break;
         case SyncType.event:
         default:
