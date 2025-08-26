@@ -1,18 +1,16 @@
+import { SelfMachine } from "@commands/Accounts/Self/Responses/Content/SelfMachine";
+import { SelfUser } from "@commands/Accounts/Self/Responses/Content/SelfUser";
+import { SelfUserAdvanced } from "@commands/Accounts/Self/Responses/Content/SelfUserAdvanced";
+import { SelfUserGeneral } from "@commands/Accounts/Self/Responses/Content/SelfUserGeneral";
 import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
 import { Payload } from "@commands/API/Requests/Payload";
-import { ErrorDetail } from "@commands/API/Responses/Errors/ErrorDetail";
+import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
 import { Reply } from "@commands/API/Responses/Reply";
 import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, SET_TIMER } from "@objects/API/Constants";
 import { ID, PLURAL } from "@objects/API/Functions";
-import { TrakitSocketStatus } from "../../worker/TrakitSocketStatus";
-import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
-import { SelfMachine } from "@commands/Accounts/Self/Responses/Content/SelfMachine";
-import { SelfUserGeneral } from "@commands/Accounts/Self/Responses/Content/SelfUserGeneral";
-import { SelfUserAdvanced } from "@commands/Accounts/Self/Responses/Content/SelfUserAdvanced";
-import { SelfUser } from "@commands/Accounts/Self/Responses/Content/SelfUser";
-import { TrakitObjectCommander } from "../../../trakit-ts-commands/clients/TrakitObjectCommander";
-import { PaySelfGet } from "@commands/Accounts/Self/Requests/PaySelfGet";
 import { TrakitSocket } from "worker/TrakitSocket";
+import { TrakitObjectCommander } from "../../../trakit-ts-commands/clients/TrakitObjectCommander";
+import { TrakitSocketStatus } from "../../worker/TrakitSocketStatus";
 
 /**
  * Production {@link WebSocket} service URL.
@@ -50,11 +48,18 @@ export const CMD_CONNECTION = "connection";
  */
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
-// command name reply suffix and unknown command response name
+/**
+ * command name reply suffix and unknown command response name
+ */
 const RESPONSE_SUFFIX = "Response",
     UNKNOWN_COMMAND = "unknownCommand" + RESPONSE_SUFFIX;
-// converts the {@link Payload} type into a WebSocket command name
-function _getCommandName<TPayload extends Payload>(payload: TPayload) {
+
+/**
+ * converts the {@link Payload} type into a WebSocket command name.
+ * @param payload 
+ * @returns 
+ */
+function getCommandName<TPayload extends Payload>(payload: TPayload): string {
     var matches = payload.getNameParts();
     if (matches.length >= 2) {
         let objName = matches[0],
@@ -110,7 +115,7 @@ function _getCommandName<TPayload extends Payload>(payload: TPayload) {
 export class TrakitSocketCommander extends TrakitObjectCommander {
     #lastConnected: Date = new Date(NaN);
     #lastReceived: Date = new Date(NaN);
-    #lastMessageName: string = "";
+    #lastMessage: string = "";
     #lastSent: Date = new Date(NaN);
 
     /**
@@ -130,8 +135,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
     /**
      * The name of the most recent message received by the underlying WebSocket.
      **/
-    get lastMessageName(): string {
-        return this.#lastMessageName;
+    get lastMessage(): string {
+        return this.#lastMessage;
     }
     /**
      * Timestamp recorded right after sending the most recent message.
@@ -161,30 +166,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
             && this.#socketOperable;
     }
 
-
-    /**
-     * Returns the full address of the WebSocket service (and session token if applicable).
-     * @param path 
-     * @returns 
-     */
-    protected override createBaseUri(path?: string | null): URL {
-        const endpoint = super.createBaseUri(path);
-        if (this.account?.ghostId) {
-            endpoint.searchParams.append("ghostId", this.account.ghostId);
-        } else if (this.account?.machine) {
-            // TODO, HMAC SHA256 implementation
-            endpoint.searchParams.append("signature", this.account.machine.key);
-        }
-        return endpoint;
-    }
-
     /**
      * 
      * @param payload 
      * @returns 
      */
     override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-        return this.send(_getCommandName(payload), payload);
+        return this.send(getCommandName(payload), payload);
     }
 
     /**
@@ -213,7 +201,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
      * A collection of pending command Promises.
      * Each key is a reqId (except for connection and disconnection) and each value is a function invoked with a {@link Reply} object.
      **/
-    #requests: Map<string | number, (response: Reply) => void> = new Map();
+    #requests: Map<string | number, <TReply extends Reply>(response: TReply) => void> = new Map();
     
     /**
      * The underlying WebSocket.
@@ -334,7 +322,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
         const msgContent = JSON_PARSE(event.data.substring(msgName.length + 1));
 
         // first, set this value
-        this.#lastMessageName = msgName;
+        this.#lastMessage = msgName;
         switch (msgName) {
             case "connectionResponse":
                 this.#lastConnected = new Date(this.#lastReceived);
@@ -445,17 +433,24 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
     open() {
         CLEAR_TIMER(this.#timerReconnect);
         this.#timerReconnect = 0;
-        return new Promise<Reply>((resolve, reject) => {
+        return new Promise<RepSelfGet>(async (resolve, reject) => {
             const state = this.state;
             switch (state) {
                 case TrakitSocketStatus.closed:
-                    const reqId = CMD_CONNECTION;
-                    this.#socket = new WebSocket(this.createBaseUri());
+                    const reqId = CMD_CONNECTION,
+                        endpoint = this.createBaseUrl();
+                    if (this.account?.ghostId) {
+                        endpoint.searchParams.append("ghostId", this.account.ghostId);
+                    } else if (this.account?.machine) {
+                        endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
+                        endpoint.searchParams.append("shadowKey", this.account.machine.key);    // sign without key
+                    }
+                    this.#socket = new WebSocket(endpoint);
                     this.#socket.onopen = (ev) => this.#socketOpen(ev);
                     this.#socket.onclose = (ev) => this.#socketClose(ev);
                     this.#requests.set(reqId, (response: Reply) => {
                         this.#requests.delete(reqId);
-                        (response.errorCode === 0 ? resolve : reject)(response);
+                        (response.errorCode === 0 ? resolve : reject)(response as RepSelfGet);
                     });
                     break;
                 default:
@@ -485,7 +480,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
                     const reqId = "disconnection";
                     this.#requests.set(reqId, (response: Reply) => {
                         this.#requests.delete(reqId);
-                        (response["errorCode"] === 0 ? resolve : reject)(response);
+                        (response.errorCode === 0 ? resolve : reject)(response);
                     });
                     this.#socket.close(1000, "Bye!");
                     break;
@@ -517,7 +512,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
                         settler = (response: Reply) => {
                             CLEAR_TIMER(timer);
                             this.#requests.delete(reqId);
-                            (response["errorCode"] === 0 ? resolve : reject)(response as TReply);
+                            (response.errorCode === 0 ? resolve : reject)(response as TReply);
                         },
                         timer = SET_TIMER(
                             settler,
