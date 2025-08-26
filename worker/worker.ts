@@ -1,6 +1,6 @@
 ﻿/**
- * Object definitions that work with our various APIs.
- * {@link https://github.com/trakitwireless/trakit-ts|TypeScript API documentation.}
+ * Synchronization library WebWorker process.
+ * {@link https://github.com/trakitwireless/trakit-ts-sync|Client synchronization library.}
  * Last updated on Thu Feb 27 2025 11:59:01 
  * @copyright Trak-iT Wireless Inc. 2025
  */

@@ -7,8 +7,8 @@ import { JSON_PARSE, KEYS } from "@objects/API/Constants";
  * @param errorContainer 
  * @returns 
  */
-export function JSON_PARSE_SAFE(jsonString: string, errorContainer: any) {
-    let json;
+export function JSON_PARSE_SAFE(jsonString: string, errorContainer: any): any | undefined {
+    let json: any;
     try {
         json = JSON_PARSE(jsonString);
     } catch (error: SyntaxError | any) {
