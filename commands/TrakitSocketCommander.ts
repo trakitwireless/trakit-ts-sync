@@ -1,15 +1,15 @@
+import { SelfMachine } from "@commands/Accounts/Self/Responses/Content/SelfMachine";
+import { SelfUser } from "@commands/Accounts/Self/Responses/Content/SelfUser";
+import { SelfUserAdvanced } from "@commands/Accounts/Self/Responses/Content/SelfUserAdvanced";
+import { SelfUserGeneral } from "@commands/Accounts/Self/Responses/Content/SelfUserGeneral";
 import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
 import { Payload } from "@commands/API/Requests/Payload";
-import { ErrorDetail } from "@commands/API/Responses/Errors/ErrorDetail";
+import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
 import { Reply } from "@commands/API/Responses/Reply";
 import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, SET_TIMER } from "@objects/API/Constants";
-import { ID } from "@objects/API/Functions";
+import { ID, PLURAL } from "@objects/API/Functions";
+import { TrakitObjectCommander } from "../../trakit-ts-commands/clients/TrakitObjectCommander";
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
-import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
-import { SelfMachine } from "@commands/Accounts/Self/Responses/Content/SelfMachine";
-import { SelfUserGeneral } from "@commands/Accounts/Self/Responses/Content/SelfUserGeneral";
-import { SelfUserAdvanced } from "@commands/Accounts/Self/Responses/Content/SelfUserAdvanced";
-import { SelfUser } from "@commands/Accounts/Self/Responses/Content/SelfUser";
 
 /**
  * Production {@link WebSocket} service URL.
@@ -48,17 +48,102 @@ export const CMD_CONNECTION = "connection";
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
+ * command name reply suffix and unknown command response name
+ */
+const RESPONSE_SUFFIX = "Response",
+    UNKNOWN_COMMAND = "unknownCommand" + RESPONSE_SUFFIX;
+
+/**
+ * converts the {@link Payload} type into a WebSocket command name.
+ * @param payload 
+ * @returns 
+ */
+function getCommandName<TPayload extends Payload>(payload: TPayload): string {
+    var matches = payload.getNameParts();
+    if (matches.length >= 2) {
+        let objName = matches[0],
+            cmdName = matches[1].toLowerCase();
+        switch (objName) {
+            case "Subscription":
+                switch (cmdName) {
+                    case "merge":
+                        return "subscribe";
+                    case "delete":
+                    case "remove":
+                        return "unsubscribe";
+                    case "list":
+                        return "getSubscriptionsList";
+                }
+                break;
+            case "Self":
+                if (cmdName == "get") return "getSessionDetails";
+                break;
+            case "Session":
+                if (cmdName == "delete") return "killSession";
+                break;
+        }
+        switch (cmdName) {
+            case "login":
+            case "logout":
+                return cmdName;
+
+            case "get":
+            case "merge":
+            case "restore":
+            case "suspend":
+            case "revive":
+            default:
+                return cmdName + objName;
+            case "delete":
+            case "remove":
+                return "remove" + objName;
+            case "list":
+                cmdName = "get" + PLURAL(objName) + "List";
+                if (matches.length > 2 && matches[2] != "ByCompany") {
+                    cmdName += matches[2];
+                }
+                return cmdName;
+        }
+    }
+    throw `no command supported for ${payload.constructor.name}`;
+}
+
+/**
  * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
  **/
-export class TrakitSocket {
+export class TrakitSocketCommander extends TrakitObjectCommander {
+    #lastConnected: Date = new Date(NaN);
+    #lastReceived: Date = new Date(NaN);
+    #lastMessage: string = "";
+    #lastSent: Date = new Date(NaN);
+
     /**
-     * Trak-iT's WebSocket URL.
-     **/
-    url: string;
+     * Timestamp recorded right after establishing a connection and receiving the `connectionResponse` message.
+     */
+    get lastConnected(): Date {
+        return this.#lastConnected;
+    }
     /**
-     * Your session id.
+     * A timestamp from the last time we received any kind of message from the underlying WebSocket (requested or otherwise).
+     * Does not reset when we send a message, only on receive.
+     * This is used by the keep-alive process.
      **/
-    ghostId: string;
+    get lastReceived(): Date {
+        return this.#lastReceived;
+    }
+    /**
+     * The name of the most recent message received by the underlying WebSocket.
+     **/
+    get lastMessage(): string {
+        return this.#lastMessage;
+    }
+    /**
+     * Timestamp recorded right after sending the most recent message.
+     */
+    get lastSent(): Date {
+        return this.#lastSent;
+    }
+
     /**
      * Returns a {@link TrakitSocketStatus} about the underlying WebSocket.
      * Also takes into account a null connection, and an open connection that has not yet received the first message.
@@ -79,37 +164,32 @@ export class TrakitSocket {
         return this.#socketReady
             && this.#socketOperable;
     }
+
     /**
      * 
+     * @param payload 
+     * @returns 
      */
-    account!: RepSelfGet;
-    /**
-     * A timestamp from the last time we received any kind of message from the underlying WebSocket (requested or otherwise).
-     * Does not reset when we send a message, only on receive.
-     * This is used by the keep-alive process.
-     **/
-    lastReceived: Date = new Date(NaN);
-    /**
-     * The name of the most recent message received by the underlying WebSocket.
-     **/
-    lastMessageName: string = "";
+    override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
+        return this.send(getCommandName(payload), payload);
+    }
 
     /**
      * Gets invoked any time the WebSocket connection is opened.
      */
-    onOpen: ((this: TrakitSocket, message: Reply) => any) | null = null;
+    onOpen: ((this: TrakitSocketCommander, message: Reply) => any) | null = null;
     /**
      * Gets invoked any time the WebSocket connection is closed.
      */
-    onClose: ((this: TrakitSocket, message: Reply) => any) | null = null;
+    onClose: ((this: TrakitSocketCommander, message: Reply) => any) | null = null;
     /**
      * Gets invoked any time a message is received from the WebSocket.
      */
-    onMessage: ((this: TrakitSocket, name: string, message: any) => any) | null = null;
+    onMessage: ((this: TrakitSocketCommander, name: string, message: any) => any) | null = null;
     /**
      * Gets invoked any time an error occurs on the WebSocket.
      */
-    onError: ((this: TrakitSocket, message: Reply) => any) | null = null;
+    onError: ((this: TrakitSocketCommander, message: Reply) => any) | null = null;
 
     //#region Internal WebSocket control
     /**
@@ -120,7 +200,7 @@ export class TrakitSocket {
      * A collection of pending command Promises.
      * Each key is a reqId (except for connection and disconnection) and each value is a function invoked with a {@link Reply} object.
      **/
-    #requests: Map<string | number, (response: Reply) => void> = new Map();
+    #requests: Map<string | number, <TReply extends Reply>(response: TReply) => void> = new Map();
     
     /**
      * The underlying WebSocket.
@@ -223,7 +303,7 @@ export class TrakitSocket {
      * This handler also fires the "connection" event, not the onopen handler.
      **/
     #socketMessage(event: MessageEvent<string>) {
-        this.lastReceived = new Date;
+        this.#lastReceived = new Date;
 
         /**
          * Will fire an event of the message name when true (default).
@@ -241,10 +321,11 @@ export class TrakitSocket {
         const msgContent = JSON_PARSE(event.data.substring(msgName.length + 1));
 
         // first, set this value
-        this.lastMessageName = msgName;
+        this.#lastMessage = msgName;
         switch (msgName) {
             case "connectionResponse":
-                this.ghostId = (msgContent as RepSelfGet).ghostId || "";
+                this.#lastConnected = new Date(this.#lastReceived);
+                this.setAuth(this.account = new RepSelfGet(msgContent));
                 this.#socketOperable = msgContent["errorCode"] === 0;
                 this.#socketReady = true;
                 // Promise is settled here, not below
@@ -256,8 +337,7 @@ export class TrakitSocket {
                 break;
             case "loginResponse":
             case "getSessionDetailsResponse":
-                this.account = msgContent as RepSelfGet;
-                this.ghostId = this.account.ghostId || "";
+                this.setAuth(this.account = new RepSelfGet(msgContent));
                 this.#socketOperable = this.account.errorCode === 0
                     && !this.account.user?.passwordExpired;
                 break;
@@ -265,13 +345,13 @@ export class TrakitSocket {
                 this.#socketOperable = msgContent["errorCode"] === 0;
                 break;
             case "sessionMachineMerged":
-                this.account.machine = new SelfMachine(msgContent);
+                (this.account as RepSelfGet).machine = new SelfMachine(msgContent);
                 break;
             case "sessionGeneralMerged":
-                (this.account.user as SelfUser).general = new SelfUserGeneral(msgContent);
+                ((this.account as RepSelfGet).user as SelfUser).general = new SelfUserGeneral(msgContent);
                 break;
             case "sessionAdvancedMerged":
-                (this.account.user as SelfUser).advanced = new SelfUserAdvanced(msgContent);
+                ((this.account as RepSelfGet).user as SelfUser).advanced = new SelfUserAdvanced(msgContent);
                 break;
             case "noopResponse":
                 // the "no operation" messages do not need an event
@@ -325,14 +405,13 @@ export class TrakitSocket {
     keepAliveEnabled: boolean = true;
     /**
      * Handle for the timer associated with performing the keep-alive operation.
-     * @type {!number}
      **/
     #timerKeepAlive: number = 0;
     //#endregion Keep-Alive
 
-    constructor(url: string, ghostId?: string | null) {
-        this.url = url || URI_PROD;
-        this.ghostId = ghostId || "";
+    constructor(url?: string, ghostId?: string | null) {
+        super(url || URI_PROD);
+        if (ghostId) this.query.set("ghostId", ghostId);
     }
     /**
      * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
@@ -352,17 +431,24 @@ export class TrakitSocket {
     open() {
         CLEAR_TIMER(this.#timerReconnect);
         this.#timerReconnect = 0;
-        return new Promise<Reply>((resolve, reject) => {
+        return new Promise<RepSelfGet>(async (resolve, reject) => {
             const state = this.state;
             switch (state) {
                 case TrakitSocketStatus.closed:
-                    const reqId = CMD_CONNECTION;
-                    this.#socket = new WebSocket(this.url.replace(/\/+$/, '') + "/?ghostId=" + this.ghostId);
+                    const reqId = CMD_CONNECTION,
+                        endpoint = this.createBaseUrl();
+                    if (this.account?.ghostId) {
+                        endpoint.searchParams.append("ghostId", this.account.ghostId);
+                    } else if (this.account?.machine) {
+                        endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
+                        endpoint.searchParams.append("shadowKey", this.account.machine.key);    // sign without key
+                    }
+                    this.#socket = new WebSocket(endpoint);
                     this.#socket.onopen = (ev) => this.#socketOpen(ev);
                     this.#socket.onclose = (ev) => this.#socketClose(ev);
                     this.#requests.set(reqId, (response: Reply) => {
                         this.#requests.delete(reqId);
-                        (response.errorCode === 0 ? resolve : reject)(response);
+                        (response.errorCode === 0 ? resolve : reject)(response as RepSelfGet);
                     });
                     break;
                 default:
@@ -380,8 +466,6 @@ export class TrakitSocket {
     /**
      * Closes the underlying WebSocket connection, and returns a Promise that resolves when the connection is confirmed to be closed.
      * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
-     * @this {TrakitSocket}
-     * @return {Promise}
      **/
     close() {
         return new Promise<Reply>((resolve, reject) => {
@@ -392,7 +476,7 @@ export class TrakitSocket {
                     const reqId = "disconnection";
                     this.#requests.set(reqId, (response: Reply) => {
                         this.#requests.delete(reqId);
-                        (response["errorCode"] === 0 ? resolve : reject)(response);
+                        (response.errorCode === 0 ? resolve : reject)(response);
                     });
                     this.#socket.close(1000, "Bye!");
                     break;
@@ -414,8 +498,8 @@ export class TrakitSocket {
      * @param command		The name of the command to send.
      * @param params		Optional object or value for the command.
      **/
-    send(command: string, params?: Payload) {
-        return new Promise<Reply>((resolve, reject) => {
+    send<TReply extends Reply>(command: string, params?: Payload) {
+        return new Promise<TReply>((resolve, reject) => {
             // get the socket state inside the resolver because it could be invoked multiple times.
             const state = this.state;
             switch (state) {
@@ -424,7 +508,7 @@ export class TrakitSocket {
                         settler = (response: Reply) => {
                             CLEAR_TIMER(timer);
                             this.#requests.delete(reqId);
-                            (response["errorCode"] === 0 ? resolve : reject)(response);
+                            (response.errorCode === 0 ? resolve : reject)(response as TReply);
                         },
                         timer = SET_TIMER(
                             settler,
@@ -442,7 +526,7 @@ export class TrakitSocket {
                     this.resetKeepAlive();
                     break;
                 case TrakitSocketStatus.closed:
-                    this.open().then(() => this.send(command, params).then(resolve, reject), reject);
+                    this.open().then(() => this.send(command, params).then(resolve as any, reject), reject);
                     break;
                 default:
                     reject({

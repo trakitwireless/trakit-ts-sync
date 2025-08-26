@@ -1,8 +1,8 @@
 import { RepSelfGet } from '@commands/Accounts/Self/Responses/RepSelfGet';
-import { TrakitSocket } from './TrakitSocket';
+import { TrakitSocketCommander } from './TrakitSocketCommander';
 
 /**
- * Describes the state of the {@link TrakitSocket}'s connection to the Trak-iT WebSocket service.
+ * Describes the state of the {@link TrakitSocketCommander}'s connection to the Trak-iT WebSocket service.
  */
 export enum TrakitSocketStatus {
     /**
