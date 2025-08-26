@@ -1,24 +1,23 @@
 ﻿import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
 import { Reply } from "@commands/API/Responses/Reply";
+import { PaySubscriptionMerge } from "@commands/WebSocket/Requests/PaySubscriptionMerge";
+import { RepSubscription } from "@commands/WebSocket/Responses/RepSubscription";
 import { CLEAR_TIMER, JSON_STRINGIFY, SET_TIMER } from "@objects/API/Constants";
 import { ulong } from "@objects/API/Types";
-import { SyncBase } from "common/SyncBase";
+import { SUBSCRIPTION_LIST_BY_COMPANY, SUBSCRIPTION_SPLITS } from "common/Subscriptions";
+import { SubscriptionType } from "common/SubscriptionType";
 import { SyncDispose } from "common/SyncDispose";
 import { SyncInit } from "common/SyncInit";
-import { SyncSocket } from "common/SyncSocket";
 import { SyncMessage } from "common/SyncMessage";
 import { SyncRestful } from "common/SyncRestful";
+import { SyncSocket } from "common/SyncSocket";
+import { SyncStatus } from "common/SyncStatus";
 import { SyncSubscriptions } from "common/SyncSubscriptions";
 import { SyncType } from "common/SyncType";
+import { CMD_CONNECTION, CMD_DISCONNECTION, TrakitSocketCommander } from "../commands/TrakitSocketCommander";
+import { TrakitSocketStatus } from "../commands/TrakitSocketStatus";
 import { SubscribedRegions } from "./SubscribedRegions";
-import { CMD_CONNECTION, CMD_DISCONNECTION, TrakitSocket } from "./TrakitSocket";
-import { TrakitSocketStatus } from "./TrakitSocketStatus";
-import { PaySubscriptionMerge } from "@commands/WebSocket/Requests/PaySubscriptionMerge";
-import { SubscriptionType } from "common/SubscriptionType";
-import { SyncStatus } from "common/SyncStatus";
 import { version } from "./worker";
-import { RepSubscription } from "@commands/WebSocket/Responses/RepSubscription";
-import { SUBSCRIPTION_LIST_BY_COMPANY, SUBSCRIPTION_SPLITS } from "common/Subscriptions";
 
 /**
  * The amount of time (in milliseconds) to wait between intervals checking for expired subscriptions.
@@ -27,7 +26,7 @@ const TIMEOUT_SUBSCRIPTION = 10 * 1000;	// 10 seconds
 
 /**
  * This is the class which does the work in the background {@link Worker} for the {@link SyncClient}.
- * It handles synchronizing regions, maintaining a connection to Kraken, and send HTTP requests to Mindflayer.
+ * It handles synchronizing regions, maintaining a connection to Trak-iT's WebSocket, and send HTTP requests to Trak-iT's RESTful service.
  * This class also maintains a queue of up-going messages.
  **/
 export class SyncWorker {
@@ -38,11 +37,11 @@ export class SyncWorker {
     
     /**
      * Callback used to clear expired subscriptions from the dictionary.
-     * Also resets the timer after sending unsubscribe Promise to Kraken is resolved.
+     * Also resets the timer after sending unsubscribe Promise to Trak-iT's WebSocket is resolved.
      **/
     #subscriptionExpirer() {
         const expirations: Promise<Reply>[] = [];
-        if (this.#tws.state === TrakitSocketStatus.open) {
+        if (this.#socket.state === TrakitSocketStatus.open) {
             this.#subscriptions.forEach((subscribed, company) => {
                 const expired = subscribed.expiredRegions(true);
                 if (expired.length) expirations.push(this.#subscribe(false, company, expired));
@@ -61,12 +60,12 @@ export class SyncWorker {
     #subscriptionTimer: number = 0;
 
     /**
-     * The Kraken main connection.
+     * The Trak-iT WebSocket's main connection.
      **/
-    #tws!: TrakitSocket;
+    #socket!: TrakitSocketCommander;
 
     /**
-     * Disconnects Kraken then sends a message to the {@link SyncClient} about it, and dies.
+     * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.
      * Does not terminate the {@link Worker}.
      **/
     dispose() {
@@ -74,13 +73,13 @@ export class SyncWorker {
             var msg = new SyncDispose();
             msg.response = response;
             self.postMessage(msg);
-            this.#tws.dispose();
-            (this.#tws as TrakitSocket | null) = null;
+            this.#socket.dispose();
+            (this.#socket as TrakitSocketCommander | null) = null;
         };
-        this.#tws.close().then(action, action);
+        this.#socket.close().then(action, action);
     }
     /**
-     * Handles the "connection" event from Kraken.
+     * Handles the "connection" event from the Trak-iT WebSocket.
      * This will update the global {@link SESSION_ID}, sends a {@link SyncMessage} to the {@link SyncClient},
      * and re-subscribe to any regions that were subscribed to before the disconnection occured.
      * Also restarts the subscription expirer.
@@ -102,7 +101,7 @@ export class SyncWorker {
         this.#subscriptionExpirer();
     }
     /**
-     * Handles the "disconnection" event from Kraken.
+     * Handles the "disconnection" event from the Trak-iT WebSocket.
      * Stops the subscription expirer (it is restarted on re-connection).
      * Also sends a {@link SyncMessage} to the {@link SyncClient}.
      * @param msg 
@@ -114,9 +113,7 @@ export class SyncWorker {
         this.#subscriptionTimer = 0;
     }
     /**
-     * Handles message events from Kraken.
-     * For login and session-details related messages, will set the global {@link SESSION_ID},
-     * (Kraken handles this to set its own {@link KrakenSocket#ghostId}).
+     * Handles message events from the Trak-iT WebSocket.
      * Also sends a {@link SyncMessage} to the {@link SyncClient}.
      * @param kind 
      * @param content 
@@ -137,7 +134,7 @@ export class SyncWorker {
         self.postMessage(new SyncMessage(kind, content));
     }
     /**
-     * Handles the "error" event from Kraken.
+     * Handles the "error" event from the Trak-iT WebSocket.
      * All this does is relay the event as a {@link SyncMessage} to the {@link SyncClient}.
      * @param error 
      **/
@@ -146,10 +143,10 @@ export class SyncWorker {
     }
 
     /**
-     * Sends a (un)subscribe command to Kraken for the given company and regions.
+     * Sends a (un)subscribe command to the Trak-iT WebSocket for the given company and regions.
      **/
     #subscribe(add: boolean, company: ulong, regions: SubscriptionType[]) {
-        return this.#tws.send(
+        return this.#socket.send(
             add
                 ? "subscribe"
                 : "unsubscribe",
@@ -176,16 +173,16 @@ export class SyncWorker {
      * @param msg
      **/
     init(msg: SyncInit) {
-        this.#tws = new TrakitSocket(msg.socket, msg.ghostId);
-        this.#tws.onOpen = (msg) => this.#onOpen(msg);
-        this.#tws.onClose = (msg) => this.#onClose(msg);
-        this.#tws.onMessage = (msg, data) => this.#onMessage(msg, data);
-        this.#tws.onError = (msg) => this.#onError(msg);
+        this.#socket = new TrakitSocketCommander(msg.socket, msg.ghostId);
+        this.#socket.onOpen = (msg) => this.#onOpen(msg);
+        this.#socket.onClose = (msg) => this.#onClose(msg);
+        this.#socket.onMessage = (msg, data) => this.#onMessage(msg, data);
+        this.#socket.onError = (msg) => this.#onError(msg);
         const action = (response: Reply) => {
             msg.response = response;
             self.postMessage(msg);
         };
-        this.#tws.open().then(action, action);
+        this.#socket.open().then(action, action);
     }
     /**
      * Immediately posts the current {@link Worker} state and variables, ignoring the queue and going "right now".
@@ -197,13 +194,13 @@ export class SyncWorker {
             "v": [version],
             "kind": SyncType.status,
             "socket": {
-                "ghostId": this.#tws.ghostId,
-                "state": this.#tws.state,
-                "ready": this.#tws.ready,
-                "reconnectEnabled": this.#tws.reconnectEnabled,
-                "keepAliveEnabled": this.#tws.keepAliveEnabled,
-                "lastReceived": this.#tws.lastReceived,
-                "lastMessageName": this.#tws.lastMessageName,
+                "ghostId": this.#socket.ghostId,
+                "state": this.#socket.state,
+                "ready": this.#socket.ready,
+                "reconnectEnabled": this.#socket.reconnectEnabled,
+                "keepAliveEnabled": this.#socket.keepAliveEnabled,
+                "lastReceived": this.#socket.lastReceived,
+                "lastMessageName": this.#socket.lastMessageName,
             },
             "subscriptions": {
                 // key is a company id
@@ -245,7 +242,7 @@ export class SyncWorker {
             }
         }
         for (let subType of requestedSubscriptions.concat(temporarySubscriptions)) {
-            // for mindflayer requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
+            // for REST requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
             // build a list of all URL templates for every subscription type being requested
             if (!alreadySubscribed.includes(subType) && !newSubscriptions.includes(subType)) {
                 newSubscriptions.push(subType);
@@ -332,7 +329,7 @@ export class SyncWorker {
                                 })
                                     // blanks are removed
                                     .remove("")
-                                    // since Mindflayer is not providing region lists in all cases (for complex types)
+                                    // since Trak-iT's RESTful service is not providing region lists in all cases (for complex types)
                                     // we find out if this region is a member of a complex type, and return that type name instead
                                     .map(function (region) {
                                         var sub = "";
@@ -391,7 +388,7 @@ export class SyncWorker {
                 .reduce((acc, val) => acc.concat(val), [])
                 .without(subscribed.expiringRegions())
         subscribed.addExpiries(regions);
-        // does not send "unsubscribe" to Kraken, this is done in the {@link SyncWorker#subscriptionTimer} process.
+        // does not send "unsubscribe" to the Trak-iT WebSocket, this is done in the {@link SyncWorker#subscriptionTimer} process.
         msg.response = {
             "errorCode": 0,
             "message": "Regions added to unsubscribe timeout",
@@ -400,13 +397,13 @@ export class SyncWorker {
         self.postMessage(msg);
     }
     /**
-     * Sends an XHR to Mindflayer, and when a response is returned (or timeout occurs, or JSON parsing error occurs),
+     * Sends an XHR to Trak-iT's RESTful service, and when a response is returned (or timeout occurs, or JSON parsing error occurs),
      * the response is added to the message and add to the queue to go back to the main {@link Window}.
      * @param msg
      **/
-    mindflayer(msg: SyncRestful) {
+    rest(msg: SyncRestful) {
         // if the socket is not open, we would miss sync events
-        // so if the socket is not open, we should open it and then send the mindflayer command
+        // so if the socket is not open, we should open it and then send the REST command
         // but we also don't need to worry about that for GET requests; which are got getting an object or a list of them
 
         const action = (response: Reply) => {
@@ -416,7 +413,7 @@ export class SyncWorker {
 
 
 
-        return msg.method === "GET" || this.#tws.state === TrakitSocketStatus.open
+        return msg.method === "GET" || this.#socket.state === TrakitSocketStatus.open
             ? XHR_MINDFLAYER(
                 msg.path,
                 msg.method,
@@ -426,18 +423,18 @@ export class SyncWorker {
                         : JSON_STRINGIFY(msg.body)
                     : null
             ).then(action, action)
-            : this.#tws.open().finally(() => this.mindflayer(msg));
+            : this.#socket.open().finally(() => this.rest(msg));
     }
     /**
-     * Sends a command to Kraken, and when a response is returned (or timeout occurs),
+     * Sends a command to the Trak-iT WebSocket, and when a response is returned (or timeout occurs),
      * the response is added to the message and add to the queue to go back to the main {@link Window}.
      * @param msg
      **/
-    kraken(msg: SyncSocket) {
+    socket(msg: SyncSocket) {
         const action = (response: Reply) => {
             msg.response = response;
             self.postMessage(msg);
         };
-        this.#tws.send(msg.name, msg.body).then(action, action);
+        this.#socket.send(msg.name, msg.body).then(action, action);
     }
 }

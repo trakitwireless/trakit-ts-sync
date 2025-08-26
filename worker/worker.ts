@@ -6,8 +6,8 @@
  */
 import { SyncBase } from "common/SyncBase";
 import { SyncInit } from "common/SyncInit";
-import { SyncSocket } from "common/SyncSocket";
 import { SyncRestful } from "common/SyncRestful";
+import { SyncSocket } from "common/SyncSocket";
 import { SyncSubscriptions } from "common/SyncSubscriptions";
 import { SyncType } from "common/SyncType";
 import { SyncWorker } from "./SyncWorker";
@@ -47,10 +47,10 @@ self.onmessage = function (event: MessageEvent<SyncBase>) {
             PEASANT.desync(msg as SyncSubscriptions);
             break;
         case SyncType.rest:
-            PEASANT.mindflayer(msg as SyncRestful);
+            PEASANT.rest(msg as SyncRestful);
             break;
         case SyncType.socket:
-            PEASANT.kraken(msg as SyncSocket);
+            PEASANT.socket(msg as SyncSocket);
             break;
         case SyncType.event:
         default:

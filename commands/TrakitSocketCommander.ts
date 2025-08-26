@@ -177,7 +177,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
     /**
      * Gets invoked any time the WebSocket connection is opened.
      */
-    onOpen: ((this: TrakitSocketCommander, message: Reply) => any) | null = null;
+    onOpen: ((this: TrakitSocketCommander, message: RepSelfGet) => any) | null = null;
     /**
      * Gets invoked any time the WebSocket connection is closed.
      */

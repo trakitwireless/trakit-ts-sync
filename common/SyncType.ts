@@ -1,7 +1,7 @@
-import { TrakitSocket } from "../worker/TrakitSocket";
+import { TrakitSocketCommander } from "../commands/TrakitSocketCommander";
 
 /**
- * The types of subscriptions available using {@link TrakitSocket#subscribe}/{@link TrakitSocket#unsubscribe}.
+ * The types of subscriptions available using {@link TrakitSocketCommander#subscribe}/{@link TrakitSocketCommander#unsubscribe}.
  * Each type has a different synchronization messages and objects.
  **/
 export enum SyncType {
@@ -24,17 +24,17 @@ export enum SyncType {
      **/
     desync = "desync",
     /**
-     * Sent by the {@link Window} making a request to Mindflayer directly.
-     * Sent by the {@link Worker} Mindflayer's response.
+     * Sent by the {@link Window} making a request to Trak-iT's RESTful directly.
+     * Sent by the {@link Worker} Trak-iT's RESTful response.
      **/
     rest = "rest",
     /**
-     * Sent by the {@link Window} making a request to Kraken directly.
-     * Sent by the {@link Worker} Kraken's response.
+     * Sent by the {@link Window} making a request to Trak-iT WebSocket directly.
+     * Sent by the {@link Worker} Trak-iT WebSocket's response.
      **/
     socket = "socket",
     /**
-     * Sent by the {@link Worker} when a Kraken message is received outside of an executed command.
+     * Sent by the {@link Worker} when a Trak-iT WebSocket message is received outside of an executed command.
      **/
     event = "event",
     /**

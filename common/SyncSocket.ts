@@ -3,11 +3,11 @@ import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType";
 
 /**
- * For creating a call directly to Kraken (like... what exactly? Connection details?)
+ * For creating a call directly to Trak-iT WebSocket (like... what exactly? Connection details?)
  **/
 export class SyncSocket extends SyncBase {
 	/**
-	 * Name of the Kraken command.
+	 * Name of the Trak-iT WebSocket command.
 	 **/
 	name: string;
 	/**

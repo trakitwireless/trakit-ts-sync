@@ -101,7 +101,7 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: any = {
 };
 
 /**
- * A mapping of Mindflayer routes to get things listed by asset.
+ * A mapping of Trak-iT RESTful routes to get things listed by asset.
  **/
 export const SUBSCRIPTION_LIST_BY_ASSET: any = {
     /* messaging */
@@ -120,7 +120,7 @@ export const SUBSCRIPTION_LIST_BY_ASSET: any = {
 };
 
 /**
- * A mapping of Mindflayer routes to get things listed by billing profile.
+ * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
  **/
 export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: any = {
     "billingHosting": "/billing/profiles/{profileId}/rules",
@@ -130,7 +130,7 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: any = {
 };
 
 /**
- * A mapping of Mindflayer routes to get things listed by behaviour script.
+ * A mapping of Trak-iT RESTful routes to get things listed by behaviour script.
  **/
 export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT: any = {
     "behaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
