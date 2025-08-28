@@ -2,8 +2,8 @@
 import { Reply } from "@commands/API/Responses/Reply";
 import { PaySubscriptionMerge } from "@commands/WebSocket/Requests/PaySubscriptionMerge";
 import { RepSubscription } from "@commands/WebSocket/Responses/RepSubscription";
-import { CLEAR_TIMER, JSON_STRINGIFY, SET_TIMER } from "@objects/API/Constants";
-import { ulong } from "@objects/API/Types";
+import { CLEAR_TIMER, JSON_STRINGIFY, SET_TIMER } from '@trakit/objects';
+import { ulong } from '@trakit/objects';
 import { SUBSCRIPTION_LIST_BY_COMPANY, SUBSCRIPTION_SPLITS } from "common/Subscriptions";
 import { SubscriptionType } from "common/SubscriptionType";
 import { SyncDispose } from "common/SyncDispose";

@@ -1,4 +1,4 @@
-import { JSON_PARSE, KEYS } from "@objects/API/Constants";
+import { JSON_PARSE, KEYS } from '@trakit/objects';
 
 /**
  * Parses the passed JSON string and returns the parsed value.

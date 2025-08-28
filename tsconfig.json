@@ -13,7 +13,7 @@
         "baseUrl": ".",
         "paths": {
             "@commands/*": ["../trakit-ts-commands/commands/*"],
-            "@objects/*": ["../trakit-ts-objects/objects/*"],
+            '@trakit/objects';: ["../trakit-ts-objects/objects/*"],
         }
     },
     "references": [

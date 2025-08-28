@@ -6,8 +6,8 @@ import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
 import { Payload } from "@commands/API/Requests/Payload";
 import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
 import { Reply } from "@commands/API/Responses/Reply";
-import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, SET_TIMER } from "@objects/API/Constants";
-import { ID, PLURAL } from "@objects/API/Functions";
+import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, SET_TIMER } from '@trakit/objects';
+import { ID, PLURAL } from '@trakit/objects';
 import { TrakitObjectCommander } from "../../trakit-ts-commands/clients/TrakitObjectCommander";
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
 
