@@ -11,9 +11,9 @@ const obfuscate = {
   //   module: true,
   //   toplevel: true,
   // },
-  sourceMap: {
-    filename: '_publish/trakit-sync-worker.min.js',
-  },
+  // sourceMap: {
+  //   filename: '_publish/trakit-sync-worker.min.js',
+  // },
 };
 
 export default [

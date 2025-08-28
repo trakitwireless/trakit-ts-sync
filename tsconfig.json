@@ -2,9 +2,17 @@
     "compilerOptions": {
         "target": "ESNext",
         "module": "ESNext",
-        "outDir": "_publish",
+        "moduleResolution": "node",
         "composite": true,
+        "declaration": true, // Optionally generate types
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "isolatedModules": true,
+
+        "rootDir": ".",
+        "outDir": "./_publish",  // Output directory
         "sourceMap": true,
+
         "strict": true,
         "noImplicitAny": true,
         "noImplicitOverride": true,
@@ -12,12 +20,8 @@
         "strictNullChecks": true,
         "baseUrl": ".",
         "paths": {
-            "@commands/*": ["../trakit-ts-commands/commands/*"],
-            '@trakit/objects';: ["../trakit-ts-objects/objects/*"],
+            "@trakit/commands": ["../trakit-ts-commands/_publish/commands.d.ts"],
+            "@trakit/objects": ["../trakit-ts-objects/_publish/objects.d.ts"],
         }
-    },
-    "references": [
-        { "path": "../trakit-ts-commands" },
-        { "path": "../trakit-ts-objects" }
-    ]
+    }
 }
