@@ -1,3 +1,4 @@
+import { nothing } from "@trakit/objects";
 import { SubscriptionType } from "../common/SubscriptionType";
 
 /**
@@ -27,7 +28,7 @@ export class SubscribedRegions {
      * that way it will no longer be listed as an active subscription, or as expired.
      * @param purge
      **/
-    expiredRegions(purge?: boolean | null): SubscriptionType[] {
+    expiredRegions(purge?: boolean | nothing): SubscriptionType[] {
         const now = new Date,
             regions: SubscriptionType[] = [];
         for (let [region, expiry] of this.#regions) {
@@ -57,7 +58,7 @@ export class SubscribedRegions {
      * @param region
      * @param date
      **/
-    #setExpiry(region: SubscriptionType, date?: Date | null): Date | null {
+    #setExpiry(region: SubscriptionType, date?: Date | nothing): Date | nothing {
         date = date || null;
         this.#regions.set(region, date);
         return date;

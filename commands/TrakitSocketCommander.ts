@@ -6,7 +6,7 @@ import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
 import { Payload } from "@commands/API/Requests/Payload";
 import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
 import { Reply } from "@commands/API/Responses/Reply";
-import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, SET_TIMER } from '@trakit/objects';
+import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, nothing, SET_TIMER } from '@trakit/objects';
 import { ID, PLURAL } from '@trakit/objects';
 import { TrakitObjectCommander } from "../../trakit-ts-commands/clients/TrakitObjectCommander";
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
@@ -409,7 +409,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
     #timerKeepAlive: number = 0;
     //#endregion Keep-Alive
 
-    constructor(url?: string, ghostId?: string | null) {
+    constructor(url?: string, ghostId?: string | nothing) {
         super(url || URI_PROD);
         if (ghostId) this.query.set("ghostId", ghostId);
     }

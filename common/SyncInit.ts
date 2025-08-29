@@ -1,3 +1,4 @@
+import { nothing } from "@trakit/objects";
 import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType";
 
@@ -21,7 +22,7 @@ export class SyncInit extends SyncBase {
 	 **/
 	rest: string;
 
-	constructor(ghostId?: string | null, socket?: string | null, rest?: string | null) {
+	constructor(ghostId: string | nothing, socket: string | nothing, rest?: string | nothing) {
 		super(SyncType.init);
 		this.ghostId = ghostId || "";
 		this.socket = socket || "";

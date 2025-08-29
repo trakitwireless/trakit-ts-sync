@@ -1,6 +1,7 @@
 import { Payload } from "@commands/API/Requests/Payload";
 import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType";
+import { nothing } from "@trakit/objects";
 
 /**
  * For creating a call directly to Trak-iT WebSocket (like... what exactly? Connection details?)
@@ -15,7 +16,7 @@ export class SyncSocket extends SyncBase {
 	 **/
 	body: Payload | null;
 
-	constructor(name: string, body?: Payload | null) {
+	constructor(name: string, body: Payload | nothing) {
 		super(SyncType.socket);
 		this.name = name;
 		this.body = body || null;
