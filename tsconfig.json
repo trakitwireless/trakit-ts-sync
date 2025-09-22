@@ -20,8 +20,8 @@
         "strictNullChecks": true,
         "baseUrl": ".",
         "paths": {
-            "@trakit/commands": ["../trakit-ts-commands/_publish/commands.d.ts"],
-            "@trakit/objects": ["../trakit-ts-objects/_publish/objects.d.ts"],
+            "@trakit/commands": ["../trakit-ts-commands/_publish/index.d.ts"],
+            "@trakit/objects": ["../trakit-ts-objects/_publish/index.d.ts"],
         }
     }
 }
