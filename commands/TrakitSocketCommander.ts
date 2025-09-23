@@ -1,14 +1,5 @@
-import { SelfMachine } from "@commands/Accounts/Self/Responses/Content/SelfMachine";
-import { SelfUser } from "@commands/Accounts/Self/Responses/Content/SelfUser";
-import { SelfUserAdvanced } from "@commands/Accounts/Self/Responses/Content/SelfUserAdvanced";
-import { SelfUserGeneral } from "@commands/Accounts/Self/Responses/Content/SelfUserGeneral";
-import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
-import { Payload } from "@commands/API/Requests/Payload";
-import { ErrorCode } from "@commands/API/Responses/Errors/ErrorCode";
-import { Reply } from "@commands/API/Responses/Reply";
-import { CLEAR_TIMER, JSON_PARSE, JSON_STRINGIFY, MIN, nothing, SET_TIMER } from '@trakit/objects';
-import { ID, PLURAL } from '@trakit/objects';
-import { TrakitObjectCommander } from "../../trakit-ts-commands/clients/TrakitObjectCommander";
+import { ErrorCode, Payload, Reply, RepSelfGet, SelfMachine, SelfUser, SelfUserAdvanced, SelfUserGeneral, TrakitObjectCommander } from "@trakit/commands";
+import { utility, nothing } from '@trakit/objects';
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
 
 /**
@@ -246,15 +237,15 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
      * This also fires the "disconnection" event, and starts the re-connect timer.
      **/
     #socketClose(event: CloseEvent) {
-        CLEAR_TIMER(this.#timerKeepAlive);
-        CLEAR_TIMER(this.#timerReconnect);
+        clearTimeout(this.#timerKeepAlive);
+        clearTimeout(this.#timerReconnect);
         this.#socketReady = false;
         this.#delayReconnect = this.#delayReconnect
             ? this.#delayReconnect * 2
             : this.lastReceived
                 ? new Date().valueOf() - this.lastReceived.valueOf()
                 : 5000;
-        const reconnectTimeout = MIN(this.#delayReconnect, TIMEOUT_MAX_RECONNECT),
+        const reconnectTimeout = Math.min(this.#delayReconnect, TIMEOUT_MAX_RECONNECT),
             errorDetails = {
                 "code": event.code,
                 "reason": event.reason,
@@ -271,7 +262,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
         // cancel all commands
         this.#requests.forEach((settler, key) => {
             response.errorCode = key === CMD_DISCONNECTION ? 0 : 1;
-            if (key = ID(key)) response["reqId"] = key;
+            if (key = utility.id(key)) response["reqId"] = key;
             settler(response);
         });
 
@@ -282,7 +273,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
         // start reconnect timer
         this.#timerReconnect = this.reconnectEnabled
             && this.#socketOperable
-            ? SET_TIMER(
+            ? setTimeout(
                 () => this.open(),
                 reconnectTimeout,
                 this
@@ -318,7 +309,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
         /**
          * The JSON parsed from the message received by the underlying WebSocket.
          **/
-        const msgContent = JSON_PARSE(event.data.substring(msgName.length + 1));
+        const msgContent = JSON.parse(event.data.substring(msgName.length + 1));
 
         // first, set this value
         this.#lastMessage = msgName;
@@ -429,7 +420,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
      * If the underlying WebSocket is not closed (as in, any state of openning or being closed), the returned Promise will be rejected.
      **/
     open() {
-        CLEAR_TIMER(this.#timerReconnect);
+        clearTimeout(this.#timerReconnect);
         this.#timerReconnect = 0;
         return new Promise<RepSelfGet>(async (resolve, reject) => {
             const state = this.state;
@@ -506,11 +497,11 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
                 case TrakitSocketStatus.open:
                     const reqId = ++this.#requestId,
                         settler = (response: Reply) => {
-                            CLEAR_TIMER(timer);
+                            clearTimeout(timer);
                             this.#requests.delete(reqId);
                             (response.errorCode === 0 ? resolve : reject)(response as TReply);
                         },
-                        timer = SET_TIMER(
+                        timer = setTimeout(
                             settler,
                             TIMEOUT_COMMAND,
                             {
@@ -522,7 +513,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
                     params = params || {} as Payload;
                     params.reqId = reqId;
                     this.#requests.set(reqId, settler);
-                    this.#socket.send(command + " " + JSON_STRINGIFY(params));
+                    this.#socket.send(command + " " + JSON.stringify(params));
                     this.resetKeepAlive();
                     break;
                 case TrakitSocketStatus.closed:
@@ -544,10 +535,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
      * Resets the keep-alive timer (to try and keep the firewall from disconnecting the underlying WebSocket).
      **/
     resetKeepAlive() {
-        CLEAR_TIMER(this.#timerKeepAlive);
+        clearTimeout(this.#timerKeepAlive);
         this.#timerKeepAlive = this.keepAliveEnabled
             && this.#socketOperable
-            ? SET_TIMER(
+            ? setTimeout(
                 () => this.send("noop"),
                 TIMEOUT_NOOP
             )
