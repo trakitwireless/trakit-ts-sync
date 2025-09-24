@@ -1,10 +1,41 @@
-import { ErrorCode, Payload, Reply, TrakitObjectCommander } from "@trakit/commands";
-import { nothing, url } from "@trakit/objects";
+import { ErrorCode, IRepListByAsset, Payload, Reply, TrakitObjectCommander } from "@trakit/commands";
+import { nothing, url, utility } from "@trakit/objects";
+import { IPaySingle } from "@trakit/commands";
+import { IPayListByCompany } from "@trakit/commands";
+import { IPayListByLabels } from "@trakit/commands";
+import { IPayListByReferences } from "@trakit/commands";
 
 /**
  * The HTTP methods supported by the Trak-iT RESTful API.
  */
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+/**
+ * Creates a standardized error response.
+ * @param ex The error to include in the response.
+ * @returns A standardized error response object.
+ */
+function createClientErrorResponse(ex: any): any {
+	return {
+		"errorCode": ErrorCode.unknown,
+		"message": "Client exception",
+		"errorDetails": ex instanceof Error
+			? {
+				"kind": "stack",
+				"message": ex.message,
+				"stack": ex.stack,
+			}
+			: {
+				"kind": "externals",
+				"errors": [JSON.stringify(ex)],
+			},
+	}
+}
+
+/**
+ * Splits Pascal-case words into their components.
+ */
+const SPLITTER = new RegExp("[A-Z][a-z]+");
 
 /**
  * 
@@ -29,22 +60,167 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 		this.headers.set("Content-Type", "application/json");
 	}
 
-	//createRequest(payload: Payload): Request {
+	/**
+	 * Gets the appropriate HTTP verb and route for the given payload.
+	 * @param payload	The payload to analyze.
+	 * @returns A tuple containing the HTTP verb and route.
+	 */
+	getVerbRoute(payload: Payload): [HttpMethod, string] {
+		let method: HttpMethod = "GET",
+			route = "",
+			query = "";
+		const action = payload.getAction();
+		switch (action.object) {
+			case "Self":
+				if (action.kind == "Get") {
+					method = "GET";
+					route = "self";
+				} else {
+					method = "POST";
+					route = "self/" + action.filter.toLowerCase();
+				}
+				break;
+			case "Subscription":
+				throw new Error(action.object + " only supported by TrakitSocketCommander");
+			default:
+				/*
+				"Get"
+				| "List"
+				| "Merge"
+				| "Delete"
+				| "Restore"
+				| "Suspend"
+				| "Revive"
+				| "Cancel"
+				| "Change"
+				 */
+				if (action.batch) {
+					method = "PATCH";
+					switch (action.kind) {
+						case "Get":
+						case "List":
+							method = "GET";
+							break;
+						case "Merge":
+							break;
+						case "Delete":
+							method = "DELETE";
+							break;
+						case "Restore":
+							route += "/restore";
+							break;
+						case "Suspend":
+							route += "/suspend";
+							break;
+						case "Revive":
+							route += "/revive";
+							break;
+						case "Cancel":
+							method = "POST";
+							route += "/cancel";
+							break;
+						case "Change":
+							method = "PUT";
+							break;
+					}
+				} else {
+					const objNames = [...action.object.match(SPLITTER) as string[]].map(s => utility.plural(s));
+					route = objNames.join("/");
+					if ((payload as any as IPaySingle).getKey) {
+						route += "/" + (payload as any as IPaySingle).getKey();
+					}
+					switch (action.kind) {
+						case "Get":
+							//method = "GET";
+							break;
+						case "List":
+							//method = "GET";
+							// type IPayListByAsset
+							if ((payload as any as IPayListByAsset)?.asset?.id) {
+								route = `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
+							}
+							// type IPayListByCompany
+							if ((payload as any as IPayListByCompany)?.company?.id) {
+								route = `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
+							}
+							// type IPayListByDate
+							if (utility.isntNaN((payload as any as IPayListByDate)?.after?.valueOf())) {
+								query += "&after=" + encodeURIComponent((payload as any as IPayListByDate).after.toISOString());
+							}
+							if (utility.isntNaN((payload as any as IPayListByDate)?.before?.valueOf())) {
+								query += "&before=" + encodeURIComponent((payload as any as IPayListByDate).before.toISOString());
+							}
+							// type IPayListById
+							if (utility.isntNaN((payload as any as IPayListById)?.lowest)) {
+								query += "&lowest=" + (payload as any as IPayListById).lowest;
+							}
+							if (utility.isntNaN((payload as any as IPayListById)?.highest)) {
+								query += "&highest=" + (payload as any as IPayListById).highest;
+							}
+							// type IPayListByKey
+							if ((payload as any as IPayListByKey)?.first) {
+								query += "&first=" + (payload as any as IPayListByKey).first;
+							}
+							if ((payload as any as IPayListByKey)?.last) {
+								query += "&last=" + (payload as any as IPayListByKey).last;
+							}
+							// type IPayListByLabels
+							if ((payload as any as IPayListByLabels)?.labels?.length) {
+								query += "&labels=" + encodeURIComponent((payload as any as IPayListByLabels).labels.join(","));
+							}
+							// type IPayListByReferences
+							if ((payload as any as IPayListByReferences)?.references?.size) {
+								query += "&" + ((payload as any as IPayListByReferences).references as Map<string, string>)
+									.entries()
+									.map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
+									.toArray()
+									.join("&");
+							}
+							// type IPayListByUser
+							if ((payload as any as IPayListByUser)?.user?.login) {
+								query += "&login=" + encodeURIComponent((payload as any as IPayListByUser).user.login);
+							}
+							break;
+						case "Merge":
+							method = "POST";
+							break;
+						case "Delete":
+							method = "DELETE";
+							break;
+						case "Restore":
+							method = "PATCH";
+							route += "/restore";
+							break;
+						case "Suspend":
+							method = "PATCH";
+							route += "/suspend";
+							break;
+						case "Revive":
+							method = "PATCH";
+							route += "/revive";
+							break;
+						case "Cancel":
+							method = "POST";
+							route += "/cancel";
+							break;
+						case "Change":
+							method = "PUT";
+							break;
+					}
+					break;
+				}
+		}
+		if (query.length) route += "?" + query.substring(1);
+		return [method, route];
+	}
 
-
-
-
-	// return [this.createBaseUrl(), {
-	// 	method,
-	// 	headers: {
-	// 		"Content-Type": "application/json",
-	// 		"Authorization": `Bearer ${this.token}`
-	// 	},
-	// 	body: method === "GET"
-	// 		? undefined
-	// 		: JSON.stringify(payload)
-	// }];
-	//}
+	/**
+	 * Creates a request object for the specified HTTP method and body.
+	 * @param path The URL path for the request.
+	 * @param method The HTTP method to use (GET, POST, etc.).
+	 * @param body The request body to include (if applicable).
+	 * @returns A Request object configured with the specified parameters.
+	 */
 	createRequest(path: url, method: HttpMethod, body: any): Request {
 		const route = this.createBaseUrl(path),
 			headers = new Map(this.headers),
@@ -72,25 +248,32 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 	}
 
 	/**
-	 * 
-	 * @param payload 
+	 * Sends a command to the underlying service, and returns a Promise that completes when a reply is received.
+	 * @param payload   The payload to send to the service.
+	 * @returns         A promise that resolves with the reply.
 	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		return new Promise(async (resolve, reject) => {
+			let method: HttpMethod,
+				path: string,
+				body: any,
+				reply: TReply | null = null;
 			try {
-				const path = "",// to be built from payload.getNameParts()
-					method = "GET",// to be built from payload.getNameParts()
-					body = payload.toJSON(),
-					response = await this.send(path, method, body),
-					reply = payload.createReply(response) as TReply;
-				(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
+				[method, path] = this.getVerbRoute(payload);
+				body = payload.toJSON();
 			} catch (ex) {
-				reject(new Reply({
-					"errorCode": ErrorCode.service,
-					"message": "Client exception",
-					"errorDetails": ex,
-				}));
+				method = "GET";
+				path = "";
+				reply = payload.createReply(createClientErrorResponse(ex)) as TReply;
 			}
+			if (!reply) {
+				try {
+					reply = payload.createReply(await this.send(path, method, body)) as TReply;
+				} catch (ex) {
+					reply = payload.createReply(ex) as TReply;
+				}
+			}
+			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
 		});
 	}
 
@@ -108,11 +291,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 					response = await fetch(request);
 				resolve(await response.json());
 			} catch (ex) {
-				reject({
-					"errorCode": ErrorCode.unknown,
-					"message": "Client exception",
-					"errorDetails": ex,
-				});
+				reject(createClientErrorResponse(ex));
 			}
 		});
 	}
