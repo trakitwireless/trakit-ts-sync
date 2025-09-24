@@ -3,12 +3,12 @@ import { nothing, url, utility } from "@trakit/objects";
 import { IPaySingle } from "@trakit/commands";
 import { IPayListByCompany } from "@trakit/commands";
 import { IPayListByLabels } from "@trakit/commands";
-import { IPayListByReferences } from "@trakit/commands";
+import { IPayListByReferences, IPayListByAsset } from "@trakit/commands";
 
 /**
- * The HTTP methods supported by the Trak-iT RESTful API.
+ * The HTTP verbs supported by the Trak-iT RESTful API.
  */
-type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+type HttpVerb = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 /**
  * Creates a standardized error response.
@@ -35,7 +35,7 @@ function createClientErrorResponse(ex: any): any {
 /**
  * Splits Pascal-case words into their components.
  */
-const SPLITTER = new RegExp("[A-Z][a-z]+");
+const SPLITTER = /[A-Z][a-z]+/;
 
 /**
  * 
@@ -65,18 +65,18 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 	 * @param payload	The payload to analyze.
 	 * @returns A tuple containing the HTTP verb and route.
 	 */
-	getVerbRoute(payload: Payload): [HttpMethod, string] {
-		let method: HttpMethod = "GET",
+	getVerbRoute(payload: Payload): [HttpVerb, string] {
+		let verb: HttpVerb = "GET",
 			route = "",
 			query = "";
 		const action = payload.getAction();
 		switch (action.object) {
 			case "Self":
 				if (action.kind == "Get") {
-					method = "GET";
+					verb = "GET";
 					route = "self";
 				} else {
-					method = "POST";
+					verb = "POST";
 					route = "self/" + action.filter.toLowerCase();
 				}
 				break;
@@ -90,21 +90,21 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 				| "Delete"
 				| "Restore"
 				| "Suspend"
-				| "Revive"
+				| "Reactivate"
 				| "Cancel"
 				| "Change"
 				 */
 				if (action.batch) {
-					method = "PATCH";
+					verb = "PATCH";
 					switch (action.kind) {
 						case "Get":
 						case "List":
-							method = "GET";
+							verb = "GET";
 							break;
 						case "Merge":
 							break;
 						case "Delete":
-							method = "DELETE";
+							verb = "DELETE";
 							break;
 						case "Restore":
 							route += "/restore";
@@ -112,15 +112,15 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 						case "Suspend":
 							route += "/suspend";
 							break;
-						case "Revive":
+						case "Reactivate":
 							route += "/revive";
 							break;
 						case "Cancel":
-							method = "POST";
+							verb = "POST";
 							route += "/cancel";
 							break;
 						case "Change":
-							method = "PUT";
+							verb = "PUT";
 							break;
 					}
 				} else {
@@ -131,13 +131,20 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 					}
 					switch (action.kind) {
 						case "Get":
-							//method = "GET";
+							//verb = "GET";
 							break;
 						case "List":
-							//method = "GET";
+							//verb = "GET";
+							switch (action.filter) {
+								case "Asset":
+									route = `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
+									break;
+								case "Company":
+									route = `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
+									break;
+							}
 							// type IPayListByAsset
 							if ((payload as any as IPayListByAsset)?.asset?.id) {
-								route = `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
 							}
 							// type IPayListByCompany
 							if ((payload as any as IPayListByCompany)?.company?.id) {
@@ -182,58 +189,58 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 							}
 							break;
 						case "Merge":
-							method = "POST";
+							verb = "POST";
 							break;
 						case "Delete":
-							method = "DELETE";
+							verb = "DELETE";
 							break;
 						case "Restore":
-							method = "PATCH";
+							verb = "PATCH";
 							route += "/restore";
 							break;
 						case "Suspend":
-							method = "PATCH";
+							verb = "PATCH";
 							route += "/suspend";
 							break;
-						case "Revive":
-							method = "PATCH";
+						case "Reactivate":
+							verb = "PATCH";
 							route += "/revive";
 							break;
 						case "Cancel":
-							method = "POST";
+							verb = "POST";
 							route += "/cancel";
 							break;
 						case "Change":
-							method = "PUT";
+							verb = "PUT";
 							break;
 					}
 					break;
 				}
 		}
 		if (query.length) route += "?" + query.substring(1);
-		return [method, route];
+		return [verb, route];
 	}
 
 	/**
 	 * Creates a request object for the specified HTTP method and body.
 	 * @param path The URL path for the request.
-	 * @param method The HTTP method to use (GET, POST, etc.).
+	 * @param verb The HTTP method to use (GET, POST, etc.).
 	 * @param body The request body to include (if applicable).
 	 * @returns A Request object configured with the specified parameters.
 	 */
-	createRequest(path: url, method: HttpMethod, body: any): Request {
+	createRequest(path: url, verb: HttpVerb, body: any): Request {
 		const route = this.createBaseUrl(path),
 			headers = new Map(this.headers),
 			init: any = {
-				method,
+				method: verb,
 			};
-		if (body && method !== "GET") {
+		if (body && verb !== "GET") {
 			init.body = JSON.stringify(body);
 		}
 		if (this._machine) {
 			headers.set("Authorization", "HMAC256 " + this._machine.createHmacSignature(
 				route,
-				method,
+				verb,
 				(init.body ?? "").length,
 				new Date
 			));
@@ -254,21 +261,21 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		return new Promise(async (resolve, reject) => {
-			let method: HttpMethod,
+			let verb: HttpVerb,
 				path: string,
 				body: any,
 				reply: TReply | null = null;
 			try {
-				[method, path] = this.getVerbRoute(payload);
+				[verb, path] = this.getVerbRoute(payload);
 				body = payload.toJSON();
 			} catch (ex) {
-				method = "GET";
+				verb = "GET";
 				path = "";
 				reply = payload.createReply(createClientErrorResponse(ex)) as TReply;
 			}
 			if (!reply) {
 				try {
-					reply = payload.createReply(await this.send(path, method, body)) as TReply;
+					reply = payload.createReply(await this.send(path, verb, body)) as TReply;
 				} catch (ex) {
 					reply = payload.createReply(ex) as TReply;
 				}
@@ -279,15 +286,15 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 
 	/**
 	 * Sends the given request to Trak-iT's RESTful API and awaits a result.
-	 * @param path		Relative path to the resource being accessed.
-	 * @param method	HTTP method to use for the request.
-	 * @param body		Optional JSON body to send with the request.
-	 * @returns			A promise that resolves with the JSON response from the server.
+	 * @param path	Relative path to the resource being accessed.
+	 * @param verb	HTTP method to use for the request.
+	 * @param body	Optional JSON body to send with the request.
+	 * @returns		A promise that resolves with the JSON response from the server.
 	 */
-	send(path: url, method: HttpMethod = "GET", body?: any): Promise<any> {
+	send(path: url, verb: HttpVerb = "GET", body?: any): Promise<any> {
 		return new Promise(async (resolve, reject) => {
 			try {
-				const request = this.createRequest(path, method, body),
+				const request = this.createRequest(path, verb, body),
 					response = await fetch(request);
 				resolve(await response.json());
 			} catch (ex) {
