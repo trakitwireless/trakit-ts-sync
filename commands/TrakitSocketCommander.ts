@@ -97,14 +97,18 @@ function getCommandName<TPayload extends Payload>(payload: TPayload): string {
 					return "killSession";
 			}
 			break;
+		case "DispatchJob":
+			switch (action.filter) {
+				case "Cancel":
+				case "Change":
+					return action.kind.toLocaleLowerCase() + action.object;
+			}
 	}
 	switch (action.kind) {
 		case "Get":
 		case "Merge":
 		case "Restore":
 		case "Suspend":
-		case "Cancel":
-		case "Change":
 			return action.kind.toLocaleLowerCase() + action.object;
 		case "Delete":
 			return "remove" + action.object;

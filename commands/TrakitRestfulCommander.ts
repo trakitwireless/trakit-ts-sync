@@ -1,4 +1,4 @@
-import { ErrorCode, IRepListByAsset, Payload, Reply, TrakitObjectCommander } from "@trakit/commands";
+import { ErrorCode, IPayListByDate, IPayListById, IPayListByKey, IPayListByUser, IRepListByAsset, Payload, Reply, TrakitObjectCommander } from "@trakit/commands";
 import { nothing, url, utility } from "@trakit/objects";
 import { IPaySingle } from "@trakit/commands";
 import { IPayListByCompany } from "@trakit/commands";
@@ -81,7 +81,18 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 				}
 				break;
 			case "Subscription":
-				throw new Error(action.object + " only supported by TrakitSocketCommander");
+				throw new Error(action.object + " only supported by TrakitSocketCommander", { cause: action });
+			case "DispatchJob":
+				switch (action.filter) {
+					case "Cancel":
+						verb = !action.batch ? "POST" : "PATCH";
+						route += "/cancel";
+						break;
+					case "Change":
+						verb = !action.batch ? "PUT" : "PATCH";
+						break;
+				}
+				// no break => fall through to default for DispatchJob where filter is not Cancel or Change
 			default:
 				/*
 				"Get"
@@ -91,8 +102,6 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 				| "Restore"
 				| "Suspend"
 				| "Reactivate"
-				| "Cancel"
-				| "Change"
 				 */
 				if (action.batch) {
 					verb = "PATCH";
@@ -115,13 +124,6 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 						case "Reactivate":
 							route += "/revive";
 							break;
-						case "Cancel":
-							verb = "POST";
-							route += "/cancel";
-							break;
-						case "Change":
-							verb = "PUT";
-							break;
 					}
 				} else {
 					const objNames = [...action.object.match(SPLITTER) as string[]].map(s => utility.plural(s));
@@ -136,26 +138,22 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 						case "List":
 							//verb = "GET";
 							switch (action.filter) {
-								case "Asset":
+								case "Asset":	// IPayListByAsset
 									route = `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
 									break;
-								case "Company":
+								case "Company":	// IPayListByCompany
 									route = `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
 									break;
-							}
-							// type IPayListByAsset
-							if ((payload as any as IPayListByAsset)?.asset?.id) {
-							}
-							// type IPayListByCompany
-							if ((payload as any as IPayListByCompany)?.company?.id) {
-								route = `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
+								case "User":	// IPayListByUser
+									route = `users/${encodeURIComponent((payload as any as IPayListByUser).user.login)}/${route}`;
+									break;
 							}
 							// type IPayListByDate
 							if (utility.isntNaN((payload as any as IPayListByDate)?.after?.valueOf())) {
-								query += "&after=" + encodeURIComponent((payload as any as IPayListByDate).after.toISOString());
+								query += "&after=" + encodeURIComponent(((payload as any as IPayListByDate).after as Date).toISOString());
 							}
 							if (utility.isntNaN((payload as any as IPayListByDate)?.before?.valueOf())) {
-								query += "&before=" + encodeURIComponent((payload as any as IPayListByDate).before.toISOString());
+								query += "&before=" + encodeURIComponent(((payload as any as IPayListByDate).before as Date).toISOString());
 							}
 							// type IPayListById
 							if (utility.isntNaN((payload as any as IPayListById)?.lowest)) {
@@ -164,7 +162,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 							if (utility.isntNaN((payload as any as IPayListById)?.highest)) {
 								query += "&highest=" + (payload as any as IPayListById).highest;
 							}
-							// type IPayListByKey
+							//// type IPayListByKey
 							if ((payload as any as IPayListByKey)?.first) {
 								query += "&first=" + (payload as any as IPayListByKey).first;
 							}
@@ -182,10 +180,6 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 									.map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
 									.toArray()
 									.join("&");
-							}
-							// type IPayListByUser
-							if ((payload as any as IPayListByUser)?.user?.login) {
-								query += "&login=" + encodeURIComponent((payload as any as IPayListByUser).user.login);
 							}
 							break;
 						case "Merge":
@@ -205,13 +199,6 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 						case "Reactivate":
 							verb = "PATCH";
 							route += "/revive";
-							break;
-						case "Cancel":
-							verb = "POST";
-							route += "/cancel";
-							break;
-						case "Change":
-							verb = "PUT";
 							break;
 					}
 					break;
