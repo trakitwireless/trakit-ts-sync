@@ -1,5 +1,18 @@
-import { ErrorCode, Payload, Reply, RepSelfGet, SelfMachine, SelfUser, SelfUserAdvanced, SelfUserGeneral, TrakitObjectCommander } from "@trakit/commands";
-import { utility, nothing } from '@trakit/objects';
+import {
+	ErrorCode,
+	Payload,
+	Reply,
+	RepSelfGet,
+	SelfMachine,
+	SelfUser,
+	SelfUserAdvanced,
+	SelfUserGeneral,
+	TrakitObjectCommander,
+} from "@trakit/commands";
+import {
+	utility,
+	nothing,
+} from '@trakit/objects';
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
 
 /**
@@ -50,53 +63,63 @@ const RESPONSE_SUFFIX = "Response",
  * @returns 
  */
 function getCommandName<TPayload extends Payload>(payload: TPayload): string {
-    var matches = payload.getNameParts();
-    if (matches.length >= 2) {
-        let objName = matches[0],
-            cmdName = matches[1].toLowerCase();
-        switch (objName) {
-            case "Subscription":
-                switch (cmdName) {
-                    case "merge":
-                        return "subscribe";
-                    case "delete":
-                    case "remove":
-                        return "unsubscribe";
-                    case "list":
-                        return "getSubscriptionsList";
-                }
-                break;
-            case "Self":
-                if (cmdName == "get") return "getSessionDetails";
-                break;
-            case "Session":
-                if (cmdName == "delete") return "killSession";
-                break;
-        }
-        switch (cmdName) {
-            case "login":
-            case "logout":
-                return cmdName;
-
-            case "get":
-            case "merge":
-            case "restore":
-            case "suspend":
-            case "revive":
-            default:
-                return cmdName + objName;
-            case "delete":
-            case "remove":
-                return "remove" + objName;
-            case "list":
-                cmdName = "get" + PLURAL(objName) + "List";
-                if (matches.length > 2 && matches[2] != "ByCompany") {
-                    cmdName += matches[2];
-                }
-                return cmdName;
-        }
-    }
-    throw `no command supported for ${payload.constructor.name}`;
+	const action = payload.getAction(),
+		error = new Error("no command supported for " + payload.constructor.name);
+	switch (action.object) {
+		case "Subscription":
+			switch (action.kind) {
+				case "Merge":
+					return "subscribe";
+				case "Delete":
+					return "unsubscribe";
+				case "List":
+					return "getSubscriptionsList";
+				default:
+					throw error;
+			}
+		case "Self":
+			switch (action.filter) {
+				case "Login":
+				case "Logout":
+					return action.filter.toLowerCase();
+				case "Contact":
+				case "Password":
+				case "Preferences":
+					return "updateOwn" + action.filter;
+				default:
+					throw error;
+			}
+		case "Session":
+			switch (action.kind) {
+				case "Get":
+					return "getSessionDetails";
+				case "Delete":
+					return "killSession";
+			}
+			break;
+	}
+	switch (action.kind) {
+		case "Get":
+		case "Merge":
+		case "Restore":
+		case "Suspend":
+		case "Cancel":
+		case "Change":
+			return action.kind.toLocaleLowerCase() + action.object;
+		case "Delete":
+			return "remove" + action.object;
+		case "Reactivate":
+			return "revive" + action.object;
+		case "List":
+			return "get" + utility.plural(action.object) + "List"
+				+ (
+					(action.filter || "Company") != "Company"
+						? "By" + action.filter
+						: ""
+				);
+		default:
+			throw error;
+	}
 }
 
 /**
@@ -472,13 +495,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
                     this.#socket.close(1000, "Bye!");
                     break;
                 default:
-                    reject({
+					reject(new Reply({
                         "errorCode": ErrorCode.unknown,
                         "message": "WebSocket not open",
                         "errorDetails": {
                             "connection": state,
                         },
-                    });
+                    }));
                     break;
             }
         });
@@ -520,13 +543,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
                     this.open().then(() => this.send(command, params).then(resolve as any, reject), reject);
                     break;
                 default:
-                    reject({
-                        "errorCode": ErrorCode.unknown,
-                        "message": "Not connected",
-                        "errorDetails": {
-                            "connection": state,
-                        },
-                    });
+					reject(new Reply({
+						"errorCode": ErrorCode.unknown,
+						"message": "Not connected",
+						"errorDetails": {
+							"connection": state,
+						},
+					}));
                     break;
             }
         });

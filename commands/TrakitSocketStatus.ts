@@ -1,4 +1,4 @@
-import { RepSelfGet } from '@commands/Accounts/Self/Responses/RepSelfGet';
+import { RepSelfGet } from '@trakit/commands';
 import { TrakitSocketCommander } from './TrakitSocketCommander';
 
 /**
