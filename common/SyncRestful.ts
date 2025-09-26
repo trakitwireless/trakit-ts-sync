@@ -1,4 +1,4 @@
-import { Payload } from "@commands/API/Requests/Payload";
+import { Payload } from "@trakit/commands";
 import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType";
 

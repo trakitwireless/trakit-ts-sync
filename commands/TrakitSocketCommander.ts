@@ -1,16 +1,14 @@
 import {
-    ErrorCode,
-    Payload,
-    Reply,
-    RepSelfGet,
-    TrakitObjectCommander,
+	ErrorCode,
+	Payload,
+	Reply,
+	RepSelfGet,
 } from "@trakit/commands";
 import {
-    utility,
-    nothing,
-    Machine,
 	url,
+	utility
 } from '@trakit/objects';
+import { TrakitObjectCommander } from "./TrakitObjectCommander";
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
 
 /**

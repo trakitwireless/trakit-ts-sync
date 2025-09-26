@@ -1,10 +1,10 @@
-import { SubscriptionType } from "./SubscriptionType";
+import { SubscriptionType } from "@trakit/commands";
 
 /**
  * Names of objects that span multiple regions (in serialized order).
  * Object<ComplexTypeNameLowerCase, SubscriptionType[]>
  */
-export const SUBSCRIPTION_SPLITS: any = {
+export const SUBSCRIPTION_SPLITS = {
     "company": [
         SubscriptionType.companyGeneral,
         //SubscriptionType.companySettings,
@@ -35,7 +35,7 @@ export const SUBSCRIPTION_SPLITS: any = {
 /**
  * A mapping of RESTful service routes to get things listed by company.
  **/
-export const SUBSCRIPTION_LIST_BY_COMPANY: any = {
+export const SUBSCRIPTION_LIST_BY_COMPANY = {
     /* company */
     //"companyGeneral": "/companies/{companyId}/tree?includeParent=true",
     //"companyBilling": "",
@@ -103,7 +103,7 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: any = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
  **/
-export const SUBSCRIPTION_LIST_BY_ASSET: any = {
+export const SUBSCRIPTION_LIST_BY_ASSET = {
     /* messaging */
     "assetMessage": "/assets/{assetId}/messages",
     /* dispatch */
@@ -122,7 +122,7 @@ export const SUBSCRIPTION_LIST_BY_ASSET: any = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
  **/
-export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: any = {
+export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE = {
     "billingHosting": "/billing/profiles/{profileId}/rules",
     "billingDiscount": "/billing/profiles/{profileId}/discounts",
     "billingLicense": "/billing/profiles/{profileId}/licenses",
@@ -132,7 +132,7 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: any = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by behaviour script.
  **/
-export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT: any = {
+export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT = {
     "behaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
     "behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
 };

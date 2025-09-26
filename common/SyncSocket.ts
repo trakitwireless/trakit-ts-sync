@@ -1,7 +1,7 @@
-import { Payload } from "@commands/API/Requests/Payload";
+import { Payload } from "@trakit/commands";
+import { nothing } from "@trakit/objects";
 import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType";
-import { nothing } from "@trakit/objects";
 
 /**
  * For creating a call directly to Trak-iT WebSocket (like... what exactly? Connection details?)

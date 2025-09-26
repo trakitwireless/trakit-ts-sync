@@ -28,8 +28,13 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 	/**
 	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
 	 */
-	account: RepSelfGet | nothing;
+	account: RepSelfGet;
     
+	constructor(baseAddress?: url | nothing) {
+		super(baseAddress);
+		this.account = new RepSelfGet;
+	}
+	
 	//#region Commands - Self
 	/**
 	 * Requests the details of the {@link User} or {@link Machine} currently identified.

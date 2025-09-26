@@ -1,5 +1,5 @@
+import { SubscriptionType } from "@trakit/commands";
 import { nothing } from "@trakit/objects";
-import { SubscriptionType } from "../common/SubscriptionType";
 
 /**
  * The amount of time (in milliseconds) to wait before automatically removing a region subscription.

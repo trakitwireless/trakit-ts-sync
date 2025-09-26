@@ -146,17 +146,15 @@ export class SyncWorker {
      * Sends a (un)subscribe command to the Trak-iT WebSocket for the given company and regions.
      **/
     #subscribe(add: boolean, company: ulong, regions: SubscriptionType[]) {
-        return this.#socket.send(
-            add
-                ? "subscribe"
-                : "unsubscribe",
-            {
-                "company": {
-                    "id": company,
-                },
-                "subscriptionTypes": regions,
-            } as PaySubscriptionMerge
-        );
+		return this.#socket.send(
+			(add ? "" : "un") + "subscribe",
+			{
+				"company": {
+					"id": company,
+				},
+				"subscriptionTypes": regions,
+			} as PaySubscriptionMerge
+		);
     }
     /**
      * Returns (and creates a reference if needed) the subscriptions for the given company.
@@ -173,7 +171,8 @@ export class SyncWorker {
      * @param msg
      **/
     init(msg: SyncInit) {
-        this.#socket = new TrakitSocketCommander(msg.socket, msg.ghostId);
+		this.#socket = new TrakitSocketCommander(msg.socket);
+		this.#socket.setAuth(msg.ghostId);
         this.#socket.onOpen = (msg) => this.#onOpen(msg);
         this.#socket.onClose = (msg) => this.#onClose(msg);
         this.#socket.onMessage = (msg, data) => this.#onMessage(msg, data);
@@ -189,24 +188,24 @@ export class SyncWorker {
      * @param msg
      **/
     status(msg: SyncStatus) {
-        msg.response = {
-            "id": (msg || {}).id || null,
-            "v": [version],
-            "kind": SyncType.status,
-            "socket": {
-                "ghostId": this.#socket.ghostId,
-                "state": this.#socket.state,
-                "ready": this.#socket.ready,
-                "reconnectEnabled": this.#socket.reconnectEnabled,
-                "keepAliveEnabled": this.#socket.keepAliveEnabled,
-                "lastReceived": this.#socket.lastReceived,
-                "lastMessageName": this.#socket.lastMessageName,
-            },
-            "subscriptions": {
-                // key is a company id
-                // value is an array of `SubscriptionType`s
-            },
-        } as any;
+		msg.response = {
+			"id": msg?.id || null,
+			"v": [version],
+			"kind": SyncType.status,
+			"socket": {
+				"account": this.#socket.account.toJSON(),
+				"state": this.#socket.state,
+				"ready": this.#socket.ready,
+				"reconnectEnabled": this.#socket.reconnectEnabled,
+				"keepAliveEnabled": this.#socket.keepAliveEnabled,
+				"lastReceived": this.#socket.lastReceived,
+				"lastMessageName": this.#socket.lastMessage,
+			},
+			"subscriptions": {
+				// key is a company id
+				// value is an array of `SubscriptionType`s
+			},
+		} as any;
         for (let [company, subscribed] of this.#subscriptions) {
             const regions = subscribed.regions,
                 expiring = subscribed.expiringRegions();
@@ -223,21 +222,21 @@ export class SyncWorker {
      * @param msg
      **/
     sync(msg: SyncSubscriptions) {
-        const subscribed = this.#currentSubscriptions(msg.company),
-            alreadySubscribed = subscribed.regions,
-            requestedSubscriptions: SubscriptionType[] = msg.subs.map((region) => {
-                return SUBSCRIPTION_SPLITS[region] || [region];
-            }).reduce((acc, val) => acc.concat(val), []),
-            subscriptionUrls = requestedSubscriptions.map(s => SUBSCRIPTION_LIST_BY_COMPANY[s] || ""),
-            temporarySubscriptions: SubscriptionType[] = [],
-            newSubscriptions: SubscriptionType[] = [];
+		const subscribed = this.#currentSubscriptions(msg.company),
+			alreadySubscribed = subscribed.regions,
+			requestedSubscriptions: SubscriptionType[] = msg.subs.map((region: string) => {
+				return SUBSCRIPTION_SPLITS[region as keyof typeof SUBSCRIPTION_SPLITS] || [region];
+			}).reduce((acc, val) => acc.concat(val), []),
+			subscriptionUrls = requestedSubscriptions.map((s: string) => SUBSCRIPTION_LIST_BY_COMPANY[s as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || ""),
+			temporarySubscriptions: SubscriptionType[] = [],
+			newSubscriptions: SubscriptionType[] = [];
         
-        for (let subType of SUBSCRIPTION_LIST_BY_COMPANY) {
+        for (let subType of SUBSCRIPTION_LIST_BY_COMPANY as any) {
             // here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
             // example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
             // but the assetAdvanced must be temporary since we didn't ask for it
             // it can expire using the regular expiration timeout
-            if (subscriptionUrls.includes(SUBSCRIPTION_LIST_BY_COMPANY[subType])) {
+            if (subscriptionUrls.includes(SUBSCRIPTION_LIST_BY_COMPANY[subType as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "")) {
                 temporarySubscriptions.push(subType);
             }
         }

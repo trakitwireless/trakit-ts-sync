@@ -1,4 +1,4 @@
-import { Reply } from "@commands/API/Responses/Reply";
+import { Reply } from "@trakit/commands";
 import { SyncType } from "./SyncType"; // Adjust the path if SyncType is elsewhere
 
 /**

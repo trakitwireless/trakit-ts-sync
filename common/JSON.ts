@@ -1,26 +1,15 @@
-import { JSON_PARSE, KEYS } from '@trakit/objects';
+import { nothing } from "@trakit/objects";
 
 /**
  * Parses the passed JSON string and returns the parsed value.
  * If there is an exception in parsing, the errorContainer is populated with all the details of the error and `undefined` is returned.
- * @param jsonString 
- * @param errorContainer 
+ * @param json 
  * @returns 
  */
-export function JSON_PARSE_SAFE(jsonString: string, errorContainer: any): any | undefined {
-    let json: any;
-    try {
-        json = JSON_PARSE(jsonString);
-    } catch (error: SyntaxError | any) {
-        if (errorContainer) {
-            errorContainer["jsonString"] = jsonString;
-            KEYS(error)
-                .concat("name", "message")
-                .filter((key, index, array) => array.indexOf(key) === index)
-                .forEach(function (key) {
-                    errorContainer[key] = error[key] || "";
-                });
-        }
-    }
-    return json;
+export function JSON_PARSE_SAFE(json: string): [boolean, any | nothing, SyntaxError | nothing] {
+	try {
+		return [true, JSON.parse(json), null];
+	} catch (ex: SyntaxError | any) {
+		return [false, null, ex as SyntaxError];
+	}
 }

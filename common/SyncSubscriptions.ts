@@ -1,4 +1,4 @@
-import { SubscriptionType } from "./SubscriptionType";
+import { SubscriptionType } from "@trakit/commands";
 import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType"; // Adjust the path if SyncType is elsewhere
 
