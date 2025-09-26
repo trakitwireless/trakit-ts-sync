@@ -1,9 +1,23 @@
-import { ErrorCode, IPayListByDate, IPayListById, IPayListByKey, IPayListByUser, IRepListByAsset, Payload, Reply, TrakitObjectCommander } from "@trakit/commands";
-import { nothing, url, utility } from "@trakit/objects";
-import { IPaySingle } from "@trakit/commands";
-import { IPayListByCompany } from "@trakit/commands";
-import { IPayListByLabels } from "@trakit/commands";
-import { IPayListByReferences, IPayListByAsset } from "@trakit/commands";
+import {
+	ErrorCode,
+	IPayListByAsset,
+	IPayListByCompany,
+	IPayListByDate,
+	IPayListById,
+	IPayListByKey,
+	IPayListByLabels,
+	IPayListByReferences,
+	IPayListByUser,
+	IPaySingle,
+	Payload,
+	Reply,
+	TrakitObjectCommander,
+} from "@trakit/commands";
+import {
+	nothing,
+	url,
+	utility,
+ } from "@trakit/objects";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.

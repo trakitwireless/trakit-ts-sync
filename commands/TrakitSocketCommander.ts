@@ -9,22 +9,9 @@ import {
     utility,
     nothing,
     Machine,
+	url,
 } from '@trakit/objects';
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
-
-/**
- * Production {@link WebSocket} service URL.
- * This service is covered by the SLA and should be used for serices and code running in your own production environment.
- * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
- */
-export const URI_PROD = "wss://socket.trakit.ca/";  
-/**
- * Testing or beta {@link WebSocket} service URL.
- * This service is not covered by the SLA and should be used to test your own code before deployment.
- * Throttling of connections and commands is tighter to help you diagnose issues before switching to production.
- * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
- */
-export const URI_BETA = "wss://kraken.trakit.ca/";  
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -136,6 +123,20 @@ function getCommand(payload: Payload): string {
  * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
  **/
 export class TrakitSocketCommander extends TrakitObjectCommander {
+	/**
+	 * Production RESTful service URL.
+	 * This service is covered by the SLA and should be used for serices and code running in your own production environment.
+	 * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
+	 */
+	static readonly URI_PROD: url = "wss://socket.trakit.ca/";
+	/**
+	 * Testing or beta RESTful service URL.
+	 * This service is not covered by the SLA and should be used to test your own code before deployment.
+	 * Throttling of connections and commands is tighter to help you diagnose issues before switching to production.
+	 * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
+	 */
+	static readonly URI_BETA: url = "wss://kraken.trakit.ca/";
+
 	#lastConnected: Date = new Date(NaN);
 	#lastReceived: Date = new Date(NaN);
 	#lastMessage: string = "";
@@ -190,16 +191,21 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 	}
 
 	/**
-	 * 
-	 * @param payload 
-	 * @returns 
+	 * Sends a {@link Payload} to the Trak-iT WebSocket service, and returns a Promise that is resolved with for successful commands, and rejected for error responses, or failures to send.
+	 * @param payload	The command being sent.
+	 * @returns			A Promise which is resolved for successful commands, otherwise it is rejected.
 	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		return new Promise((resolve, reject) => {
-			function settler(response: any) {
-				(response.errorCode === 0 ? resolve : reject)(payload.createReply(response) as TReply);
-			}
-			this.send(getCommand(payload), payload.toJSON()).then(settler, settler);
+			const settler = (response: any) => (
+				response["errorCode"] === 0
+					? resolve
+					: reject
+			)(
+				payload.createReply(response) as TReply
+			);
+			this.send(getCommand(payload), payload.toJSON())
+				.then(settler, settler);
 		});
 	}
 
@@ -302,10 +308,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 		// cancel all commands (sorting will make disconnection the last one)
 		for (const key of [...this.#requests.keys()].sort()) {
 			if (key === CMD_DISCONNECTION) {
-				response.errorCode = ErrorCode.success;
+				response["errorCode"] = ErrorCode.success;
 				delete response["reqId"];
 			} else {
-				response.errorCode = ErrorCode.unknown;
+				response["errorCode"] = ErrorCode.unknown;
 				response["reqId"] = key;
 			}
 			this.#socketSettle(key, response);
@@ -460,9 +466,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 	#timerKeepAlive: number = 0;
 	//#endregion Keep-Alive
 
-	constructor(url?: string, ghostId?: string | nothing) {
-		super(url || URI_PROD);
-		if (ghostId) this.query.set("ghostId", ghostId);
+	constructor(url?: string) {
+		super(url || TrakitSocketCommander.URI_PROD);
 	}
 	/**
 	 * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
@@ -497,7 +502,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
 					this.#socket.onclose = (ev) => this.#socketClose(ev);
 					this.#requests.set(CMD_CONNECTION, (response: any) => {
-						(response.errorCode === 0 ? resolve : reject)(this.account as RepSelfGet);
+						(response["errorCode"] === 0 ? resolve : reject)(this.account as RepSelfGet);
 					});
 					break;
 				default:
@@ -524,7 +529,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 				case TrakitSocketStatus.open:
 					this.reconnectEnabled = false;
 					this.#requests.set(CMD_DISCONNECTION, (response: any) => {
-						(response.errorCode === 0 ? resolve : reject)(new Reply(response));
+						(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
 					});
 					this.#socket.close(1000, "Bye!");
 					break;
@@ -542,10 +547,12 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 		});
 	}
 	/**
-	 * Sends a command and parameters to Trak-iT's WebSocket.
+	 * Sends a command and parameters to Trak-iT's WebSocket service.
 	 * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
-	 * @param command        The name of the command to send.
-	 * @param params        Optional object or value for the command.
+	 * IF the command is sent, and a response received, even an error, the Promise is resolved.
+	 * @param command	The name of the command to send.
+	 * @param params	Optional object or value for the command.
+	 * @returns 		A Promise which is resolved when a response is received, otherwise it is rejected.
 	 **/
 	send(command: string, params?: any): Promise<any> {
 		return new Promise((resolve, reject) => {
@@ -554,22 +561,20 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 			switch (state) {
 				case TrakitSocketStatus.open:
 					const reqId = ++this.#requestId,
-						settler = (response: any) => {
-							clearTimeout(timer);
-							(response.errorCode === 0 ? resolve : reject)(response);
-						},
 						timer = setTimeout(
-							settler,
-							TIMEOUT_COMMAND,
-							{
+							() => this.#socketSettle(reqId, {
 								"reqId": reqId,
 								"errorCode": ErrorCode.unknown,
 								"message": "Command timeout",
-							}
+							}),
+							TIMEOUT_COMMAND
 						);
 					params = params || {};
 					params.reqId = reqId;
-					this.#requests.set(reqId, settler);
+					this.#requests.set(reqId, (response: any) => {
+						clearTimeout(timer);
+						resolve(response);
+					});
 					this.#socket.send(command + " " + JSON.stringify(params));
 					this.resetKeepAlive();
 					break;
