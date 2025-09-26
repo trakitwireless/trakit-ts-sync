@@ -18,33 +18,19 @@ const obfuscate = {
 
 export default [
   {
-    input: 'worker/worker.ts',
+    input: 'index.ts',
     output: [
       // {
       //   file: '../_publish/trakit-sync-worker.js',
       //   format: 'es',
       // },
       {
-        file: '_publish/trakit-sync-worker.min.js',
+        file: '_publish/trakit-sync.min.js',
         format: 'es',
         plugins: [terser(obfuscate)]
       }
     ],
     plugins: [typescript()],
-  },
-  {
-    input: 'client/client.ts',
-    output: [
-      // {
-      //   file: '../_publish/trakit-sync-client.js',
-      //   format: 'es',
-      // },
-      {
-        file: '_publish/trakit-sync-client.min.js',
-        format: 'es',
-        plugins: [terser(obfuscate)]
-      }
-    ],
-    plugins: [typescript()],
+	external: ['@trakit/objects', '@trakit/commands']
   }
 ];
