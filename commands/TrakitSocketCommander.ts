@@ -58,13 +58,13 @@ const RESPONSE_SUFFIX = "Response",
     UNKNOWN_COMMAND = "unknownCommand" + RESPONSE_SUFFIX;
 
 /**
- * converts the {@link Payload} type into a WebSocket command name.
+ * Returns a WebSocket command name based on the {@link Payload} type.
  * @param payload 
  * @returns 
  */
-function getCommandName<TPayload extends Payload>(payload: TPayload): string {
+function getCommandName(payload: Payload): string {
 	const action = payload.getAction(),
-		error = new Error("no command supported for " + payload.constructor.name);
+		error = new Error("no command supported for " + payload.constructor.name, { cause: action });
 	switch (action.object) {
 		case "Subscription":
 			switch (action.kind) {
