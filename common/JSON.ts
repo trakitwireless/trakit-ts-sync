@@ -1,4 +1,4 @@
-import { nothing } from "@trakit/objects";
+import { nothing, JsonValue } from "@trakit/objects";
 
 /**
  * Parses the passed JSON string and returns the parsed value.
@@ -6,7 +6,7 @@ import { nothing } from "@trakit/objects";
  * @param json 
  * @returns 
  */
-export function JSON_PARSE_SAFE(json: string): [boolean, any | nothing, SyntaxError | nothing] {
+export function JSON_PARSE_SAFE(json: string): [boolean, JsonValue, SyntaxError | nothing] {
 	try {
 		return [true, JSON.parse(json), null];
 	} catch (ex: SyntaxError | any) {

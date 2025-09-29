@@ -50,7 +50,7 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 				this.account = reply;
 				break;
 			default:
-				this.account = null;
+				this.account = new RepSelfGet;
 				break;
 		}
 		this.setAuth(this.account);
@@ -82,7 +82,7 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 	public async logout(): Promise<RepSelfLogout> {
 		const reply = await this.command<RepSelfLogout>(new PaySelfLogout());
 		this.setAuth();
-		this.account = null;
+		this.account = new RepSelfGet;
 		return reply;
 	}
 

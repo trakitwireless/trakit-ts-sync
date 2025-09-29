@@ -233,7 +233,16 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 	 * A collection of pending command Promises.
 	 * Each key is a reqId (except for connection and disconnection) and each value is a function invoked with a {@link Reply} object.
 	 **/
-	#requests: Map<string | number, (response: any) => void> = new Map();
+	#requestsPending: Map<string | number, (response: any) => void> = new Map();
+	/**
+	 * Settles the promise for the given request ID with the provided message content.
+	 * @param reqId The ID of the request to settle.
+	 * @param msgContent The content of the message to resolve or reject the promise.
+	 */
+	#requestSettle(reqId: string | number, msgContent: any) {
+		this.#requestsPending.get(reqId)?.(msgContent);
+		this.#requestsPending.delete(reqId);
+	}
     
 	/**
 	 * The underlying WebSocket.
@@ -285,7 +294,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 		this.#delayReconnect = this.#delayReconnect
 			? this.#delayReconnect * 2
 			: this.lastReceived
-				? new Date().valueOf() - this.lastReceived.valueOf()
+				? (new Date).valueOf() - this.lastReceived.valueOf()
 				: 5000;
 		const reconnectTimeout = Math.min(this.#delayReconnect, TIMEOUT_MAX_RECONNECT),
 			errorDetails = {
@@ -295,28 +304,37 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 				"reason": event.reason,
 				"wasClean": event.wasClean,
 				"reconnect": this.reconnectEnabled,
-				"retry": new Date().valueOf() + reconnectTimeout,
+				"retry": (new Date).valueOf() + reconnectTimeout,
 			},
 			response: any = {
-				"errorCode": ErrorCode.unknown,
+				"errorCode": ErrorCode.success,
 				"message": "Disconnected",
 				"errorDetails": errorDetails,
 			};
 
-		// cancel all commands (sorting will make disconnection the last one)
-		for (const key of [...this.#requests.keys()].sort()) {
-			if (key === CMD_DISCONNECTION) {
-				response["errorCode"] = ErrorCode.success;
-				delete response["reqId"];
+		// cancel all commands (sorting into the order in which they were sent, with "disconnection" last)
+		for (const reqId of [...this.#requestsPending.keys()].sort()) {
+			if (reqId === CMD_DISCONNECTION) {
+				this.#requestSettle(reqId, {
+					...response,
+					"errorDetails": {
+						...errorDetails,
+					},
+				});
 			} else {
-				response["errorCode"] = ErrorCode.unknown;
-				response["reqId"] = key;
+				this.#requestSettle(reqId, {
+					...response,
+					"reqId": reqId,
+					"errorCode": ErrorCode.unknown,
+					"errorDetails": {
+						...errorDetails,
+					},
+				});
 			}
-			this.#socketSettle(key, response);
 		}
 
 		// fire event
-		this.onClose?.(response);
+		this.onClose?.(new Reply(response));
 
 		// start reconnect timer
 		this.#timerReconnect = this.reconnectEnabled
@@ -367,9 +385,9 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 				this.#lastConnected = new Date(this.#lastReceived);
 				this.#socketReady = true;
 				// Promise is settled here, not below
-				this.#socketSettle(CMD_CONNECTION, msgContent);
+				this.#requestSettle(CMD_CONNECTION, msgContent);
 				// then we fire event here, not below
-				this.onOpen?.(msgContent);
+				this.onOpen?.(this.account);
 				// because we are firing the "connection" event instead of the "message" event at the end.
 				msgEvent = false;
 				break;
@@ -403,7 +421,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 			/**
 			 * The function that will settle (resolve or reject) the Promise for the pending command.
 			 **/
-			this.#socketSettle(msgContent["reqId"], msgContent);
+			this.#requestSettle(msgContent["reqId"], msgContent);
 
 			/**
 			 * Fires the "message" event.
@@ -423,15 +441,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 		this.setAuth(this.account = new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
-	}
-	/**
-	 * Settles the promise for the given request ID with the provided message content.
-	 * @param reqId The ID of the request to settle.
-	 * @param msgContent The content of the message to resolve or reject the promise.
-	 */
-	#socketSettle(reqId: string | number, msgContent: any) {
-		this.#requests.get(reqId)?.(msgContent);
-		this.#requests.delete(reqId);
 	}
 	//#endregion Internal WebSocket control
 
@@ -474,7 +483,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 		this.#socketOperable = false;	// prevent re-connect
 		this.close().finally(() => {
 			(this.#socket as any) =
-				(this.#requests as any) = null;
+				(this.#requestsPending as any) = null;
 		});
 	}
 
@@ -499,7 +508,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 					this.#socket = new WebSocket(endpoint);
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
 					this.#socket.onclose = (ev) => this.#socketClose(ev);
-					this.#requests.set(CMD_CONNECTION, (response: any) => {
+					this.#requestsPending.set(CMD_CONNECTION, (response: any) => {
 						(response["errorCode"] === 0 ? resolve : reject)(this.account as RepSelfGet);
 					});
 					break;
@@ -526,7 +535,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 			switch (state) {
 				case TrakitSocketStatus.open:
 					this.reconnectEnabled = false;
-					this.#requests.set(CMD_DISCONNECTION, (response: any) => {
+					this.#requestsPending.set(CMD_DISCONNECTION, (response: any) => {
 						(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
 					});
 					this.#socket.close(1000, "Bye!");
@@ -560,7 +569,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 				case TrakitSocketStatus.open:
 					const reqId = ++this.#requestId,
 						timer = setTimeout(
-							() => this.#socketSettle(reqId, {
+							() => this.#requestSettle(reqId, {
 								"reqId": reqId,
 								"errorCode": ErrorCode.unknown,
 								"message": "Command timeout",
@@ -569,7 +578,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 						);
 					params = params || {};
 					params.reqId = reqId;
-					this.#requests.set(reqId, (response: any) => {
+					this.#requestsPending.set(reqId, (response: any) => {
 						clearTimeout(timer);
 						resolve(response);
 					});

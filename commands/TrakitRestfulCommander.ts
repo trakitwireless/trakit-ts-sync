@@ -11,13 +11,13 @@ import {
 	IPaySingle,
 	Payload,
 	Reply,
-	TrakitObjectCommander,
 } from "@trakit/commands";
 import {
 	nothing,
 	url,
 	utility,
  } from "@trakit/objects";
+import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.
