@@ -36,68 +36,65 @@ export const SUBSCRIPTION_SPLITS = {
  * A mapping of RESTful service routes to get things listed by company.
  **/
 export const SUBSCRIPTION_LIST_BY_COMPANY = {
-    /* company */
-    //"companyGeneral": "/companies/{companyId}/tree?includeParent=true",
-    //"companyBilling": "",
-    //"companyDirectory": "",
-    //"companyLabels": "",
-    //"companyPolicies": "",
-    //"companyReseller": "",
-    "contact": "/companies/{companyId}/contacts",
-    /* users/accounts */
-    "user": "/companies/{companyId}/users",
-    "userGeneral": "/companies/{companyId}/users/generals",
-    "userAdvanced": "/companies/{companyId}/users/advanceds",
-    "userGroup": "/companies/{companyId}/users/groups",
-    "machine": "/companies/{companyId}/machines",
-    /* file hosting */
-    "icon": "/companies/{companyId}/icons",
-    "picture": "/companies/{companyId}/pictures",
-    "document": "/companies/{companyId}/documents",
-    "formTemplate": "/companies/{companyId}/forms/templates",
-    "formResult": "/companies/{companyId}/forms",
-    /* assets */
-    "assetGeneral": "/companies/{companyId}/assets",    //assets/generals
-    "assetAdvanced": "/companies/{companyId}/assets",   //assets/advanceds
-    "assetDispatch": "/companies/{companyId}/assets",   //assets/dispatches
-    "assetMessage": "/companies/{companyId}/assets/messages",
-    //	"assetAlert",
-    /* dispatch */
-    "dispatchTask": "/companies/{companyId}/assets/dispatch/tasks",
-    "dispatchTemplate": "/companies/{companyId}/assets/dispatch/templates",
-    "dispatchJob": "/companies/{companyId}/assets/dispatch/jobs",
-    /* maintenance */
-    "maintenanceSchedule": "/companies/{companyId}/maintenance/schedules",
-    "maintenanceJob": "/companies/{companyId}/maintenance/jobs",
-    /* places */
-    "placeGeneral": "/companies/{companyId}/places",
-    //"placeExtended": "/companies/{companyId}/places",
-    /* behaviours */
-    "behaviourScript": "/companies/{companyId}/behaviours/scripts",
-    "behaviour": "/companies/{companyId}/behaviours",
-    //"behaviourLog": "",
-    /* providers and configs */
-    "providerGeneral": "/companies/{companyId}/providers",  //providers/generals
-    "providerAdvanced": "/companies/{companyId}/providers", //providers/advanceds
-    "providerControl": "/companies/{companyId}/providers",  //providers/controls
-    "providerConfiguration": "/companies/{companyId}/providers/configurations", 
-    "providerScript": "/companies/{companyId}/providers/scripts", 
-    "providerConfig": "/companies/{companyId}/providers/configs", 
-    "providerRegistration": "/companies/{companyId}/providers/registrations",
-    /* reports */
-    "reportTemplate": "/companies/{companyId}/reports/templates",
-    "reportSchedule": "/companies/{companyId}/reports/schedules",
-    "reportResult": "/companies/{companyId}/reports/results",
-    /* billing */
-    "billingProfile": "/companies/{companyId}/billing/profiles",
-    //"billingHosting": "",
-    //"billingDiscount": "",
-    //"billingLicense": "",
-    "billingReport": "/companies/{companyId}/billing/profiles/reports",
-    //	"billingMapCast",
-    //	"billingRatePlan",
-    //	"billingReseller",
-    //	"billingSupport",
+	/* company */
+	"Company": "/companies/generals?parent={companyId}",
+	"CompanyGeneral": "/companies/generals?parent={companyId}",
+	//"CompanySettings": "/companies/settings?parent={companyId}",
+	"CompanyDirectory": "/companies/directory?parent={companyId}",
+	"CompanyLabels": "/companies/labels?parent={companyId}",
+	"CompanyPolicies": "/companies/policies?parent={companyId}",
+	"CompanyReseller": "/companies/resellers?parent={companyId}",
+	/* accounts */
+	"Contact": "/companies/{companyId}/contacts",
+	"Machine": "/companies/{companyId}/machines",
+	"User": "/companies/{companyId}/users",
+	"UserGeneral": "/companies/{companyId}/users/generals",
+	"UserAdvanced": "/companies/{companyId}/users/advanceds",
+	"UserGroup": "/companies/{companyId}/users/groups",
+	/* file hosting */
+	"Icon": "/companies/{companyId}/icons",
+	"Picture": "/companies/{companyId}/pictures",
+	"Document": "/companies/{companyId}/documents",
+	"FormTemplate": "/companies/{companyId}/forms/templates",
+	"FormResult": "/companies/{companyId}/forms",
+	/* assets */
+	"Asset": "/companies/{companyId}/assets",
+	"AssetGeneral": "/companies/{companyId}/assets/generals",
+	"AssetAdvanced": "/companies/{companyId}/assets/advanceds",
+	"AssetDispatch": "/companies/{companyId}/assets/dispatches",
+	"Message": "/companies/{companyId}/assets/messages",
+	//	"AssetAlert",
+	/* dispatch */
+	"DispatchTask": "/companies/{companyId}/assets/dispatch/tasks",
+	"DispatchTemplate": "/companies/{companyId}/assets/dispatch/templates",
+	"DispatchJob": "/companies/{companyId}/assets/dispatch/jobs",
+	/* maintenance */
+	"MaintenanceSchedule": "/companies/{companyId}/maintenance/schedules",
+	"MaintenanceJob": "/companies/{companyId}/maintenance/jobs",
+	/* places */
+	"Place": "/companies/{companyId}/places",
+	"PlaceGeneral": "/companies/{companyId}/places",
+	//"PlaceExtended": "/companies/{companyId}/places",
+	/* behaviours */
+	"BehaviourScript": "/companies/{companyId}/behaviours/scripts",
+	"Behaviour": "/companies/{companyId}/behaviours",
+	//"BehaviourLog": "",
+	/* providers and configs */
+	"Provider": "/companies/{companyId}/providers",
+	"ProviderGeneral": "/companies/{companyId}/providers/generals",
+	"ProviderAdvanced": "/companies/{companyId}/providers/advanceds",
+	"ProviderControl": "/companies/{companyId}/providers/controls",
+	"ProviderConfiguration": "/companies/{companyId}/providers/configurations",
+	"ProviderScript": "/companies/{companyId}/providers/scripts",
+	"ProviderConfig": "/companies/{companyId}/providers/configs",
+	"ProviderRegistration": "/companies/{companyId}/providers/registrations",
+	/* reports */
+	"ReportTemplate": "/companies/{companyId}/reports/templates",
+	"ReportSchedule": "/companies/{companyId}/reports/schedules",
+	"ReportResult": "/companies/{companyId}/reports/results",
+	/* billing */
+	"BillingProfile": "/companies/{companyId}/billing/profiles",
+	"BillingReport": "/companies/{companyId}/billing/profiles/reports",
 };
 
 /**
@@ -105,34 +102,40 @@ export const SUBSCRIPTION_LIST_BY_COMPANY = {
  **/
 export const SUBSCRIPTION_LIST_BY_ASSET = {
     /* messaging */
-    "assetMessage": "/assets/{assetId}/messages",
+    "Message": "/assets/{assetId}/messages",
     /* dispatch */
-    "dispatchTask": "/assets/{assetId}/dispatch/tasks",
-    "dispatchTemplate": "/assets/{assetId}/dispatch/templates",
-    "dispatchJob": "/assets/{assetId}/dispatch/jobs",
+    "DispatchTask": "/assets/{assetId}/dispatch/tasks",
+    "DispatchJob": "/assets/{assetId}/dispatch/jobs",
     /* file hosting */
-    "formResult": "/assets/{assetId}/forms",
+    "FormResult": "/assets/{assetId}/forms",
     /* maintenance */
-    "maintenanceJob": "/assets/{assetId}/maintenance/jobs",
-    /* ELD (deprecated) */
-    "hosInspection": "/assets/{assetId}/hos/inspections",
-    "hosEvent": "/assets/{assetId}/hos/events",
-};
-
-/**
- * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
- **/
-export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE = {
-    "billingHosting": "/billing/profiles/{profileId}/rules",
-    "billingDiscount": "/billing/profiles/{profileId}/discounts",
-    "billingLicense": "/billing/profiles/{profileId}/licenses",
-    "billingReport": "/billing/profiles/{profileId}/reports",
+    "MaintenanceJob": "/assets/{assetId}/maintenance/jobs",
 };
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by behaviour script.
  **/
 export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT = {
-    "behaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
-    "behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
+    "BehaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
+    "Behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
+};
+
+/**
+ * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
+ **/
+export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE = {
+	"BillingHosting": "/billing/profiles/{profileId}/rules",
+	"BillingLicense": "/billing/profiles/{profileId}/licenses",
+	"BillingReport": "/billing/profiles/{profileId}/reports",
+	//"BillingMapCast": "",
+	//"BillingRatePlan": "",
+	//"BillingReseller": "",
+	//"BillingSupport": "",
+};
+
+/**
+ * A mapping of Trak-iT RESTful routes to get things listed by asset.
+ **/
+export const SUBSCRIPTION_LIST_BY_USER = {
+	"Session": "/users/{userLogin}/sessions",
 };

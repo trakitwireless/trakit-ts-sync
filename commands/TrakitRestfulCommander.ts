@@ -1,6 +1,7 @@
 import {
 	ErrorCode,
 	IPayListByAsset,
+	IPayListByBillingProfile,
 	IPayListByCompany,
 	IPayListByDate,
 	IPayListById,
@@ -18,6 +19,7 @@ import {
 	utility,
  } from "@trakit/objects";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
+import { SUBSCRIPTION_LIST_BY_ASSET, SUBSCRIPTION_LIST_BY_BILLING_PROFILE, SUBSCRIPTION_LIST_BY_COMPANY } from "common/Subscriptions";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.
@@ -106,8 +108,11 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 						verb = !action.batch ? "PUT" : "PATCH";
 						break;
 				}
-				// no break => fall through to default for DispatchJob where filter is not Cancel or Change
+			// no break => fall through to default for DispatchJob where filter is not Cancel or Change
 			default:
+				route = [...action.object.match(SPLITTER) as string[]]
+											.map(utility.plural)
+											.join("/");
 				/*
 				"Get"
 				| "List"
@@ -140,9 +145,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 							break;
 					}
 				} else {
-					const objNames = [...action.object.match(SPLITTER) as string[]].map(s => utility.plural(s));
-					route = objNames.join("/");
-					if ((payload as any as IPaySingle).getKey) {
+					if ((payload as any).getKey) {
 						route += "/" + (payload as any as IPaySingle).getKey();
 					}
 					switch (action.kind) {
@@ -152,11 +155,25 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 						case "List":
 							//verb = "GET";
 							switch (action.filter) {
-								case "Asset":	// IPayListByAsset
-									route = `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
+								case "BillingProfile":	// IPayListByBillingProfile
+									route = action.object in SUBSCRIPTION_LIST_BY_BILLING_PROFILE
+										? SUBSCRIPTION_LIST_BY_BILLING_PROFILE[action.object as keyof typeof SUBSCRIPTION_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
+										: `billing/profiles/${(payload as any as IPayListByBillingProfile).billingProfile.id}/${route}`;
+									break;
+								case "BillingProfile":	// IPayListByBillingProfile
+									route = action.object in SUBSCRIPTION_LIST_BY_BILLING_PROFILE
+										? SUBSCRIPTION_LIST_BY_BILLING_PROFILE[action.object as keyof typeof SUBSCRIPTION_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
+										: `billing/profiles/${(payload as any as IPayListByBillingProfile).billingProfile.id}/${route}`;
 									break;
 								case "Company":	// IPayListByCompany
-									route = `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
+									route = action.object in SUBSCRIPTION_LIST_BY_COMPANY
+										? SUBSCRIPTION_LIST_BY_COMPANY[action.object as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY].replace("{companyId}", (payload as any).company.id)
+										: `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
+									break;
+								case "Asset":	// IPayListByAsset
+									route = action.object in SUBSCRIPTION_LIST_BY_ASSET
+										? SUBSCRIPTION_LIST_BY_ASSET[action.object as keyof typeof SUBSCRIPTION_LIST_BY_ASSET].replace("{assetId}", (payload as any).asset.id)
+										: `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
 									break;
 								case "User":	// IPayListByUser
 									route = `users/${encodeURIComponent((payload as any as IPayListByUser).user.login)}/${route}`;
@@ -218,7 +235,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 					break;
 				}
 		}
-		if (query.length) route += "?" + query.substring(1);
+		if (query.length) route += route.includes("?") ? query : "?" + + query.substring(1);
 		return [verb, route];
 	}
 
@@ -269,7 +286,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 			try {
 				[verb, path] = this.getVerbRoute(payload);
 				body = payload.toJSON();
-			} catch (ex) {
+			} catch (ex: Error | any) {
 				verb = "GET";
 				path = "";
 				reply = payload.createReply(createClientErrorResponse(ex)) as TReply;
@@ -277,7 +294,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 			if (!reply) {
 				try {
 					reply = payload.createReply(await this.send(path, verb, body)) as TReply;
-				} catch (ex) {
+				} catch (ex: Reply | any) {
 					reply = payload.createReply(ex) as TReply;
 				}
 			}
@@ -298,7 +315,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 				const request = this.createRequest(path, verb, body),
 					response = await fetch(request);
 				resolve(await response.json());
-			} catch (ex) {
+			} catch (ex: Error | any) {
 				reject(createClientErrorResponse(ex));
 			}
 		});

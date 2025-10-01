@@ -1,15 +1,15 @@
-import { nothing, JsonValue } from "@trakit/objects";
+import { JsonValue } from "@trakit/objects";
 
 /**
  * Parses the passed JSON string and returns the parsed value.
- * If there is an exception in parsing, the errorContainer is populated with all the details of the error and `undefined` is returned.
+ * If there is an exception in parsing, the Error is populated with all the details of the error and `undefined` is returned.
  * @param json 
  * @returns 
  */
-export function JSON_PARSE_SAFE(json: string): [boolean, JsonValue, SyntaxError | nothing] {
+export function JSON_PARSE_SAFE(json: string): [JsonValue, SyntaxError | null] {
 	try {
-		return [true, JSON.parse(json), null];
+		return [JSON.parse(json), null];
 	} catch (ex: SyntaxError | any) {
-		return [false, null, ex as SyntaxError];
+		return [null, ex as SyntaxError];
 	}
 }
