@@ -54,41 +54,31 @@ export abstract class TrakitCommander {
 	// saved session identifier when using a user account
 	protected _sessionId?: guid | null = null;
 	/**
-	 * Unsets the authentication mechanism so that requests are sent without any.
-	 */
-	setAuth(): void
-	/**
-	 * Saves the authentication mechanism as a {@link Machine}.
-	 * @param machine          The machine to use for authentication.
-	 */
-	setAuth(machine?: Machine | nothing): void
-	/**
-	 * Saves the authentication mechanism as a session id.
-	 * @param sessionId         The session id to use for authentication.
-	 */
-	setAuth(sessionId?: guid | nothing): void
-	/**
-	 * Saves the authentication mechanism as a session id.
-	 * @param account         The {@link RepSelfGet} object from a login, or "get self details" response.
-	 */
-	setAuth(account?: RepSelfGet | nothing): void
-	/**
 	 * Sets the authentication mechanism using either a session id or a Machine object.
 	 * @param value  The session id (string), {@link Machine} object, or {@link RepSelfGet} object.
 	 */
-	setAuth(value?: any | nothing): void {
+	setAuth(
+		value?: RepSelfGet
+				| Machine
+				| { key: string }
+				| { ghostId: guid }
+				| guid
+				| nothing
+	): void {
 		this._machine = null;
 		this._sessionId = null;
 		if (typeof value === "string") {
-			this._sessionId = value;
+			this._sessionId = value as guid;
 		} else if (value instanceof Machine) {
 			this._machine = value;
-		} else if (value?.key) {
+		} else if (value instanceof RepSelfGet) {
+			this.setAuth(value.machine || value.ghostId);
+		} else if ((value as any)?.key) {
 			this.setAuth(new Machine(value));
-		} else if (value?.machine?.key) {
-			this.setAuth(value.machine);
-		} else if (value?.ghostId) {
-			this.setAuth(value.ghostId);
+		} else if ((value as any)?.machine?.key) {
+			this.setAuth((value as any).machine as { key: string });
+		} else if ((value as any)?.ghostId) {
+			this.setAuth((value as any).ghostId as guid);
 		}
 	}
 	//#endregion Authorization

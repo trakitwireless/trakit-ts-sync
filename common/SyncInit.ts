@@ -1,6 +1,8 @@
-import { nothing } from "@trakit/objects";
+import { RepSelfGet } from "@trakit/commands";
+import { guid, Machine, nothing, url } from "@trakit/objects";
 import { SyncBase } from "./SyncBase";
 import { SyncType } from "./SyncType";
+import { TrakitSocketCommander } from "commands/TrakitSocketCommander";
 
 /**
  * In order to start the {@link Worker}, it needs the {@link trakit.json.RespSelfDetails#ghostId}.
@@ -10,22 +12,22 @@ import { SyncType } from "./SyncType";
  **/
 export class SyncInit extends SyncBase {
 	/**
-	 * Your session id.
-	 **/
-	ghostId: string;
+	 * The account to authenticate with; either a {@link Machine}, {@link RepSelfGet} or a session token.
+	 */
+	account: RepSelfGet | Machine | guid | nothing;
 	/**
 	 * Trak-iT WebSocket service URL.
 	 **/
-	socket: string;
+	socket: url;
 	/**
 	 * Trak-iT RESTful service URL.
 	 **/
-	rest: string;
+	rest: url;
 
-	constructor(ghostId: string | nothing, socket: string | nothing, rest?: string | nothing) {
+	constructor(account?: Machine | RepSelfGet | guid | nothing, socket?: url | nothing, rest?: url | nothing) {
 		super(SyncType.init);
-		this.ghostId = ghostId || "";
-		this.socket = socket || "";
-		this.rest = rest || "";
+		this.account = account;
+		this.socket = socket || TrakitSocketCommander.URI_PROD;
+		this.rest = rest || TrakitSocketCommander.URI_PROD;
 	}
 }

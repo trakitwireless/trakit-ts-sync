@@ -1,11 +1,6 @@
-﻿import { RepSelfGet } from "@commands/Accounts/Self/Responses/RepSelfGet";
-import { Reply } from "@commands/API/Responses/Reply";
-import { PaySubscriptionMerge } from "@commands/WebSocket/Requests/PaySubscriptionMerge";
-import { RepSubscription } from "@commands/WebSocket/Responses/RepSubscription";
-import { CLEAR_TIMER, JSON_STRINGIFY, SET_TIMER } from '@trakit/objects';
+﻿import { PaySubscriptionMerge, Reply, RepSelfGet, RepSubscription, SubscriptionType } from "@trakit/commands";
 import { ulong } from '@trakit/objects';
 import { SUBSCRIPTION_LIST_BY_COMPANY, SUBSCRIPTION_SPLITS } from "common/Subscriptions";
-import { SubscriptionType } from "common/SubscriptionType";
 import { SyncDispose } from "common/SyncDispose";
 import { SyncInit } from "common/SyncInit";
 import { SyncMessage } from "common/SyncMessage";
@@ -17,7 +12,7 @@ import { SyncType } from "common/SyncType";
 import { CMD_CONNECTION, CMD_DISCONNECTION, TrakitSocketCommander } from "../commands/TrakitSocketCommander";
 import { TrakitSocketStatus } from "../commands/TrakitSocketStatus";
 import { SubscribedRegions } from "./SubscribedRegions";
-import { version } from "./worker";
+import { TrakitRestfulCommander } from "commands/TrakitRestfulCommander";
 
 /**
  * The amount of time (in milliseconds) to wait between intervals checking for expired subscriptions.
@@ -48,7 +43,7 @@ export class SyncWorker {
             });
         }
         Promise.allSettled(expirations).finally(() => {
-            this.#subscriptionTimer = SET_TIMER(
+            this.#subscriptionTimer = setTimeout(
                 () => this.#subscriptionExpirer(),
                 TIMEOUT_SUBSCRIPTION
             );
@@ -57,25 +52,35 @@ export class SyncWorker {
     /**
      * Handle for the auto-remove expired subscription types.
      **/
-    #subscriptionTimer: number = 0;
+	#subscriptionTimer!: number;
 
     /**
      * The Trak-iT WebSocket's main connection.
      **/
     #socket!: TrakitSocketCommander;
+    /**
+     * The Trak-iT RESTful service.
+     **/
+	#rest!: TrakitRestfulCommander;
+	
+
+
+
+
+
+
 
     /**
      * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.
      * Does not terminate the {@link Worker}.
      **/
     dispose() {
-        const action = (response: Reply) => {
-            var msg = new SyncDispose();
-            msg.response = response;
-            self.postMessage(msg);
-            this.#socket.dispose();
-            (this.#socket as TrakitSocketCommander | null) = null;
-        };
+		const action = (response: Reply) => {
+			this.#socket?.dispose();
+			// this.#rest?.dispose();
+			(this.#rest as any) =
+			(this.#socket as any) = null;
+		};
         this.#socket.close().then(action, action);
     }
     /**
@@ -109,7 +114,7 @@ export class SyncWorker {
     #onClose(msg: Reply) {
         self.postMessage(new SyncMessage(CMD_DISCONNECTION, msg));
         // stop trying to remove expired subscriptions
-        CLEAR_TIMER(this.#subscriptionTimer);
+        clearTimeout(this.#subscriptionTimer);
         this.#subscriptionTimer = 0;
     }
     /**
