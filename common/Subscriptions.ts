@@ -1,4 +1,5 @@
 import { SubscriptionType } from "@trakit/commands";
+import { url } from "@trakit/objects";
 
 /**
  * Names of objects that span multiple regions (in serialized order).
@@ -35,7 +36,7 @@ export const SUBSCRIPTION_SPLITS = {
 /**
  * A mapping of RESTful service routes to get things listed by company.
  **/
-export const SUBSCRIPTION_LIST_BY_COMPANY = {
+export const SUBSCRIPTION_LIST_BY_COMPANY: { [key: string]: url } = {
 	/* company */
 	"Company": "/companies/generals?parent={companyId}",
 	"CompanyGeneral": "/companies/generals?parent={companyId}",
@@ -100,30 +101,30 @@ export const SUBSCRIPTION_LIST_BY_COMPANY = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
  **/
-export const SUBSCRIPTION_LIST_BY_ASSET = {
-    /* messaging */
-    "Message": "/assets/{assetId}/messages",
-    /* dispatch */
-    "DispatchTask": "/assets/{assetId}/dispatch/tasks",
-    "DispatchJob": "/assets/{assetId}/dispatch/jobs",
-    /* file hosting */
-    "FormResult": "/assets/{assetId}/forms",
-    /* maintenance */
-    "MaintenanceJob": "/assets/{assetId}/maintenance/jobs",
+export const SUBSCRIPTION_LIST_BY_ASSET: { [key: string]: url } = {
+	/* messaging */
+	"Message": "/assets/{assetId}/messages",
+	/* dispatch */
+	"DispatchTask": "/assets/{assetId}/dispatch/tasks",
+	"DispatchJob": "/assets/{assetId}/dispatch/jobs",
+	/* file hosting */
+	"FormResult": "/assets/{assetId}/forms",
+	/* maintenance */
+	"MaintenanceJob": "/assets/{assetId}/maintenance/jobs",
 };
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by behaviour script.
  **/
-export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT = {
-    "BehaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
-    "Behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
+export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT: { [key: string]: url } = {
+	"BehaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
+	"Behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
 };
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
  **/
-export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE = {
+export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: { [key: string]: url } = {
 	"BillingHosting": "/billing/profiles/{profileId}/rules",
 	"BillingLicense": "/billing/profiles/{profileId}/licenses",
 	"BillingReport": "/billing/profiles/{profileId}/reports",
@@ -136,6 +137,6 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
  **/
-export const SUBSCRIPTION_LIST_BY_USER = {
+export const SUBSCRIPTION_LIST_BY_USER: { [key: string]: url } = {
 	"Session": "/users/{userLogin}/sessions",
 };
