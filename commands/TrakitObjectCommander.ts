@@ -61,7 +61,7 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 	 * Sends a login command, and if successful, saves the ghostId as the authentication mechanism for all further requests.
 	 * @param username Your email address.
 	 * @param password Your password.
-	 * @param [userAgent] Optional string to identify this software.
+	 * @param userAgent Optional string to identify this software.
 	 * @returns The response, which contains a SelfUser when successful.
 	 */
 	public async login(username: string, password: string, userAgent: string | null = null): Promise<RepSelfGet | null> {

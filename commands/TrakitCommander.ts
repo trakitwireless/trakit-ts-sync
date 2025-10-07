@@ -45,7 +45,7 @@ export abstract class TrakitCommander {
 	}
 
 	constructor(baseAddress?: url | nothing) {
-		this.baseAddress = new URL(baseAddress || "");
+		this.baseAddress = new URL(baseAddress || self.location?.origin);
 	}
 
 	//#region Authorization

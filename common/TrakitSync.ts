@@ -1,10 +1,11 @@
-﻿import { ContentId, ErrorCode, IRepList, PaySubscriptionDelete, PaySubscriptionMerge, Reply, RepSelfGet, RepSubscription, SubscriptionType } from "@trakit/commands";
+﻿import { ContentId, ErrorCode, IRepList, Payload, PaySubscriptionDelete, PaySubscriptionMerge, Reply, RepSelfGet, RepSubscription, SubscriptionType } from "@trakit/commands";
 import {
 	Base,
 	BaseComponent,
 	guid, Machine, nothing, ulong,
 	IRequestable,
 	url,
+	email,
 } from '@trakit/objects';
 import { TrakitRestfulCommander } from "commands/TrakitRestfulCommander";
 import { version } from "index";
@@ -20,6 +21,8 @@ import { SyncSocket } from "./SyncSocket";
 import { SyncStatus } from "./SyncStatus";
 import { SyncSubscriptions } from "./SyncSubscriptions";
 import { SyncType } from "./SyncType";
+import { PayListBy } from "../../trakit-ts-commands/_publish/commands/API/Requests/PayListBy";
+import { TrakitObjectCommander } from "commands/TrakitObjectCommander";
 
 /**
  * The amount of time (in milliseconds) to wait between intervals checking for expired subscriptions.
@@ -1053,37 +1056,7 @@ function SyncClient_filterDispatchJob(job) {
 			&& job.updated < Date.midnight()
 		);
 }
-/**
- * Every night at midnight, we purge yesterday's Dispatch jobs/tasks.
- **/
-function CLIENT_tomorrow() {
-	COMPANIES.forEach(function(company) {
-		SELECTED.dispatchJobs.forEach(function(job) {
-			if (SyncClient_filterDispatchJob(job)) {
-				var kind = "dispatchJob",
-					content = {
-						"id": job.id,
-						"v": job.version.slice(),
-						"company": job.company.id,
-					};
-				SyncClient_deleted(kind, content);
-				if (company === SELECTED) me.fire(kind + "Deleted", content);
-			}
-		});
-		SELECTED.dispatchTasks.forEach(function(task) {
-			if (SyncClient_filterDispatchTask(task)) {
-				var kind = "dispatchTask",
-					content = {
-						"id": task.id,
-						"v": task.version.slice(),
-						"company": task.company.id,
-					};
-				SyncClient_deleted(kind, content);
-				if (company === SELECTED) me.fire(kind + "Deleted", content);
-			}
-		});
-	});
-}
+
 
 /**
  * Replaces the version array with an array with the appropriate version key in the correct index
@@ -1198,20 +1171,68 @@ function getOrAddCompanyById(id, parent) {
 		});
 }
 	
+
+
+
+//#region Generics
+// these don't work for all object types like: CompanyReseller, BehaviourLog, Session, Dashcam, DispatchTasks
+me.get = function(type, id) { return MINDFLAYER_GET(type, ESCAPE((id || "").trim())); };
+me.list = function(type, companyId, constraints) { return MINDFLAYER_LIST_BY_COMPANY(type, companyId, null, constraints); };
+me.listByAsset = function(type, assetId, constraints) {
+	return MINDFLAYER_LIST_BY_ASSET(
+		type,
+		assetId,
+		null,
+		constraints
+	);
+}
+me.merge = function(type, json) { return MINDFLAYER_MERGE(type, json); };
+me.remove = function(type, id) { return MINDFLAYER_DELETE(type, id); };
+me.restore = function(type, id) { return MINDFLAYER_RESTORE(type, id); };
+me.suspend = function(type, id) { return MINDFLAYER_SUSPEND(type, id); };
+me.revive = function(type, id) { return MINDFLAYER_REVIVE(type, id); };
+me.batch = function(type, array) { return MINDFLAYER_MULTI_MERGE(type, array); };
+me.purge = function(type, array) { return MINDFLAYER_MULTI_DELETE(type, array); };
+//#endregion Generics
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * This is the class which does the work in the background {@link Worker} for the {@link SyncClient}.
  * It handles synchronizing regions, maintaining a connection to Trak-iT's WebSocket, and send HTTP requests to Trak-iT's RESTful service.
  * This class also maintains a queue of up-going messages.
  **/
-export class TrakitSync {
+export class TrakitSync extends TrakitObjectCommander {
 	/**
 	 * The Trak-iT WebSocket's main connection.
 	 **/
-	#socket!: TrakitSocketCommander;
+	#socket: TrakitSocketCommander;
 	/**
 	 * The Trak-iT RESTful service.
 	 **/
-	#rest!: TrakitRestfulCommander;
+	#rest: TrakitRestfulCommander;
 
 	//#region Subscriptions
 	/**
@@ -1228,7 +1249,7 @@ export class TrakitSync {
 		if (this.#socket.state === TrakitSocketStatus.open) {
 			this.#subscriptions.forEach((subscribed, company) => {
 				const expired = subscribed.expiredRegions(true);
-				if (expired.length) expirations.push(this.#subscribe(false, company, expired));
+				if (expired.length) expirations.push(this.#unsubscribe(company, expired));
 			});
 		}
 		Promise.allSettled(expirations).finally(() => {
@@ -1273,8 +1294,6 @@ export class TrakitSync {
 	//#endregion Subscriptions
 
 
-
-
 	
 	
 	// i need to make this more like HIERARCHY than SyncWorker
@@ -1289,11 +1308,33 @@ export class TrakitSync {
 	onResponse?: (response: Reply) => void;
 
 	onReplace?: (kind: string, companyId: ulong, response: IRepList<IRequestable>) => void;
-	onUpdate?: (kind: string, companyId: ulong, object: Base) => void;
-	onDelete?: (kind: string, companyId: ulong, object: Base) => void;
+	onUpdate?: (kind: string, companyId: ulong, object: BaseComponent) => void;
+	onDelete?: (kind: string, companyId: ulong, object: BaseComponent) => void;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+	constructor() {
+		super();
+		this.#socket = new TrakitSocketCommander(TrakitSocketCommander.URI_PROD);
+		this.#rest = new TrakitRestfulCommander(TrakitRestfulCommander.URI_PROD);
+
+		this.#socket.account =
+			this.#rest.account =
+			this.account = new RepSelfGet;
+	}
 	/**
 	 * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.
 	 * Does not terminate the {@link Worker}.
@@ -1307,6 +1348,37 @@ export class TrakitSync {
 		};
 		this.#socket.close().then(action, action);
 	}
+
+
+	override setAuth(value?: RepSelfGet | Machine | { key: string; } | { ghostId: guid; } | guid | nothing): void {
+		super.setAuth(value);
+		this.#rest.setAuth(this.account);
+		this.#socket.setAuth(this.account);
+	}
+
+
+
+
+
+	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
+		const action = payload.getAction();
+		switch (action.object) {
+			case "Subscription":
+			case "Self":
+				return this.#socket.command<TReply>(payload);
+			default:
+				return this.#rest.command<TReply>(payload);
+		}
+	}
+
+
+
+
+
+
+
+
+
 	/**
 	 * Handles the "connection" event from the Trak-iT WebSocket.
 	 * This will update the global {@link SESSION_ID}, sends a {@link SyncMessage} to the {@link SyncClient},
