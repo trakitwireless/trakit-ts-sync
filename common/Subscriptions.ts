@@ -3,34 +3,187 @@ import { url } from "@trakit/objects";
 
 /**
  * Names of objects that span multiple regions (in serialized order).
- * Object<ComplexTypeNameLowerCase, SubscriptionType[]>
  */
-export const SUBSCRIPTION_SPLITS = {
-    "company": [
-        SubscriptionType.companyGeneral,
-        //SubscriptionType.companySettings,
-        //SubscriptionType.companyDirectory,
-        SubscriptionType.companyLabels,
-        SubscriptionType.companyPolicies,
-    ],
-    "user": [
-        SubscriptionType.userGeneral,
-        SubscriptionType.userAdvanced,
-    ],
-    "asset": [
-        SubscriptionType.assetGeneral,
-        SubscriptionType.assetAdvanced,
-        SubscriptionType.assetDispatch,
-    ],
-    "place": [
-        SubscriptionType.placeGeneral,
-        //SubscriptionType.placeExtended,
-    ],
-    "provider": [
-        SubscriptionType.providerGeneral,
-        SubscriptionType.providerAdvanced,
-        SubscriptionType.providerControl,
-    ],
+export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
+	/* company */
+	"Company": [
+		SubscriptionType.companyGeneral,
+		//SubscriptionType.companySettings,
+		//SubscriptionType.companyDirectory,
+		SubscriptionType.companyLabels,
+		SubscriptionType.companyPolicies,
+	],
+	"CompanyGeneral": [
+		SubscriptionType.companyGeneral,
+	],
+	//"CompanySettings": [
+	//	SubscriptionType.companySettings,
+	//],
+	//"CompanyDirectory": [
+	//	SubscriptionType.companyDirectory,
+	//],
+	"CompanyLabels": [
+		SubscriptionType.companyLabels,
+	],
+	"CompanyPolicies": [
+		SubscriptionType.companyPolicies,
+	],
+	"CompanyReseller": [
+		SubscriptionType.companyGeneral,
+		//SubscriptionType.companySettings,
+		//SubscriptionType.companyDirectory,
+		SubscriptionType.companyLabels,
+		SubscriptionType.companyPolicies,
+	],
+	/* accounts */
+	"Contact": [
+		SubscriptionType.contact,
+	],
+	"Machine": [
+		SubscriptionType.machine,
+	],
+	"User": [
+		SubscriptionType.userGeneral,
+		SubscriptionType.userAdvanced,
+	],
+	"UserGeneral": [
+		SubscriptionType.userGeneral,
+	],
+	"UserAdvanced": [
+		SubscriptionType.userAdvanced,
+	],
+	"UserGroup": [
+		SubscriptionType.userGroup,
+	],
+	/* file hosting */
+	//"DashcamData": [
+	//	SubscriptionType.dashcamData,
+	//],
+	//"DashcamLive": [
+	//	SubscriptionType.dashcamLive,
+	//],
+	"Icon": [
+		SubscriptionType.icon,
+	],
+	"Picture": [
+		SubscriptionType.picture,
+	],
+	"Document": [
+		SubscriptionType.document,
+	],
+	"FormTemplate": [
+		SubscriptionType.formTemplate,
+	],
+	"FormResult": [
+		SubscriptionType.formResult,
+	],
+	/* assets */
+	"Asset": [
+		SubscriptionType.assetGeneral,
+		SubscriptionType.assetAdvanced,
+		SubscriptionType.assetDispatch,
+	],
+	"AssetGeneral": [
+		SubscriptionType.assetGeneral,
+	],
+	"AssetAdvanced": [
+		SubscriptionType.assetAdvanced,
+	],
+	"AssetDispatch": [
+		SubscriptionType.assetDispatch,
+	],
+	"Message": [
+		SubscriptionType.assetMessage,
+	],
+	//	"AssetAlert",
+	/* dispatch */
+	"DispatchTask": [
+		SubscriptionType.dispatchTask,
+	],
+	//"DispatchTemplate": [
+	//	SubscriptionType.dispatchTemplate,
+	//],
+	"DispatchJob": [
+		SubscriptionType.dispatchJob,
+	],
+	/* maintenance */
+	"MaintenanceSchedule": [
+		SubscriptionType.maintenanceSchedule,
+	],
+	"MaintenanceJob": [
+		SubscriptionType.maintenanceJob,
+	],
+	/* places */
+	"Place": [
+		SubscriptionType.placeGeneral,
+		//SubscriptionType.placeExtended,
+	],
+	"PlaceGeneral": [
+		SubscriptionType.placeGeneral,
+	],
+	//"PlaceExtended": [
+	//    SubscriptionType.placeExtended,
+	//],
+	/* behaviours */
+	"BehaviourScript": [
+		SubscriptionType.behaviourScript,
+	],
+	"Behaviour": [
+		SubscriptionType.behaviour,
+	],
+	"BehaviourLog": [
+		SubscriptionType.behaviourLog,
+	],
+	/* providers and configs */
+	"Provider": [
+		SubscriptionType.providerGeneral,
+		SubscriptionType.providerAdvanced,
+		SubscriptionType.providerControl,
+	],
+	"ProviderGeneral": [
+		SubscriptionType.providerGeneral,
+	],
+	"ProviderAdvanced": [
+		SubscriptionType.providerAdvanced,
+	],
+	"ProviderControl": [
+		SubscriptionType.providerControl,
+	],
+	"ProviderConfiguration": [
+		SubscriptionType.providerConfiguration,
+	],
+	"ProviderScript": [
+		SubscriptionType.providerScript,
+	],
+	"ProviderConfig": [
+		SubscriptionType.providerConfig,
+	],
+	"ProviderRegistration": [
+		SubscriptionType.providerRegistration,
+	],
+	/* reports */
+	"ReportTemplate": [
+		SubscriptionType.reportTemplate,
+	],
+	"ReportSchedule": [
+		SubscriptionType.reportSchedule,
+	],
+	"ReportResult": [
+		SubscriptionType.reportResult,
+	],
+	/* billing */
+	"BillingProfile": [
+		SubscriptionType.billingProfile,
+	],
+	"BillingReport": [
+		SubscriptionType.billingReport,
+	],
+	"BillingHosting": [
+		SubscriptionType.billingHosting,
+	],
+	"BillingLicense": [
+		SubscriptionType.billingLicense,
+	],
 };
 
 /**
@@ -53,6 +206,8 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: { [key: string]: url } = {
 	"UserAdvanced": "/companies/{companyId}/users/advanceds",
 	"UserGroup": "/companies/{companyId}/users/groups",
 	/* file hosting */
+	"Dashcam": "/companies/{companyId}/dashcams",
+	"DashcamLive": "/companies/{companyId}/dashcams/live",
 	"Icon": "/companies/{companyId}/icons",
 	"Picture": "/companies/{companyId}/pictures",
 	"Document": "/companies/{companyId}/documents",
