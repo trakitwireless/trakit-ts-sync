@@ -92,7 +92,7 @@ export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
 	"AssetDispatch": [
 		SubscriptionType.assetDispatch,
 	],
-	"Message": [
+	"AssetMessage": [
 		SubscriptionType.assetMessage,
 	],
 	//	"AssetAlert",
@@ -218,7 +218,7 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: { [key: string]: url } = {
 	"AssetGeneral": "/companies/{companyId}/assets/generals",
 	"AssetAdvanced": "/companies/{companyId}/assets/advanceds",
 	"AssetDispatch": "/companies/{companyId}/assets/dispatches",
-	"Message": "/companies/{companyId}/assets/messages",
+	"AssetMessage": "/companies/{companyId}/assets/messages",
 	//	"AssetAlert",
 	/* dispatch */
 	"DispatchTask": "/companies/{companyId}/assets/dispatch/tasks",
@@ -258,7 +258,7 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: { [key: string]: url } = {
  **/
 export const SUBSCRIPTION_LIST_BY_ASSET: { [key: string]: url } = {
 	/* messaging */
-	"Message": "/assets/{assetId}/messages",
+	"AssetMessage": "/assets/{assetId}/messages",
 	/* dispatch */
 	"DispatchTask": "/assets/{assetId}/dispatch/tasks",
 	"DispatchJob": "/assets/{assetId}/dispatch/jobs",
