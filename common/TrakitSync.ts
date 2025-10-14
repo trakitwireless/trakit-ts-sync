@@ -21,7 +21,7 @@ import { SyncSocket } from "./SyncSocket";
 import { SyncStatus } from "./SyncStatus";
 import { SyncSubscriptions } from "./SyncSubscriptions";
 import { SyncType } from "./SyncType";
-import { PayListBy } from "../../trakit-ts-commands/_publish/commands/API/Requests/PayListBy";
+import { PayListBy } from '@trakit/commands';
 import { TrakitObjectCommander } from "commands/TrakitObjectCommander";
 
 /**
@@ -1546,7 +1546,7 @@ export class TrakitSync extends TrakitObjectCommander {
 			.map(sub => SUBSCRIPTION_LIST_BY_COMPANY[sub]?.replace("{companyId}", msg.company.toString()))
 			.filter(url => url)
 			.reduce((acc, val) => acc.concat([val]), [] as url[])
-			.map((url: string) => this.#rest.send(url));
+			.map((url: string) => this.#rest._relayRequest(url));
 
 
 
@@ -1682,6 +1682,6 @@ export class TrakitSync extends TrakitObjectCommander {
 			msg.response = response;
 			self.postMessage(msg);
 		};
-		this.#socket.send(msg.name, msg.body).then(action, action);
+		this.#socket._relayRequest(msg.name, msg.body).then(action, action);
 	}
 }
