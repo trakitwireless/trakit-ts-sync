@@ -12,7 +12,9 @@
 	RepSelfPassword,
 } from '@trakit/commands';
 import {
+	JsonObject,
 	nothing,
+	serialization,
 	SystemsOfUnits,
 	Timezone,
 	ulong,
@@ -24,7 +26,7 @@ import { TrakitCommander } from './TrakitCommander';
 /**
  * The base class used to help define interaction with all Trak-iT API services.
  */
-export abstract class TrakitObjectCommander extends TrakitCommander {
+export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TRequest> {
 	/**
 	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
 	 */
@@ -80,7 +82,7 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 	 * @returns The logout response.
 	 */
 	public async logout(): Promise<RepSelfLogout> {
-		const reply = await this.command<RepSelfLogout>(new PaySelfLogout());
+		const reply = this.command<RepSelfLogout>(new PaySelfLogout());
 		this.setAuth();
 		this.account = new RepSelfGet;
 		return reply;
@@ -117,18 +119,18 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 	): Promise<Reply> {
 		return this.command<Reply>(new PaySelfContact({
 			contact: {
-				name: name,
-				notes: notes,
-				otherNames: otherNames,
-				emails: emails,
-				phones: phones,
-				addresses: addresses,
-				urls: urls,
-				dates: dates,
-				options: options,
-				roles: roles,
-				pictures: pictures,
-			},
+				name: name ?? null,
+				notes: notes ?? null,
+				otherNames: otherNames ?? null,
+				emails: emails ?? null,
+				phones: phones ?? null,
+				addresses: addresses ?? null,
+				urls: urls ?? null,
+				dates: dates ?? null,
+				options: options ?? null,
+				roles: roles ?? null,
+				pictures: pictures ?? null,
+			} as JsonObject,
 		}));
 	}
 	/**
@@ -159,18 +161,24 @@ export abstract class TrakitObjectCommander extends TrakitCommander {
 	public updatePreferences(
 		language?: string,
 		timezone?: Timezone | string,
-		notify?: UserNotifications[],
-		formats?: Map<string, string>,
-		measurements?: Map<string, SystemsOfUnits>,
-		options?: Map<string, string>
+		notify?: UserNotifications[] | JsonObject[],
+		formats?: Map<string, string> | JsonObject,
+		measurements?: Map<string, SystemsOfUnits> | JsonObject,
+		options?: Map<string, string> | JsonObject
 	): Promise<Reply> {
 		return this.command<Reply>(new PaySelfPreferences({
-			language: language,
-			timezone: timezone,
-			notify: notify,
-			formats: formats,
-			measurements: measurements,
-			options: options,
+			language: language ?? null,
+			timezone: (timezone as Timezone)?.code ?? timezone ?? null,
+			notify: notify?.map(n => (n as UserNotifications).toJSON?.() ?? n) ?? null,
+			formats: formats instanceof Map
+				? serialization.fromMap(formats) as JsonObject
+				: formats ?? null,
+			measurements: measurements instanceof Map
+				? serialization.fromMap(measurements) as JsonObject
+				: measurements ?? null,
+			options: options instanceof Map
+				? serialization.fromMap(options) as JsonObject
+				: options ?? null,
 		}));
 	}
 	//#endregion Commands - Self

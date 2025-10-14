@@ -31,7 +31,7 @@ type HttpVerb = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
  * @param ex The error to include in the response.
  * @returns A standardized error response object.
  */
-function createClientErrorResponse(ex: any): any {
+export function createClientErrorResponse(ex: any): any {
 	return {
 		"errorCode": ErrorCode.unknown,
 		"message": "Client exception",
@@ -56,7 +56,7 @@ const SPLITTER = /[A-Z][a-z]+/;
 /**
  * 
  */
-export class TrakitRestfulCommander extends TrakitObjectCommander {
+export class TrakitRestfulCommander extends TrakitObjectCommander<{ path: url, verb?: HttpVerb, body?: any }> {
 	/**
 	 * Production RESTful service URL.
 	 * This service is covered by the SLA and should be used for serices and code running in your own production environment.
@@ -279,21 +279,19 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		return new Promise(async (resolve, reject) => {
-			let verb: HttpVerb,
-				path: string,
+			let verb: HttpVerb = "GET",
+				path: string = "",
 				body: any,
 				reply: TReply | null = null;
 			try {
 				[verb, path] = this.getVerbRoute(payload);
 				body = payload.toJSON();
 			} catch (ex: Error | any) {
-				verb = "GET";
-				path = "";
 				reply = payload.createReply(createClientErrorResponse(ex)) as TReply;
 			}
 			if (!reply) {
 				try {
-					reply = payload.createReply(await this.send(path, verb, body)) as TReply;
+					reply = payload.createReply(await this.send({ path, verb, body })) as TReply;
 				} catch (ex: Reply | any) {
 					reply = payload.createReply(ex) as TReply;
 				}
@@ -304,16 +302,16 @@ export class TrakitRestfulCommander extends TrakitObjectCommander {
 
 	/**
 	 * Sends the given request to Trak-iT's RESTful API and awaits a result.
-	 * @param path	Relative path to the resource being accessed.
-	 * @param verb	HTTP method to use for the request.
-	 * @param body	Optional JSON body to send with the request.
-	 * @returns		A promise that resolves with the JSON response from the server.
+	 * @param request.path	Relative path to the resource being accessed.
+	 * @param request.verb	HTTP method to use for the request.
+	 * @param request.body	Optional JSON body to send with the request.
+	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
-	send(path: url, verb: HttpVerb = "GET", body?: any): Promise<any> {
+	override send(request: { path: url, verb?: HttpVerb, body?: any }): Promise<any> {
+		const { path, verb = "GET", body } = request;
 		return new Promise(async (resolve, reject) => {
 			try {
-				const request = this.createRequest(path, verb, body),
-					response = await fetch(request);
+				const response = await fetch(this.createRequest(path, verb, body));
 				resolve(await response.json());
 			} catch (ex: Error | any) {
 				reject(createClientErrorResponse(ex));

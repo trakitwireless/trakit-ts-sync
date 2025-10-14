@@ -5,11 +5,13 @@ import {
 	RepSelfGet,
 } from "@trakit/commands";
 import {
+	JsonObject,
 	url,
 	utility
 } from '@trakit/objects';
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 import { TrakitSocketStatus } from "./TrakitSocketStatus";
+import { createClientErrorResponse } from "./TrakitRestfulCommander";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -120,7 +122,7 @@ function getCommand(payload: Payload): string {
 /**
  * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
  **/
-export class TrakitSocketCommander extends TrakitObjectCommander {
+export class TrakitSocketCommander extends TrakitObjectCommander<{ command: string, params?: any }> {
 	/**
 	 * Production RESTful service URL.
 	 * This service is covered by the SLA and should be used for serices and code running in your own production environment.
@@ -202,7 +204,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 			)(
 				payload.createReply(response) as TReply
 			);
-			this.send(getCommand(payload), payload.toJSON())
+			this.send({ command: getCommand(payload), params: payload.toJSON() })
 				.then(settler, settler);
 		});
 	}
@@ -561,7 +563,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 	 * @param params	Optional object or value for the command.
 	 * @returns 		A Promise which is resolved when a response is received, otherwise it is rejected.
 	 **/
-	send(command: string, params?: any): Promise<any> {
+	send(request: { command: string, params?: JsonObject }): Promise<JsonObject> {
+		request.params = request.params || {};
 		return new Promise((resolve, reject) => {
 			// get the socket state inside the resolver because it could be invoked multiple times.
 			const state = this.state;
@@ -576,17 +579,20 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 							}),
 							TIMEOUT_COMMAND
 						);
-					params = params || {};
-					params.reqId = reqId;
+					(request.params as JsonObject).reqId = reqId;
 					this.#requestsPending.set(reqId, (response: any) => {
 						clearTimeout(timer);
 						resolve(response);
 					});
-					this.#socket.send(command + " " + JSON.stringify(params));
+					try {
+						this.#socket.send(request.command + " " + JSON.stringify(request.params));
+					} catch (ex: Error | any) {
+						this.#requestSettle(reqId, createClientErrorResponse(ex));
+					}
 					this.resetKeepAlive();
 					break;
 				case TrakitSocketStatus.closed:
-					this.open().then(() => this.send(command, params).then(resolve, reject), reject);
+					this.open().then(() => this.send(request).then(resolve, reject), reject);
 					break;
 				default:
 					reject({
@@ -609,7 +615,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander {
 		this.#timerKeepAlive = this.keepAliveEnabled
 			&& this.#socketOperable
 			? setTimeout(
-				() => this.send("noop"),
+				() => this.send({ command: "noop" }),
 				TIMEOUT_NOOP
 			)
 			: 0;

@@ -1326,14 +1326,13 @@ export class TrakitSync extends TrakitObjectCommander {
 
 
 
-	constructor() {
+	constructor(useBeta = false) {
 		super();
-		this.#socket = new TrakitSocketCommander(TrakitSocketCommander.URI_PROD);
-		this.#rest = new TrakitRestfulCommander(TrakitRestfulCommander.URI_PROD);
+		this.#socket = new TrakitSocketCommander(useBeta ? TrakitSocketCommander.URI_BETA : TrakitSocketCommander.URI_PROD);
+		this.#rest = new TrakitRestfulCommander(useBeta ? TrakitRestfulCommander.URI_BETA : TrakitRestfulCommander.URI_PROD);
 
 		this.#socket.account =
-			this.#rest.account =
-			this.account = new RepSelfGet;
+			this.#rest.account = this.account;
 	}
 	/**
 	 * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.

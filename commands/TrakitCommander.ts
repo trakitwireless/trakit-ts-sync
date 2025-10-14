@@ -13,7 +13,7 @@ import {
 /**
  * The base class used to help define interaction with all Trak-iT API services.
  */
-export abstract class TrakitCommander {
+export abstract class TrakitCommander<TRequest> {
 	/**
 	 * {@link url} of the underlying Trak-iT API service.
 	 */
@@ -89,4 +89,11 @@ export abstract class TrakitCommander {
 	 * @returns         A promise that resolves with the reply.
 	 */
 	abstract command<TReply extends Reply>(payload: Payload): Promise<TReply>;
+
+	/**
+	 * Sends a request to the underlying service, and returns a Promise that completes when a reply is received.
+	 * @param request	The request object to send to the service.
+	 * @returns			A promise that resolves with the content that the underlying service provides.
+	 */
+	abstract send(request: TRequest): Promise<any>;
 }
