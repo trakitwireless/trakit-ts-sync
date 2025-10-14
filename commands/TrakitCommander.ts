@@ -1,4 +1,5 @@
 ﻿import {
+	ErrorCode,
 	Payload,
 	Reply,
 	RepSelfGet,
@@ -9,6 +10,29 @@ import {
 	nothing,
 	url,
 } from '@trakit/objects';
+import { JSON_PARSE_SAFE } from '../common/JSON';
+
+/**
+ * Creates a standardized error response.
+ * @param ex The error to include in the response.
+ * @returns A standardized error response object.
+ */
+export function createClientErrorResponse(ex: any): any {
+	return {
+		"errorCode": ErrorCode.unknown,
+		"message": "Client exception",
+		"errorDetails": ex instanceof Error
+			? {
+				"kind": "stack",
+				"message": ex.message,
+				"stack": ex.stack,
+			}
+			: {
+				"kind": "externals",
+				"errors": JSON_PARSE_SAFE(ex),
+			},
+	}
+}
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.
@@ -59,11 +83,11 @@ export abstract class TrakitCommander<TRequest> {
 	 */
 	setAuth(
 		value?: RepSelfGet
-				| Machine
-				| { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing
+			| Machine
+			| { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing
 	): void {
 		this._machine = null;
 		this._sessionId = null;
@@ -86,14 +110,42 @@ export abstract class TrakitCommander<TRequest> {
 	/**
 	 * Sends a command to the underlying service, and returns a Promise that completes when a reply is received.
 	 * @param payload   The payload to send to the service.
-	 * @returns         A promise that resolves with the reply.
+	 * @returns         A promise that settles based on the underlying service's response.
 	 */
-	abstract command<TReply extends Reply>(payload: Payload): Promise<TReply>;
+	command<TReply extends Reply>(payload: Payload): Promise<TReply> {
+		return new Promise(async (resolve, reject) => {
+			let request: TRequest | null = null,
+				response: any = null,
+				reply: TReply | null = null;
+			try {
+				request = this._createRequest(payload);
+			} catch (ex: Error | any) {
+				response = createClientErrorResponse(ex);
+			}
+			try {
+				response = response ?? await this._relayRequest(request as TRequest) as TReply;
+			} catch (ex: Reply | any) {
+				reply = payload.createReply(ex) as TReply;
+			}
+			try {
+				reply = reply ?? payload.createReply(response) as TReply;
+			} catch (ex: Reply | any) {
+				reply = payload.createReply(ex) as TReply;
+			}
+			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
+		});
+	}
 
+	/**
+	 * Creates a request object to send to the underlying service.
+	 * @param payload The payload to send to the underlying service.
+	 * @returns       The request object to send to the underlying service.
+	 */
+	abstract _createRequest(payload: Payload): TRequest;
 	/**
 	 * Sends a request to the underlying service, and returns a Promise that completes when a reply is received.
 	 * @param request	The request object to send to the service.
-	 * @returns			A promise that resolves with the content that the underlying service provides.
+	 * @returns			A promise that resolves for any response, and rejects for client-side and transport errors.
 	 */
-	abstract send(request: TRequest): Promise<any>;
+	abstract _relayRequest(request: TRequest): Promise<any>;
 }
