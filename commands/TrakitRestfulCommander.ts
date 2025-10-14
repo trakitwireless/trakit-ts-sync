@@ -20,33 +20,13 @@ import {
  } from "@trakit/objects";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 import { SUBSCRIPTION_LIST_BY_ASSET, SUBSCRIPTION_LIST_BY_BILLING_PROFILE, SUBSCRIPTION_LIST_BY_COMPANY } from "common/Subscriptions";
+import { createClientErrorResponse } from "./TrakitCommander";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.
  */
-type HttpVerb = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+export type HttpVerb = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-/**
- * Creates a standardized error response.
- * @param ex The error to include in the response.
- * @returns A standardized error response object.
- */
-export function createClientErrorResponse(ex: any): any {
-	return {
-		"errorCode": ErrorCode.unknown,
-		"message": "Client exception",
-		"errorDetails": ex instanceof Error
-			? {
-				"kind": "stack",
-				"message": ex.message,
-				"stack": ex.stack,
-			}
-			: {
-				"kind": "externals",
-				"errors": [JSON.stringify(ex)],
-			},
-	}
-}
 
 /**
  * Splits Pascal-case words into their components.
@@ -56,7 +36,7 @@ const SPLITTER = /[A-Z][a-z]+/;
 /**
  * 
  */
-export class TrakitRestfulCommander extends TrakitObjectCommander<{ path: url, verb?: HttpVerb, body?: any }> {
+export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	/**
 	 * Production RESTful service URL.
 	 * This service is covered by the SLA and should be used for serices and code running in your own production environment.
@@ -111,8 +91,8 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<{ path: url, v
 			// no break => fall through to default for DispatchJob where filter is not Cancel or Change
 			default:
 				route = [...action.object.match(SPLITTER) as string[]]
-											.map(utility.plural)
-											.join("/");
+					.map(utility.plural)
+					.join("/");
 				/*
 				"Get"
 				| "List"
@@ -241,13 +221,13 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<{ path: url, v
 
 	/**
 	 * Creates a request object for the specified HTTP method and body.
-	 * @param path The URL path for the request.
-	 * @param verb The HTTP method to use (GET, POST, etc.).
-	 * @param body The request body to include (if applicable).
-	 * @returns A Request object configured with the specified parameters.
+	 * @param payload 
+	 * @returns A {@link Request} object configured with the specified parameters.
 	 */
-	createRequest(path: url, verb: HttpVerb, body: any): Request {
-		const route = this.createBaseUrl(path),
+	override _createRequest(payload: Payload): Request {
+		const [verb, path] = this.getVerbRoute(payload),
+			body = payload.toJSON(),
+			route = this.createBaseUrl(path),
 			headers = new Map(this.headers),
 			init: any = {
 				method: verb,
@@ -271,35 +251,6 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<{ path: url, v
 		}
 		return new Request(route, init);
 	}
-
-	/**
-	 * Sends a command to the underlying service, and returns a Promise that completes when a reply is received.
-	 * @param payload   The payload to send to the service.
-	 * @returns         A promise that resolves with the reply.
-	 */
-	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		return new Promise(async (resolve, reject) => {
-			let verb: HttpVerb = "GET",
-				path: string = "",
-				body: any,
-				reply: TReply | null = null;
-			try {
-				[verb, path] = this.getVerbRoute(payload);
-				body = payload.toJSON();
-			} catch (ex: Error | any) {
-				reply = payload.createReply(createClientErrorResponse(ex)) as TReply;
-			}
-			if (!reply) {
-				try {
-					reply = payload.createReply(await this.send({ path, verb, body })) as TReply;
-				} catch (ex: Reply | any) {
-					reply = payload.createReply(ex) as TReply;
-				}
-			}
-			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
-		});
-	}
-
 	/**
 	 * Sends the given request to Trak-iT's RESTful API and awaits a result.
 	 * @param request.path	Relative path to the resource being accessed.
@@ -307,11 +258,10 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<{ path: url, v
 	 * @param request.body	Optional JSON body to send with the request.
 	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
-	override send(request: { path: url, verb?: HttpVerb, body?: any }): Promise<any> {
-		const { path, verb = "GET", body } = request;
+	override _relayRequest(request: Request): Promise<any> {
 		return new Promise(async (resolve, reject) => {
 			try {
-				const response = await fetch(this.createRequest(path, verb, body));
+				const response = await fetch(request);
 				resolve(await response.json());
 			} catch (ex: Error | any) {
 				reject(createClientErrorResponse(ex));

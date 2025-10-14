@@ -9,9 +9,8 @@ import {
 	url,
 	utility
 } from '@trakit/objects';
+import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
-import { TrakitSocketStatus } from "./TrakitSocketStatus";
-import { createClientErrorResponse } from "./TrakitRestfulCommander";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -25,6 +24,28 @@ const TIMEOUT_NOOP = 300 * 1000;
  * Maximum time (in milliseconds) to wait before trying to re-connect to Trak-iT's WebSocket.
  **/
 const TIMEOUT_MAX_RECONNECT = 300 * 1000;
+
+/**
+ * Describes the state of the {@link TrakitSocketCommander}'s connection to the Trak-iT WebSocket service.
+ */
+export enum TrakitSocketStatus {
+	/**
+	 * A connection is being established and is awaiting the initial {@link RepSelfGet|connectionResponse} message.
+	 */
+	opening = WebSocket.CONNECTING,
+	/**
+	 * A connection is established and the {@link RepSelfGet|connectionResponse} message has been received.
+	 */
+	open = WebSocket.OPEN,
+	/**
+	 * Either the client or the server has initiated a disconnection.
+	 */
+	closing = WebSocket.CLOSING,
+	/**
+	 * The underlying {@link WebSocket} connection has been terminated.
+	 */
+	closed = WebSocket.CLOSED,
+}
 
 /**
  * 
@@ -188,25 +209,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	get ready(): boolean {
 		return this.#socketReady
 			&& this.#socketOperable;
-	}
-
-	/**
-	 * Sends a {@link Payload} to the Trak-iT WebSocket service, and returns a Promise that is resolved with for successful commands, and rejected for error responses, or failures to send.
-	 * @param payload	The command being sent.
-	 * @returns			A Promise which is resolved for successful commands, otherwise it is rejected.
-	 */
-	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		return new Promise((resolve, reject) => {
-			const settler = (response: any) => (
-				response["errorCode"] === 0
-					? resolve
-					: reject
-			)(
-				payload.createReply(response) as TReply
-			);
-			this.send({ command: getCommand(payload), params: payload.toJSON() })
-				.then(settler, settler);
-		});
 	}
 
 	/**
@@ -555,6 +557,18 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 			}
 		});
 	}
+
+	/**
+	 * Creates a request object for the specified payload.
+	 * @param payload The payload to include in the request.
+	 * @returns A request object configured with the specified parameters.
+	 */
+	override _createRequest(payload: Payload): { command: string; params?: any; } {
+		return {
+			command: getCommand(payload),
+			params: payload.toJSON(),
+		};
+	}
 	/**
 	 * Sends a command and parameters to Trak-iT's WebSocket service.
 	 * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
@@ -563,7 +577,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * @param params	Optional object or value for the command.
 	 * @returns 		A Promise which is resolved when a response is received, otherwise it is rejected.
 	 **/
-	send(request: { command: string, params?: JsonObject }): Promise<JsonObject> {
+	override _relayRequest(request: { command: string, params?: JsonObject }): Promise<JsonObject> {
 		request.params = request.params || {};
 		return new Promise((resolve, reject) => {
 			// get the socket state inside the resolver because it could be invoked multiple times.
@@ -592,7 +606,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 					this.resetKeepAlive();
 					break;
 				case TrakitSocketStatus.closed:
-					this.open().then(() => this.send(request).then(resolve, reject), reject);
+					this.open().then(() => this._relayRequest(request).then(resolve, reject), reject);
 					break;
 				default:
 					reject({
@@ -615,7 +629,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 		this.#timerKeepAlive = this.keepAliveEnabled
 			&& this.#socketOperable
 			? setTimeout(
-				() => this.send({ command: "noop" }),
+				() => this._relayRequest({ command: "noop" }),
 				TIMEOUT_NOOP
 			)
 			: 0;
