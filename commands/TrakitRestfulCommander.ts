@@ -14,6 +14,7 @@ import {
 	Reply,
 } from "@trakit/commands";
 import {
+	JsonObject,
 	nothing,
 	url,
 	utility,
@@ -229,8 +230,11 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 			body = payload.toJSON(),
 			route = this.createBaseUrl(path),
 			headers = new Map(this.headers),
-			init: any = {
+			init: RequestInit = {
 				method: verb,
+				cache: "no-store",
+				mode: "cors",
+				credentials: "omit",
 			};
 		if (body && verb !== "GET") {
 			init.body = JSON.stringify(body);
@@ -239,15 +243,14 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 			headers.set("Authorization", "HMAC256 " + this._machine.createHmacSignature(
 				route,
 				verb,
-				(init.body ?? "").length,
+				(init.body as string)?.length ?? 0,
 				new Date
 			));
+		} else if (this._sessionId) {
+			route.searchParams.set("ghostId", this._sessionId);
 		}
 		if (headers.size > 0) {
-			init.headers = {};
-			for (const [key, value] of headers) {
-				init.headers[key] = value;
-			}
+			init.headers = new Headers([...headers.entries()]);
 		}
 		return new Request(route, init);
 	}

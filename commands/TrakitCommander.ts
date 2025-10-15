@@ -1,6 +1,5 @@
 ﻿import {
 	ErrorCode,
-	ErrorDetail,
 	Payload,
 	Reply,
 	RepSelfGet,
@@ -8,18 +7,18 @@
 import {
 	guid,
 	JsonObject,
+	JsonValue,
 	Machine,
 	nothing,
 	url,
 } from '@trakit/objects';
-import { JSON_PARSE_SAFE } from '../common/JSON';
 
 /**
  * Creates a standardized error response.
  * @param ex The error to include in the response.
  * @returns A standardized error response object.
  */
-export function createClientErrorResponse(ex: Error, response?: JsonObject): JsonObject {
+export function createClientErrorResponse(ex: Error, response?: JsonValue): JsonObject {
 	return {
 		"errorCode": ErrorCode.unknown,
 		"message": "Client exception",
@@ -57,9 +56,6 @@ export abstract class TrakitCommander<TRequest> {
 	protected createBaseUrl(path: string | null = null): URL {
 		const route = new URL(path ?? "", this.baseAddress),
 			query = new Map(this.query);
-		if (this._sessionId) {
-			query.set("ghostId", this._sessionId);
-		}
 		for (const [key, value] of query) {
 			route.searchParams.append(key, value);
 		}
@@ -121,7 +117,8 @@ export abstract class TrakitCommander<TRequest> {
 				response = createClientErrorResponse(ex);
 			}
 			try {
-				response = response ?? await this._relayRequest(request as TRequest);
+				response = response
+					?? await this._relayRequest(request as TRequest);
 			} catch (ex: Reply | Error | any) {
 				reply = payload.createReply(
 					ex instanceof Error
@@ -130,7 +127,8 @@ export abstract class TrakitCommander<TRequest> {
 				) as TReply;
 			}
 			try {
-				reply = reply ?? payload.createReply(response) as TReply;
+				reply = reply
+					?? payload.createReply(response) as TReply;
 			} catch (ex: Error | any) {
 				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
 			}

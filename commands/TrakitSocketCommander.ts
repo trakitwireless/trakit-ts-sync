@@ -503,11 +503,11 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 			switch (state) {
 				case TrakitSocketStatus.closed:
 					const endpoint = this.createBaseUrl();
-					if (this.account?.machine) {
-						endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
-						endpoint.searchParams.append("shadowKey", this.account.machine.key);    // sign without key
-					} else if (this.account?.ghostId) {
-						endpoint.searchParams.append("ghostId", this.account.ghostId);
+					if (this._machine) {
+						endpoint.searchParams.append("shadowSig", await this._machine.createHmacSignature(endpoint));
+						endpoint.searchParams.append("shadowKey", this._machine.key);    // sign without key
+					} else if (this._sessionId) {
+						endpoint.searchParams.append("ghostId", this._sessionId);
 					}
 					this.#socket = new WebSocket(endpoint);
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
