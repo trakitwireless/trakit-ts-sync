@@ -35,7 +35,7 @@ const TIMEOUT_SUBSCRIPTION = 10 * 1000;	// 10 seconds
  * If an object type is not in the map, then use the plural of the object type.
  * @const {!Object.<string,string>}
  **/
-var MINDFLAYER_PATHS = {
+export var MINDFLAYER_PATHS = {
 	"assetMessage": "assets/messages",
 	"behaviourScript": "behaviours/scripts",
 	"dispatchJob": "dispatch/jobs",
@@ -621,7 +621,7 @@ function SyncClient_sessionDetails(messageName, sessionDetails) {
  * @param {Array.<boolean>=} updated		An empty array given to the function which is then populated with true for each part of the object that was updated.
  * @returns {trakit.fleetfreedom.MVCObject}
  **/
-function SyncClient_merged(type, json, updated) {
+export function SyncClient_merged(type, json, updated) {
 	if (CLIENT_DEBUG) console.log("SyncClient_merged", type, json);
 	/**
 	 * The company that owns the object being merged.

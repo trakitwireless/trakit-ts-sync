@@ -143,7 +143,7 @@ function getCommand(payload: Payload): string {
 /**
  * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
  **/
-export class TrakitSocketCommander extends TrakitObjectCommander<{ command: string, params?: any }> {
+export class TrakitSocketCommander extends TrakitObjectCommander<{ command: string, params?: JsonObject }> {
 	/**
 	 * Production RESTful service URL.
 	 * This service is covered by the SLA and should be used for serices and code running in your own production environment.
@@ -222,7 +222,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	/**
 	 * Gets invoked any time a message is received from the WebSocket.
 	 */
-	onMessage: ((this: TrakitSocketCommander, name: string, message: any) => any) | null = null;
+	onMessage: ((this: TrakitSocketCommander, name: string, message: JsonObject) => any) | null = null;
 	/**
 	 * Gets invoked any time an error occurs on the WebSocket.
 	 */
@@ -237,13 +237,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * A collection of pending command Promises.
 	 * Each key is a reqId (except for connection and disconnection) and each value is a function invoked with a {@link Reply} object.
 	 **/
-	#requestsPending: Map<string | number, (response: any) => void> = new Map();
+	#requestsPending: Map<string | number, (response: JsonObject) => void> = new Map();
 	/**
 	 * Settles the promise for the given request ID with the provided message content.
 	 * @param reqId The ID of the request to settle.
 	 * @param msgContent The content of the message to resolve or reject the promise.
 	 */
-	#requestSettle(reqId: string | number, msgContent: any) {
+	#requestSettle(reqId: string | number, msgContent: JsonObject): void {
 		this.#requestsPending.get(reqId)?.(msgContent);
 		this.#requestsPending.delete(reqId);
 	}
@@ -310,7 +310,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 				"reconnect": this.reconnectEnabled,
 				"retry": (new Date).valueOf() + reconnectTimeout,
 			},
-			response: any = {
+			response: JsonObject = {
 				"errorCode": ErrorCode.success,
 				"message": "Disconnected",
 				"errorDetails": errorDetails,
@@ -379,7 +379,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 		/**
 		 * The JSON parsed from the message received by the underlying WebSocket.
 		 **/
-		const msgContent = JSON.parse(event.data.substring(msgName.length + 1));
+		const msgContent = JSON.parse(event.data.substring(msgName.length + 1)) as JsonObject;
 
 		// first, set this value
 		this.#lastMessage = msgName;
@@ -425,7 +425,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 			/**
 			 * The function that will settle (resolve or reject) the Promise for the pending command.
 			 **/
-			this.#requestSettle(msgContent["reqId"], msgContent);
+			this.#requestSettle(msgContent["reqId"] as number, msgContent);
 
 			/**
 			 * Fires the "message" event.
@@ -441,7 +441,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * Updates the account information based on the received message content.
 	 * @param msgContent The JSON object containing the account information.
 	 */
-	#socketAccount(msgContent: any): void {
+	#socketAccount(msgContent: JsonObject): void {
 		this.setAuth(this.account = new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
@@ -512,7 +512,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 					this.#socket = new WebSocket(endpoint);
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
 					this.#socket.onclose = (ev) => this.#socketClose(ev);
-					this.#requestsPending.set(CMD_CONNECTION, (response: any) => {
+					this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
 						(response["errorCode"] === 0 ? resolve : reject)(this.account as RepSelfGet);
 					});
 					break;
@@ -539,7 +539,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 			switch (state) {
 				case TrakitSocketStatus.open:
 					this.reconnectEnabled = false;
-					this.#requestsPending.set(CMD_DISCONNECTION, (response: any) => {
+					this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
 						(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
 					});
 					this.#socket.close(1000, "Bye!");
@@ -563,7 +563,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * @param payload The payload to include in the request.
 	 * @returns A request object configured with the specified parameters.
 	 */
-	override _createRequest(payload: Payload): { command: string; params?: any; } {
+	override _createRequest(payload: Payload): { command: string; params?: JsonObject; } {
 		return {
 			command: getCommand(payload),
 			params: payload.toJSON(),
@@ -594,7 +594,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 							TIMEOUT_COMMAND
 						);
 					(request.params as JsonObject).reqId = reqId;
-					this.#requestsPending.set(reqId, (response: any) => {
+					this.#requestsPending.set(reqId, (response: JsonObject) => {
 						clearTimeout(timer);
 						resolve(response);
 					});

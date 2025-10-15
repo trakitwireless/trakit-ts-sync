@@ -1,11 +1,13 @@
 ﻿import {
 	ErrorCode,
+	ErrorDetail,
 	Payload,
 	Reply,
 	RepSelfGet,
 } from '@trakit/commands';
 import {
 	guid,
+	JsonObject,
 	Machine,
 	nothing,
 	url,
@@ -17,21 +19,17 @@ import { JSON_PARSE_SAFE } from '../common/JSON';
  * @param ex The error to include in the response.
  * @returns A standardized error response object.
  */
-export function createClientErrorResponse(ex: any): any {
+export function createClientErrorResponse(ex: Error, response?: JsonObject): JsonObject {
 	return {
 		"errorCode": ErrorCode.unknown,
 		"message": "Client exception",
-		"errorDetails": ex instanceof Error
-			? {
-				"kind": "stack",
-				"message": ex.message,
-				"stack": ex.stack,
-			}
-			: {
-				"kind": "externals",
-				"errors": JSON_PARSE_SAFE(ex),
-			},
-	}
+		"errorDetails": {
+			"kind": "stack",
+			"message": ex.message,
+			"stack": ex.stack ?? null,
+			"value": response ?? null,
+		}
+	};
 }
 
 /**
@@ -62,7 +60,7 @@ export abstract class TrakitCommander<TRequest> {
 		if (this._sessionId) {
 			query.set("ghostId", this._sessionId);
 		}
-		for (let [key, value] of query) {
+		for (const [key, value] of query) {
 			route.searchParams.append(key, value);
 		}
 		return route;
@@ -123,14 +121,18 @@ export abstract class TrakitCommander<TRequest> {
 				response = createClientErrorResponse(ex);
 			}
 			try {
-				response = response ?? await this._relayRequest(request as TRequest) as TReply;
-			} catch (ex: Reply | any) {
-				reply = payload.createReply(ex) as TReply;
+				response = response ?? await this._relayRequest(request as TRequest);
+			} catch (ex: Reply | Error | any) {
+				reply = payload.createReply(
+					ex instanceof Error
+						? createClientErrorResponse(ex)
+						: ex
+				) as TReply;
 			}
 			try {
 				reply = reply ?? payload.createReply(response) as TReply;
-			} catch (ex: Reply | any) {
-				reply = payload.createReply(ex) as TReply;
+			} catch (ex: Error | any) {
+				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
 			}
 			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
 		});

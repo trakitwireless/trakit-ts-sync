@@ -42,7 +42,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * Requests the details of the {@link User} or {@link Machine} currently identified.
 	 * @returns The account details or null.
 	 */
-	public async getSelfDetails(): Promise<RepSelfGet | null> {
+	public async getSelfDetails(): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfGet());
 		switch (reply.errorCode) {
 			case ErrorCode.success:
@@ -182,4 +182,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 		}));
 	}
 	//#endregion Commands - Self
+
+
+
 }
