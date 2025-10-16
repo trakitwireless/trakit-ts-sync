@@ -1,426 +1,299 @@
 ﻿import {
 	ErrorCode,
+	PayAssetBatchMerge,
+	PayAssetDelete,
+	PayAssetGet,
+	PayAssetListByCompany,
+	PayAssetMerge,
+	PayAssetReactivate,
+	PayAssetRestore,
+	PayAssetSuspend,
+	PayBehaviourBatchMerge,
+	PayBehaviourDelete,
+	PayBehaviourGet,
+	PayBehaviourListByCompany,
+	PayBehaviourLogBatchDelete,
+	PayBehaviourMerge,
+	PayBehaviourRestore,
+	PayBehaviourScriptDelete,
+	PayBehaviourScriptGet,
+	PayBehaviourScriptListByCompany,
+	PayBehaviourScriptMerge,
+	PayBehaviourScriptRestore,
+	PayCompanyDelete,
+	PayCompanyGeneralListByCompany,
+	PayCompanyGet,
+	PayCompanyMerge,
+	PayCompanyResellerGet,
+	PayCompanyRestore,
+	PayContactBatchDelete,
+	PayContactBatchMerge,
+	PayContactDelete,
+	PayContactGet,
+	PayContactListByCompany,
+	PayContactMerge,
+	PayContactRestore,
+	PayDispatchJobBatchMerge,
+	PayDispatchJobDelete,
+	PayDispatchJobGet,
+	PayDispatchJobMerge,
+	PayDispatchJobRestore,
+	PayDispatchTaskBatchMerge,
+	PayDispatchTaskDelete,
+	PayDispatchTaskGet,
+	PayDispatchTaskMerge,
+	PayDispatchTaskRestore,
+	PayFormTemplateDelete,
+	PayFormTemplateGet,
+	PayFormTemplateListByCompany,
+	PayFormTemplateMerge,
+	PayFormTemplateRestore,
+	PayIconDelete,
+	PayIconGet,
+	PayIconListByCompany,
+	PayIconMerge,
+	PayIconRestore,
+	PayMachineDelete,
+	PayMachineGet,
+	PayMachineListByCompany,
+	PayMachineMerge,
+	PayMachineRestore,
+	PayMaintenanceJobDelete,
+	PayMaintenanceJobGet,
+	PayMaintenanceJobListByCompany,
+	PayMaintenanceJobMerge,
+	PayMaintenanceJobRestore,
+	PayMaintenanceScheduleDelete,
+	PayMaintenanceScheduleGet,
+	PayMaintenanceScheduleListByCompany,
+	PayMaintenanceScheduleMerge,
+	PayMaintenanceScheduleRestore,
+	PayPictureDelete,
+	PayPictureGet,
+	PayPictureListByCompany,
+	PayPictureMerge,
+	PayPictureRestore,
+	PayPlaceDelete,
+	PayPlaceGet,
+	PayPlaceListByCompany,
+	PayPlaceMerge,
+	PayPlaceRestore,
+	PayProviderBatchDelete,
+	PayProviderBatchMerge,
+	PayProviderConfigBatchMerge,
+	PayProviderConfigDelete,
+	PayProviderConfigGet,
+	PayProviderConfigListByCompany,
+	PayProviderConfigMerge,
+	PayProviderConfigRestore,
+	PayProviderConfigurationBatchMerge,
+	PayProviderConfigurationDelete,
+	PayProviderConfigurationGet,
+	PayProviderConfigurationListByCompany,
+	PayProviderConfigurationMerge,
+	PayProviderConfigurationRestore,
+	PayProviderDelete,
+	PayProviderGet,
+	PayProviderListByCompany,
+	PayProviderMerge,
+	PayProviderRestore,
+	PayProviderScriptDelete,
+	PayProviderScriptGet,
+	PayProviderScriptListByCompany,
+	PayProviderScriptMerge,
+	PayProviderScriptRestore,
+	PayReportScheduleDelete,
+	PayReportScheduleRestore,
+	PayReportTemplateDelete,
+	PayReportTemplateGet,
+	PayReportTemplateListByCompany,
+	PayReportTemplateMerge,
+	PayReportTemplateRestore,
 	PaySelfContact,
 	PaySelfGet,
 	PaySelfLogin,
 	PaySelfLogout,
 	PaySelfPassword,
 	PaySelfPreferences,
-	RepCompanyGeneralGet,
+	PaySessionDelete,
+	PaySessionListByCompany,
+	PaySessionListByUser,
+	PayUserDelete,
+	PayUserGet,
+	PayUserGroupDelete,
+	PayUserGroupGet,
+	PayUserGroupListByCompany,
+	PayUserGroupMerge,
+	PayUserGroupRestore,
+	PayUserListByCompany,
+	PayUserMerge,
+	PayUserRestore,
+	RepAssetDelete,
+	RepAssetGet,
+	RepAssetListByCompany,
+	RepAssetMerge,
+	RepAssetSuspend,
+	RepBehaviourBatchMerge,
+	RepBehaviourDelete,
+	RepBehaviourGet,
+	RepBehaviourListByCompany,
+	RepBehaviourLogBatchDelete,
+	RepBehaviourMerge,
+	RepBehaviourScriptDelete,
+	RepBehaviourScriptGet,
+	RepBehaviourScriptListByCompany,
+	RepBehaviourScriptMerge,
+	RepCompanyDelete,
+	RepCompanyGeneralListByCompany,
+	RepCompanyGet,
+	RepCompanyMerge,
+	RepCompanyResellerGet,
+	RepContactBatchDelete,
+	RepContactBatchMerge,
+	RepContactDelete,
+	RepContactGet,
+	RepContactListByCompany,
+	RepContactMerge,
+	RepDispatchJobBatchMerge,
+	RepDispatchJobDelete,
+	RepDispatchJobGet,
+	RepDispatchJobMerge,
+	RepDispatchTaskBatchMerge,
+	RepDispatchTaskDelete,
+	RepDispatchTaskGet,
+	RepDispatchTaskMerge,
+	RepFormResultDelete,
+	RepFormResultGet,
+	RepFormResultMerge,
+	RepFormTemplateDelete,
+	RepFormTemplateGet,
+	RepFormTemplateListByCompany,
+	RepFormTemplateMerge,
+	RepIconDelete,
+	RepIconGet,
+	RepIconListByCompany,
+	RepIconMerge,
 	Reply,
+	RepMachineDelete,
+	RepMachineGet,
+	RepMachineListByCompany,
+	RepMachineMerge,
+	RepMaintenanceJobDelete,
+	RepMaintenanceJobGet,
+	RepMaintenanceJobListByCompany,
+	RepMaintenanceJobMerge,
+	RepMaintenanceScheduleDelete,
+	RepMaintenanceScheduleGet,
+	RepMaintenanceScheduleListByCompany,
+	RepMaintenanceScheduleMerge,
+	RepPictureDelete,
+	RepPictureGet,
+	RepPictureListByCompany,
+	RepPictureMerge,
+	RepPlaceDelete,
+	RepPlaceGet,
+	RepPlaceListByCompany,
+	RepPlaceMerge,
+	RepProviderConfigBatchMerge,
+	RepProviderConfigDelete,
+	RepProviderConfigGet,
+	RepProviderConfigListByCompany,
+	RepProviderConfigMerge,
+	RepProviderConfigurationBatchMerge,
+	RepProviderConfigurationDelete,
+	RepProviderConfigurationGet,
+	RepProviderConfigurationListByCompany,
+	RepProviderConfigurationMerge,
+	RepProviderRegistrationGet,
+	RepProviderRegistrationListByCompany,
+	RepProviderRegistrationMerge,
+	RepProviderScriptDelete,
+	RepProviderScriptGet,
+	RepProviderScriptListByCompany,
+	RepProviderScriptMerge,
+	RepReportScheduleDelete,
+	RepReportScheduleGet,
+	RepReportScheduleListByCompany,
+	RepReportScheduleMerge,
+	RepReportTemplateDelete,
+	RepReportTemplateGet,
+	RepReportTemplateListByCompany,
+	RepReportTemplateMerge,
 	RepSelfGet,
 	RepSelfLogout,
 	RepSelfPassword,
+	RepSessionDelete,
+	RepSessionListByCompany,
+	RepSessionListByUser,
+	RepUserDelete,
+	RepUserGet,
+	RepUserGroupDelete,
+	RepUserGroupGet,
+	RepUserGroupListByCompany,
+	RepUserGroupMerge,
+	RepUserListByCompany,
+	RepUserMerge
 } from '@trakit/commands';
 import {
+	email,
 	expression,
 	guid,
 	int,
 	JsonObject,
 	nothing,
 	serialization,
-	storage,
 	SystemsOfUnits,
 	Timezone,
 	ulong,
 	url,
-	UserNotifications,
-	utility,
+	UserNotifications
 } from '@trakit/objects';
+import { RepProviderListByCompany } from '../../trakit-ts-commands/_publish/commands/Providers/Providers/Responses/RepProviderList';
 import { TrakitCommander } from './TrakitCommander';
 
 
-//#region Mindflayer helpers
-/**
- * A mapping of object type to Mindflayer path (or path suffix).
- * If an object type is not in the map, then use the plural of the object type.
- * @const {!Object.<string,string>}
- **/
-var MINDFLAYER_PATHS = {
-	"assetMessage": "assets/messages",
-	"behaviourScript": "behaviours/scripts",
-	"dispatchJob": "dispatch/jobs",
-	"dispatchTask": "dispatch/tasks",
-	"formResult": "forms",
-	"formTemplate": "forms/templates",
-	"hosCarrier": "hos/carriers",
-	"maintenanceJob": "maintenance/jobs",
-	"maintenanceSchedule": "maintenance/schedules",
-	"providerConfig": "providers/configs",
-	"providerConfiguration": "providers/configurations",
-	"providerRegistration": "providers/registrations",
-	"providerScript": "providers/scripts",
-	"reportResult": "reports/results",
-	"reportSchedule": "reports/schedules",
-	"reportTemplate": "reports/templates",
-	"userGroup": "users/groups",
-};
-/**
- * Returns an object
- * @param {!string} type
- * @param {!trakit.json.BaseResponse} response
- * @return {!Object}
- **/
-function MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD(type, response) {
-	return GET_KEYS(response).reduce(function(json, key) {
-		if (key !== type) json[key] = response[key];
-		return json;
-	}, {
-		"errorCode": 1,	// unknown
-	});
-}
-/**
- * Creates query-string parameters for requests to Mindflayer.
- * @param {string=} path
- * @param {ParamListConstraints=} constraints
- * @return {!string}
- */
-function MINDFLAYER_CONSTRAINT_QUERY_STRING(path, constraints) {
-	var query = [];
-	if (constraints) {
-		var after, before;
-		if (constraints["includeDeleted"]) query.push("includeDeleted=" + (!!constraints["includeDeleted"]));
-		if (constraints["includeArchive"]) query.push("includeArchive=" + (!!constraints["includeArchive"]));
-		if (!isNaN(constraints["limit"])) query.push("limit=" + ROUND(constraints["limit"]));
-		if (!isNaN(constraints["lowest"])) query.push("lowest=" + ROUND(constraints["lowest"]));
-		if (!isNaN(constraints["highest"])) query.push("highest=" + ROUND(constraints["highest"]));
-		if ((after = DATE(constraints["after"])).isValid()) query.push("after=" + ESCAPE(after.toISOString()));
-		if ((before = DATE(constraints["before"])).isValid()) query.push("before=" + ESCAPE(before.toISOString()));
-		if (!!constraints["first"]) query.push("first=" + String(constraints["first"]).trim());
-		if (!!constraints["last"]) query.push("last=" + String(constraints["last"]).trim());
-		if (constraints["includeSuspended"]) query.push("includeSuspended=" + (!!constraints["includeSuspended"]));
-		if (constraints["includeMessages"]) query.push("includeMessages=" + (!!constraints["includeMessages"]));
-		if (constraints["includeTasks"]) query.push("includeTasks=" + (!!constraints["includeTasks"]));
-		if (constraints["tree"]) query.push("tree=" + (!!constraints["tree"]));
-		if (constraints["includeParent"]) query.push("includeParent=" + (!!constraints["includeParent"]));
-		if (constraints["kind"]) query.push("kind=" + constraints["kind"]);
-		if (constraints["branch"]) query.push("branch=" + (!!constraints["branch"]));
-		if (constraints["trunk"]) query.push("trunk=" + (!!constraints["trunk"]));
-		if (constraints["pending"]) query.push("pending=" + (!!constraints["pending"]));
-	}
-	return query.length
-		? ((path || "").includes("?") ? "&" : "?") + query.join("&")
-		: "";
-}
-/**
- * Sends a request to list objects by their company.
- * Also fires the list event same as {@link SyncClient#sync}.
- * @param {!string} type
- * @param {!number} companyId
- * @param {string=} path
- * @param {ParamListConstraints=} constraints
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_LIST_BY_COMPANY(type, companyId, path, constraints) {
-	return CLIENT.mindflayer(
-		"companies/"
-		+ (IS_NAN(companyId) ? SELECTED.id : companyId)
-		+ "/"
-		+ (path || MINDFLAYER_PATHS[type] || PLURAL(type))
-		+ MINDFLAYER_CONSTRAINT_QUERY_STRING(path, constraints)
-	).next(function(/** SyncMindflayer */ msg) {
-		var response = MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD(type, msg.response);
-		if (msg.response.errorCode === 0) {
-			response[PLURAL(type)] = SyncClient_list(type, msg.response);
-		}
-		me.fire(type + "List", response);
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to list objects by their asset.
- * @param {!string} type
- * @param {!number} assetId
- * @param {string=} path
- * @param {ParamListConstraints=} constraints
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_LIST_BY_ASSET(type, assetId, path, constraints) {
-	return CLIENT.mindflayer("assets/" + assetId + "/" + (path || MINDFLAYER_PATHS[type] || PLURAL(type)) + MINDFLAYER_CONSTRAINT_QUERY_STRING(path, constraints)).next(function(/** SyncMindflayer */ msg) {
-		var response = MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD(type, msg.response);
-		if (msg.response.errorCode === 0) {
-			response[PLURAL(type)] = msg.response.map(function(json) {
-				return SyncClient_merged(type, json);
-			});
-		}
-		me.fire(type + "AssetList", response);
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to get a specific object.
- * @param {!string} type
- * @param {!number|string} id
- * @param {string=} path
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_GET(type, id, path) {
-	return CLIENT.mindflayer(((path || MINDFLAYER_PATHS[type] || PLURAL(type)) + "/" + id).pruneEnd("/")).next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			var updated = [],
-				object = SyncClient_merged(
-					type,
-					msg.response[type],
-					updated
-				);
-			// because the {@link type} could be a value like "provider", we don't want to fire "providerMerged" instead of "providerGeneralMerged".
-			// so we use the {@link SUBSCRIPTION_SPLITS} map to find all the events we need to fire
-			(SUBSCRIPTION_SPLITS[type] || [type]).forEach(function(region, index) {
-				// however, we don't want to fire all events in case one of the parts is not updated.
-				// so we check that each part has changed (based on comparison of version keys) and only fire the appropriate events
-				if (updated[index]) me.fire(region + "Merged", object);
-			});
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to merge an object.
- * Can also be used for batch operations if the PATCH verb is specified.
- * @param {!string} path
- * @param {!Object} json
- * @param {string=} verb
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_MERGE(type, json, path, verb) {
-	var body = {};
-	body[type] = json;
-	return CLIENT.mindflayer(path || MINDFLAYER_PATHS[type] || PLURAL(type), verb || "POST", body).next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {// && (json["v"] || []).length === 0) {
-			var updated = [],						// an array of parts that were updated.
-				object = SyncClient_merged(
-					type,
-					MERGE(json, msg.response[type]),	// merge request with response
-					updated
-				);
-			// because the {@link type} could be a value like "provider", we don't want to fire "providerMerged" instead of "providerGeneralMerged".
-			// so we use the {@link SUBSCRIPTION_SPLITS} map to find all the events we need to fire
-			(SUBSCRIPTION_SPLITS[type] || [type]).forEach(function(region, index) {
-				// however, we don't want to fire all events in case one of the parts is not updated.
-				// so we check that each part has changed (based on comparison of version keys) and only fire the appropriate events
-				if (updated[index]) me.fire(region + "Merged", object);
-			});
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to delete an object.
- * @param {!string} path
- * @param {!number|string} id
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_DELETE(type, id, path) {
-	return CLIENT.mindflayer(((path || MINDFLAYER_PATHS[type] || PLURAL(type)) + "/" + id).pruneEnd("/"), "DELETE").next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			var object = SyncClient_deleted(type, msg.response[type]);
-			// we DO NOT use the {@link SUBSCRIPTION_SPLITS} map because the deleted message is "providerDeleted" instead of "providerGeneralDeleted".
-			if (object) me.fire(type + "Deleted", object);
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to restore a deleted object.
- * @param {!string} path
- * @param {!number|string} id
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_RESTORE(type, id, path) {
-	return CLIENT.mindflayer((path || MINDFLAYER_PATHS[type] || PLURAL(type)) + "/" + id + "/restore", "PATCH").next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			var updated = [],
-				object = SyncClient_merged(
-					type,
-					msg.response[type],
-					updated
-				),
-				// because the {@link type} could be a value like "provider", we don't want to fire "providerMerged" instead of "providerGeneralMerged".
-				// so we use the {@link SUBSCRIPTION_SPLITS} map to find the first region on which to fire the event
-				region = (SUBSCRIPTION_SPLITS[type] || [type])[0];
-			me.fire(region + "Merged", object);
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to suspend an object.
- * @param {!string} path
- * @param {!number|string} id
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_SUSPEND(type, id, path) {
-	return CLIENT.mindflayer((path || MINDFLAYER_PATHS[type] || PLURAL(type)) + "/" + id + "/suspend", "PATCH").next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			var updated = [],
-				object = SyncClient_merged(
-					type,
-					msg.response[type],
-					updated
-				),
-				// because the {@link type} could be a value like "provider", we don't want to fire "providerMerged" instead of "providerGeneralMerged".
-				// so we use the {@link SUBSCRIPTION_SPLITS} map to find the first region on which to fire the event
-				region = (SUBSCRIPTION_SPLITS[type] || [type])[0];
-			me.fire(region + "Merged", object);
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to revive an object.
- * @param {!string} path
- * @param {!number|string} id
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_REVIVE(type, id, path) {
-	return CLIENT.mindflayer((path || MINDFLAYER_PATHS[type] || PLURAL(type)) + "/" + id + "/revive", "PATCH").next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			var updated = [],
-				object = SyncClient_merged(
-					type,
-					msg.response[type],
-					updated
-				),
-				// because the {@link type} could be a value like "provider", we don't want to fire "providerMerged" instead of "providerGeneralMerged".
-				// so we use the {@link SUBSCRIPTION_SPLITS} map to find the first region on which to fire the event
-				region = (SUBSCRIPTION_SPLITS[type] || [type])[0];
-			me.fire(region + "Merged", object);
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to do a batch operation on the given array of object JSONs.
- * @param {!string} path
- * @param {!Array.<Object>} array
- * @param {string=} verb
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_MULTI_MERGE(type, array, path, verb) {
-	var body = {},
-		types = PLURAL(type);
-	body[types] = array;
-	return CLIENT.mindflayer(path || MINDFLAYER_PATHS[type] || types, verb || "PATCH", body).next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			msg.response[types].map(function(json, index) {
-				var updated = [],
-					object = SyncClient_merged(
-						type,
-						json,
-						updated
-					);
-				// because the {@link type} could be a value like "provider", we don't want to fire "providerMerged" instead of "providerGeneralMerged".
-				// so we use the {@link SUBSCRIPTION_SPLITS} map to find all the events we need to fire
-				(SUBSCRIPTION_SPLITS[type] || [type]).forEach(function(region, index) {
-					// however, we don't want to fire all events in case one of the parts is not updated.
-					// so we check that each part has changed (based on comparison of version keys) and only fire the appropriate events
-					if (updated[index]) me.fire(region + "Merged", object);
-				});
-			});
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to do a batch delete on the given array of object JSONs.
- * @param {!string} path
- * @param {!Array.<Object>} array
- * @param {string=} verb
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_MULTI_DELETE(type, array, path, verb) {
-	var body = {},
-		types = PLURAL(type);
-	body[types] = array;
-	return CLIENT.mindflayer(path || MINDFLAYER_PATHS[type] || types, verb || "DELETE", body).next(function(/** SyncMindflayer */ msg) {
-		if (msg.response.errorCode === 0) {
-			msg.response[types].map(function(json, index) {
-				var object = SyncClient_deleted(type, json);
-				// we DO NOT use the {@link SUBSCRIPTION_SPLITS} map because the deleted message is "providerDeleted" instead of "providerGeneralDeleted".
-				if (object) me.fire(type + "Deleted", object);
-			});
-		}
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-/**
- * Sends a request to search for objects by the given expression.
- * @param {!string} type
- * @param {!string} expression
- * @param {string=} path
- * @param {ParamListConstraints=} constraints
- * @return {!Promise<SyncMindflayer>}
- **/
-function MINDFLAYER_SEARCH(type, expression, path, constraints) {
-	return CLIENT.mindflayer(
-		MINDFLAYER_CONSTRAINT_QUERY_STRING(
-			(path || MINDFLAYER_PATHS[type] || PLURAL(type))
-			+ "?search=" + ESCAPE(expression),
-			constraints
-		)
-	).next(function(/** SyncMindflayer */ msg) {
-		var response = MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD(type, msg.response);
-		if (msg.response.errorCode === 0) {
-			response[PLURAL(type)] = msg.response.map(function(json) {
-				return SyncClient_merged(type, json);
-			});
-		}
-		//me.fire(type + "Search", response);	=> do this?
-		return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-	});
-}
-//#endregion Mindflayer helpers
-
-//#region Behaviours/Logs
-/**
- * Finds the given company and removes all the logs returned using the filter argument.
- * @param {!number} companyId
- * @param {!function(trakit.fleetfreedom.BehaviourLog):boolean} filter
- **/
-function BEHAVIOUR_LOG_PURGE(companyId: ulong, filter) {
-	var company = COMPANIES.get(companyId: ulong);
-	if (company) {
-		company.behaviourLogs.filter(filter).forEach(function(log) {
-			company.removeBehaviourLog(log.id);
-		});
-	}
-}
-/**
- * The name of the {@link trakit.fleetfreedom.BehaviourLog} type.
- * @const {string}
- **/
-var BEHAVIOUR_LOG_TYPE = "behaviourLog";
-/**
- * The name of the {@link trakit.fleetfreedom.BehaviourLog} type.
- * @const {string}
- **/
-var BEHAVIOUR_LOG_TYPES = BEHAVIOUR_LOG_TYPE + "s";
-/**
- * Name of the event fired when loading a list of logs by {@link trakit.fleetfreedom.Behaviour}.
- * @const {string}
- **/
-var BEHAVIOUR_LOG_BEHAVE_EVENT = BEHAVIOUR_LOG_TYPE + "BehaviourList";
-/**
- * Name of the event fired when loading a list of logs by {@link trakit.fleetfreedom.BehaviourScript}.
- * @const {string}
- **/
-var BEHAVIOUR_LOG_SCRIPT_EVENT = BEHAVIOUR_LOG_TYPE + "BehaviourScriptList";
-//#endregion Behaviours/Logs
-
-
+////#region Behaviours/Logs
+///**
+// * Finds the given company and removes all the logs returned using the filter argument.
+// * @param {!number} companyId
+// * @param {!function(trakit.fleetfreedom.BehaviourLog):boolean} filter
+// **/
+//function BEHAVIOUR_LOG_PURGE(companyId: ulong, filter) {
+//	var company = COMPANIES.get(companyId: ulong);
+//	if (company) {
+//		company.behaviourLogs.filter(filter).forEach(function(log) {
+//			company.removeBehaviourLog(log.id);
+//		});
+//	}
+//}
+///**
+// * The name of the {@link trakit.fleetfreedom.BehaviourLog} type.
+// * @const {string}
+// **/
+//var BEHAVIOUR_LOG_TYPE = "behaviourLog";
+///**
+// * The name of the {@link trakit.fleetfreedom.BehaviourLog} type.
+// * @const {string}
+// **/
+//var BEHAVIOUR_LOG_TYPES = BEHAVIOUR_LOG_TYPE + "s";
+///**
+// * Name of the event fired when loading a list of logs by {@link trakit.fleetfreedom.Behaviour}.
+// * @const {string}
+// **/
+//var BEHAVIOUR_LOG_BEHAVE_EVENT = BEHAVIOUR_LOG_TYPE + "BehaviourList";
+///**
+// * Name of the event fired when loading a list of logs by {@link trakit.fleetfreedom.BehaviourScript}.
+// * @const {string}
+// **/
+//var BEHAVIOUR_LOG_SCRIPT_EVENT = BEHAVIOUR_LOG_TYPE + "BehaviourScriptList";
+////#endregion Behaviours/Logs
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.
  */
 export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TRequest> {
-	/**
-	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
-	 */
-	account: RepSelfGet;
-    
 	constructor(baseAddress?: url | nothing) {
 		super(baseAddress);
-		this.account = new RepSelfGet;
 	}
 	
 	//#region Self
@@ -428,7 +301,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * Requests the details of the {@link User} or {@link Machine} currently identified.
 	 * @returns The account details or null.
 	 */
-	public async getSelfDetails(): Promise<RepSelfGet> {
+	public async listSelfDetails(): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfGet());
 		switch (reply.errorCode) {
 			case ErrorCode.success:
@@ -577,10 +450,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getCompanies(id: ulong, constraints: JsonObject) {
+	listCompanies(id: ulong, constraints: JsonObject) {
 		return this.command<RepCompanyGeneralListByCompany>(new PayCompanyGeneralListByCompany({
 			...constraints,
-			id,
+			company: { id },
 		}));
 	}
 	/**
@@ -589,28 +462,44 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getCompany(id: ulong) { return MINDFLAYER_GET("company", id); };
+	getCompany(id: ulong) {
+		return this.command<RepCompanyGet>(new PayCompanyGet({
+			company: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Company}.
 	 * @expose
 	 * @param {!trakit.json.Company} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeCompany(json: JsonObject) { return MINDFLAYER_MERGE("company", json); };
+	mergeCompany(json: JsonObject) {
+		return this.command<RepCompanyMerge>(new PayCompanyMerge({
+			company: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Company}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeCompany(id: ulong) { return MINDFLAYER_DELETE("company", id); };
+	removeCompany(id: ulong) {
+		return this.command<RepCompanyDelete>(new PayCompanyDelete({
+			company: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Company}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreCompany(id: ulong) { return MINDFLAYER_RESTORE("company", id); };
+	restoreCompany(id: ulong) {
+		return this.command<RepCompanyDelete>(new PayCompanyRestore({
+			company: { id },
+		}));
+	}
 	//#endregion Companies
 	//#region Companies/Reseller
 	/**
@@ -620,17 +509,21 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	getReseller(id: ulong) {
-		// pass the id as empty string because otherwise it is appended to the path
-		// this is the one exception to the Mindflayer route consistency
-		return MINDFLAYER_GET("companyReseller", "", "companies/" + id + "/reseller");
-	};
+		return this.command<RepCompanyResellerGet>(new PayCompanyResellerGet({
+			company: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.CompanyReseller}.
 	 * @expose
 	 * @param {!trakit.json.CompanyReseller} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeReseller(json: JsonObject) { return MINDFLAYER_MERGE("companyReseller", json, "companies/" + json["id"] + "/reseller"); };
+	mergeReseller(json: JsonObject) {
+		return this.command<RepCompanyResellerMerge>(new PayCompanyResellerMerge({
+			company: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.CompanyReseller}.
 	 * @expose
@@ -638,10 +531,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	removeReseller(id: ulong) {
-		// pass the id as empty string because otherwise it is appended to the path
-		// this is the one exception to the Mindflayer route consistency
-		return MINDFLAYER_DELETE("companyReseller", "", "companies/" + id + "/reseller");
-	};
+		return this.command<RepCompanyResellerDelete>(new PayCompanyResellerDelete({
+			company: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.CompanyReseller}.
 	 * @expose
@@ -649,10 +542,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	restoreReseller(id: ulong) {
-		// pass the id as empty string because otherwise it is appended to the path
-		// this is the one exception to the Mindflayer route consistency
-		return MINDFLAYER_RESTORE("companyReseller", "", "companies/" + id + "/reseller/restore");
-	};
+		return this.command<RepCompanyResellerRestore>(new PayCompanyResellerRestore({
+			company: { id },
+		}));
+	}
 	//#endregion Companies/Reseller
 	
 	//#region Contacts
@@ -664,42 +557,78 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getContacts(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("contact", companyId, null, constraints); };
+	listContacts(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepContactListByCompany>(new PayContactListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given contact from the server by its {@link trakit.fleetfreedom.Contact#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getContact(id: ulong) { return MINDFLAYER_GET("contact", id); };
+	getContact(id: ulong) {
+		return this.command<RepContactGet>(new PayContactGet({
+			contact: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Contact}.
 	 * @expose
 	 * @param {!trakit.json.Contact} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeContact(json: JsonObject) { return MINDFLAYER_MERGE("contact", json); };
-	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Contact}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Contact>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	multiMergeContact(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("contact", array); };
+	mergeContact(json: JsonObject) {
+		return this.command<RepContactMerge>(new PayContactMerge({
+			contact: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Contact}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeContact(id: ulong) { return MINDFLAYER_DELETE("contact", id); };
+	removeContact(id: ulong) {
+		return this.command<RepContactDelete>(new PayContactDelete({
+			contact: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Contact}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreContact(id: ulong) { return MINDFLAYER_RESTORE("contact", id); };
+	restoreContact(id: ulong) {
+		return this.command<RepContactDelete>(new PayContactRestore({
+			contact: { id },
+		}));
+	}
+	/**
+	 * Merges a batch of {@link trakit.fleetfreedom.Contact}s.
+	 * @expose
+	 * @param {!Array.<trakit.json.Contact>} array
+	 * @return {!Promise<SyncMindflayer>}
+	 **/
+	multiMergeContact(array: JsonObject[]) {
+		return this.command<RepContactBatchMerge>(new PayContactBatchMerge({
+			contacts: array,
+		}));
+	}
+	/**
+	 * Merges a batch of {@link trakit.fleetfreedom.Contact}s.
+	 * @expose
+	 * @param {!Array.<trakit.json.Contact>} array
+	 * @return {!Promise<SyncMindflayer>}
+	 **/
+	multiRemoveContact(array: JsonObject[]) {
+		return this.command<RepContactBatchDelete>(new PayContactBatchDelete({
+			contacts: array,
+		}));
+	}
 	//#endregion Contacts
 	//#region Users
 	/**
@@ -710,35 +639,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByString=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getUsers(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("user", companyId, null, constraints); };
+	listUsers(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepUserListByCompany>(new PayUserListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given user from the server by its {@link trakit.fleetfreedom.User#id}.
 	 * @expose
 	 * @param {!string} login
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getUser(login) { return MINDFLAYER_GET("user", (login || "").trim()); };
+	getUser(login: email) {
+		return this.command<RepUserGet>(new PayUserGet({
+			user: { login },
+		}));
+	}
 	/**
 	 * Merges an {@link trakit.fleetfreedom.User}.
 	 * @expose
 	 * @param {!trakit.json.User} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeUser(json: JsonObject) { return MINDFLAYER_MERGE("user", json); };
+	mergeUser(json: JsonObject) {
+		return this.command<RepUserMerge>(new PayUserMerge({
+			user: json,
+		}));
+	}
 	/**
 	 * Deletes an {@link trakit.fleetfreedom.User}.
 	 * @expose
 	 * @param {!string} login
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeUser(login) { return MINDFLAYER_DELETE("user", (login || "").trim()); };
+	removeUser(login: email) {
+		return this.command<RepUserDelete>(new PayUserDelete({
+			user: { login },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.User}.
 	 * @expose
 	 * @param {!string} login
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreUser(login) { return MINDFLAYER_RESTORE("user", (login || "").trim()); };
+	restoreUser(login: email) {
+		return this.command<RepUserDelete>(new PayUserRestore({
+			user: { login },
+		}));
+	}
 	//#endregion User
 	//#region User Groups
 	/**
@@ -749,35 +699,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getUserGroups(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("userGroup", companyId, null, constraints); };
+	listUserGroups(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepUserGroupListByCompany>(new PayUserGroupListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given group from the server by its {@link trakit.fleetfreedom.UserGroup#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getUserGroup(id: ulong) { return MINDFLAYER_GET("userGroup", id); };
+	getUserGroup(id: ulong) {
+		return this.command<RepUserGroupGet>(new PayUserGroupGet({
+			userGroup: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.UserGroup}.
 	 * @expose
 	 * @param {!trakit.json.UserGroup} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeUserGroup(json: JsonObject) { return MINDFLAYER_MERGE("userGroup", json); };
+	mergeUserGroup(json: JsonObject) {
+		return this.command<RepUserGroupMerge>(new PayUserGroupMerge({
+			userGroup: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.UserGroup}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeUserGroup(id: ulong) { return MINDFLAYER_DELETE("userGroup", id); };
+	removeUserGroup(id: ulong) {
+		return this.command<RepUserGroupDelete>(new PayUserGroupDelete({
+			userGroup: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.UserGroup}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreUserGroup(id: ulong) { return MINDFLAYER_RESTORE("userGroup", id); };
+	restoreUserGroup(id: ulong) {
+		return this.command<RepUserGroupDelete>(new PayUserGroupRestore({
+			userGroup: { id },
+		}));
+	}
 	//#endregion User Groups
 	//#region Machines
 	/**
@@ -788,35 +759,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByString=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getMachines(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("machine", companyId, null, constraints); };
+	listMachines(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepMachineListByCompany>(new PayMachineListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given machine from the server by its {@link trakit.fleetfreedom.Machine#id}.
 	 * @expose
 	 * @param {!string} key
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getMachine(key) { return MINDFLAYER_GET("machine", (key || "").trim()); };
+	getMachine(key: string) { 
+		return this.command<RepMachineGet>(new PayMachineGet({
+			machine: { id: key },
+		}));
+	}
 	/**
 	 * Merges an {@link trakit.fleetfreedom.Machine}.
 	 * @expose
 	 * @param {!trakit.json.Machine} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeMachine(json: JsonObject) { return MINDFLAYER_MERGE("machine", json); };
+	mergeMachine(json: JsonObject) {
+		return this.command<RepMachineMerge>(new PayMachineMerge({
+			machine: json,
+		}));
+	}
 	/**
 	 * Deletes an {@link trakit.fleetfreedom.Machine}.
 	 * @expose
 	 * @param {!string} key
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeMachine(key) { return MINDFLAYER_DELETE("machine", (key || "").trim()); };
+	removeMachine(key: string) { 
+		return this.command<RepMachineDelete>(new PayMachineDelete({
+			machine: { id: key },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Machine}.
 	 * @expose
 	 * @param {!string} key
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreMachine(key) { return MINDFLAYER_RESTORE("machine", (key || "").trim()); };
+	restoreMachine(key: string) { 
+		return this.command<RepMachineDelete>(new PayMachineRestore({
+			machine: { id: key },
+		}));
+	}
 	//#endregion Machine
 	//#region Sessions
 	/**
@@ -826,90 +818,36 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {number=} companyId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getSessions(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("session", companyId, "users/sessions", constraints); };
+	listSessions(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepSessionListByCompany>(new PaySessionListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a list of all Sessions in the given user.
 	 * @expose
 	 * @param {!string} login
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getSessionsByUser(login) {
-		return CLIENT.mindflayer("users/" + (login || "").trim() + "/sessions").next(function (/** SyncMindflayer */ msg) {
-			var response = MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD("sessions", msg.response);
-			if (msg.response.errorCode === 0) {
-				var company = COMPANIES.get(msg.response["user"]["company"]);
-				if (company) {
-					// remove all previous sessions for this user
-					company.sessions.filter(function (sess) {
-						return sess.login === login;
-					}).forEach(function (sess) {
-						company.removeSession(sess.handle);
-					});
-				}
-				response["sessions"] = msg.response["sessions"].map(function (json: JsonObject) {
-					return SyncClient_merged("Session", json);
-				});
-			}
-			me.fire("sessionUserList", response);
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
+	listSessionsByUser(login: email, constraints: JsonObject) {
+		return this.command<RepSessionListByUser>(new PaySessionListByUser({
+			...constraints,
+			user: { login },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.SessionFull}.
 	 * @expose
 	 * @param {!string} handle
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	killSession(handle) { return MINDFLAYER_DELETE("session", "", "users/sessions?handle=" + ESCAPE((handle || "").trim())); };
+	killSession(handle: string) { 
+		return this.command<RepSessionDelete>(new PaySessionDelete({
+			session: { handle },
+		}));
+	}
 	//#endregion Sessions
-	//#region Self
-	/**
-	 * Gets details about your own session information.
-	 * @expose
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	getSessionDetails() {
-		return CLIENT.mindflayer("self").next(function (/** SyncMindflayer */ msg) {
-			SyncClient_sessionDetails("user", msg.response);
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
-	/**
-	 * Sends a login request to Mindflayer.
-	 * This was originally added so that user's whose sessions were about to end could re-login and simply change sessions.
-	 * I am not sure if that will work anymore...
-	 * @expose
-	 * @param {!string} username
-	 * @param {!string} password
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	login(username, password) {
-		return CLIENT.mindflayer("self/login", "POST", {
-			"userAgent": ns["userAgent"],
-			"username": username,
-			"password": password,
-		}).next(function (/** SyncMindflayer */ msg) {
-			SyncClient_sessionDetails("login", msg.response);
-			SyncClient_sessionGeneralMerged();
-			SyncClient_sessionAdvancedMerged();
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
-	/**
-	 * Saves changes to your own user's contact card.
-	 * @expose
-	 * @param {!trakit.json.Contact} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	updateOwnContact(json: JsonObject) { return MINDFLAYER_MERGE("contact", json, "self/contact"); };
-	/**
-	 * Upd
-	 * @expose
-	 * @param {!trakit.json.UserGeneral} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	updateOwnPreferences(json: JsonObject) { return CLIENT.kraken("updateOwnPreferences", json); };
-	//#endregion Self
 
 	//#region Icons
 	/**
@@ -920,35 +858,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getIcons(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("icon", companyId, null, constraints); };
+	listIcons(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepIconListByCompany>(new PayIconListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given icon from the server by its {@link trakit.fleetfreedom.Icon#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getIcon(id: ulong) { return MINDFLAYER_GET("icon", id); };
+	getIcon(id: ulong) {
+		return this.command<RepIconGet>(new PayIconGet({
+			icon: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Icon}.
 	 * @expose
 	 * @param {!trakit.json.Icon} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeIcon(json: JsonObject) { return MINDFLAYER_MERGE("icon", json); };
+	mergeIcon(json: JsonObject) {
+		return this.command<RepIconMerge>(new PayIconMerge({
+			icon: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Icon}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeIcon(id: ulong) { return MINDFLAYER_DELETE("icon", id); };
+	removeIcon(id: ulong) {
+		return this.command<RepIconDelete>(new PayIconDelete({
+			icon: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Icon}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreIcon(id: ulong) { return MINDFLAYER_RESTORE("icon", id); };
+	restoreIcon(id: ulong) {
+		return this.command<RepIconDelete>(new PayIconRestore({
+			icon: { id },
+		}));
+	}
 	//#endregion Icons
 	//#region Pictures
 	/**
@@ -959,35 +918,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getPictures(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("picture", companyId, null, constraints); };
+	listPictures(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepPictureListByCompany>(new PayPictureListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given picture from the server by its {@link trakit.fleetfreedom.Picture#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getPicture(id: ulong) { return MINDFLAYER_GET("picture", id); };
+	getPicture(id: ulong) {
+		return this.command<RepPictureGet>(new PayPictureGet({
+			picture: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Picture}.
 	 * @expose
 	 * @param {!trakit.json.Picture} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergePicture(json: JsonObject) { return MINDFLAYER_MERGE("picture", json); };
+	mergePicture(json: JsonObject) {
+		return this.command<RepPictureMerge>(new PayPictureMerge({
+			picture: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Picture}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removePicture(id: ulong) { return MINDFLAYER_DELETE("picture", id); };
+	removePicture(id: ulong) {
+		return this.command<RepPictureDelete>(new PayPictureDelete({
+			picture: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Picture}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restorePicture(id: ulong) { return MINDFLAYER_RESTORE("picture", id); };
+	restorePicture(id: ulong) {
+		return this.command<RepPictureDelete>(new PayPictureRestore({
+			picture: { id },
+		}));
+	}
 	//#endregion Pictures
 	//#region Documents
 	/**
@@ -998,35 +978,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDocuments(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("document", companyId, null, constraints); };
+	listDocuments(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepDocumentListByCompany>(new PayDocumentListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given document from the server by its {@link trakit.fleetfreedom.Document#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDocument(id: ulong) { return MINDFLAYER_GET("document", id); };
+	getDocument(id: ulong) {
+		return this.command<RepDocumentGet>(new PayDocumentGet({
+			document: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Document}.
 	 * @expose
 	 * @param {!trakit.json.Document} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeDocument(json: JsonObject) { return MINDFLAYER_MERGE("document", json); };
+	mergeDocument(json: JsonObject) {
+		return this.command<RepDocumentMerge>(new PayDocumentMerge({
+			document: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Document}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeDocument(id: ulong) { return MINDFLAYER_DELETE("document", id); };
+	removeDocument(id: ulong) {
+		return this.command<RepDocumentDelete>(new PayDocumentDelete({
+			document: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Document}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreDocument(id: ulong) { return MINDFLAYER_RESTORE("document", id); };
+	restoreDocument(id: ulong) {
+		return this.command<RepDocumentDelete>(new PayDocumentRestore({
+			document: { id },
+		}));
+	}
 	//#endregion Documents
 	//#region Forms/Templates
 	/**
@@ -1037,35 +1038,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getFormTemplates(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("formTemplate", companyId, null, constraints); };
+	listFormTemplates(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepFormTemplateListByCompany>(new PayFormTemplateListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given template from the server by its {@link trakit.fleetfreedom.FormTemplate#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getFormTemplate(id: ulong) { return MINDFLAYER_GET("formTemplate", id); };
+	getFormTemplate(id: ulong) {
+		return this.command<RepFormTemplateGet>(new PayFormTemplateGet({
+			formTemplate: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.FormTemplate}.
 	 * @expose
 	 * @param {!trakit.json.FormTemplate} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeFormTemplate(json: JsonObject) { return MINDFLAYER_MERGE("formTemplate", json); };
+	mergeFormTemplate(json: JsonObject) {
+		return this.command<RepFormTemplateMerge>(new PayFormTemplateMerge({
+			formTemplate: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.FormTemplate}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeFormTemplate(id: ulong) { return MINDFLAYER_DELETE("formTemplate", id); };
+	removeFormTemplate(id: ulong) {
+		return this.command<RepFormTemplateDelete>(new PayFormTemplateDelete({
+			formTemplate: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.FormTemplate}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreFormTemplate(id: ulong) { return MINDFLAYER_RESTORE("formTemplate", id); };
+	restoreFormTemplate(id: ulong) {
+		return this.command<RepFormTemplateDelete>(new PayFormTemplateRestore({
+			formTemplate: { id },
+		}));
+	}
 	//#endregion Forms/Templates
 	//#region Forms/Results
 	/**
@@ -1076,42 +1098,67 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getFormResults(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("formResult", companyId, null, constraints); };
+	listFormResults(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepFormResultListByCompany>(new PayFormResultListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given form result from the server by its {@link trakit.fleetfreedom.FormResult#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getFormResult(id: ulong) { return MINDFLAYER_GET("formResult", id); };
+	getFormResult(id: ulong) {
+		return this.command<RepFormResultGet>(new PayFormResultGet({
+			formResult: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.FormResult}.
 	 * @expose
 	 * @param {!trakit.json.FormResult} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeFormResult(json: JsonObject) { return MINDFLAYER_MERGE("formResult", json); };
+	mergeFormResult(json: JsonObject) {
+		return this.command<RepFormResultMerge>(new PayFormResultMerge({
+			formResult: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.FormResult}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.FormResult>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeFormResult(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("formResult", array); };
+	multiMergeFormResult(id: ulong) {
+		return this.command<RepFormResultBatchMerge>(new PayFormResultBatchMerge({
+			formResult: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.FormResult}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeFormResult(id: ulong) { return MINDFLAYER_DELETE("formResult", id); };
+	removeFormResult(id: ulong) {
+		return this.command<RepFormResultDelete>(new PayFormResultDelete({
+			formResult: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.FormResult}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreFormResult(id: ulong) { return MINDFLAYER_RESTORE("formResult", id); };
+	restoreFormResult(id: ulong) {
+		return this.command<RepFormResultDelete>(new PayFormResultRestore({
+			formResult: { id },
+		}));
+	}
 	//#endregion Forms/Results
 	//#region Dashcams
 	/**
@@ -1122,14 +1169,23 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDashcamDatas(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("dashcam", companyId, "dashcams", constraints); };
+	listDashcamDatas(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepDashcamDataListByCompany>(new PayDashcamDataListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given dashcam-data from the server by its {@link trakit.json.DashcamData#guid}.
 	 * @expose
 	 * @param {!trakit.json.guid} guid
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDashcamData(guid: guid) { return MINDFLAYER_GET("dashcam", (guid || "").trim()); };
+	getDashcamData(guid: guid) { 
+		return this.command<RepDashcamDataGet>(new PayDashcamDataGet({
+			dashcam: { guid },
+		}));
+	}
 	/**
 	 * Retrieves a list of all dashcam-data in the given company.
 	 * If a company is not given it will use the currently selected company.
@@ -1137,7 +1193,12 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {number=} companyId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDashcamLives(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("dashcam", companyId, "dashcams/live", constraints); };
+	listDashcamLives(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepDashcamLiveListByCompany>(new PayDashcamLiveListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	//#endregion Dashcams
 
 	//#region Assets
@@ -1149,56 +1210,89 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstrainAsset=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getAssets(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("asset", companyId, null, constraints); };
+	listAssets(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepAssetListByCompany>(new PayAssetListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given asset from the server by its {@link trakit.fleetfreedom.Asset#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getAsset(id: ulong) { return MINDFLAYER_GET("asset", id); };
+	getAsset(id: ulong) {
+		return this.command<RepAssetGet>(new PayAssetGet({
+			asset: { id },
+		}));
+	}
 	/**
 	 * Merges an {@link trakit.fleetfreedom.Asset}.
 	 * @expose
 	 * @param {!trakit.json.Asset} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeAsset(json: JsonObject) { return MINDFLAYER_MERGE("asset", json); };
+	mergeAsset(json: JsonObject) {
+		return this.command<RepAssetMerge>(new PayAssetMerge({
+			asset: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.Asset}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.Asset>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeAsset(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("asset", array); };
+	multiMergeAsset(id: ulong) {
+		return this.command<RepAssetBatchMerge>(new PayAssetBatchMerge({
+			asset: { id },
+		}));
+	}
 	/**
 	 * Deletes an {@link trakit.fleetfreedom.Asset}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeAsset(id: ulong) { return MINDFLAYER_DELETE("asset", id); };
+	removeAsset(id: ulong) {
+		return this.command<RepAssetDelete>(new PayAssetDelete({
+			asset: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Asset}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreAsset(id: ulong) { return MINDFLAYER_RESTORE("asset", id); };
+	restoreAsset(id: ulong) {
+		return this.command<RepAssetDelete>(new PayAssetRestore({
+			asset: { id },
+		}));
+	}
 	/**
 	 * Suspends an {@link trakit.fleetfreedom.Asset}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	suspendAsset(id: ulong) { return MINDFLAYER_SUSPEND("asset", id); };
+	suspendAsset(id: ulong) { 
+		return this.command<RepAssetSuspend>(new PayAssetSuspend({
+			asset: { id },
+		}));
+	}
 	/**
 	 * Reactivates an {@link trakit.fleetfreedom.Asset}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	reviveAsset(id: ulong) { return MINDFLAYER_REVIVE("asset", id); };
+	reviveAsset(id: ulong) { 
+		return this.command<RepAssetSuspend>(new PayAssetReactivate({
+			asset: { id },
+		}));
+	}
 	/**
 	 * Searches all available companies for {@link trakit.fleetfreedom.Asset}s that match the given expression.
 	 * @expose
@@ -1206,7 +1300,9 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	searchAssets(expression: expression, constraints) { return MINDFLAYER_SEARCH("asset", expression, null, constraints); };
+	searchAssets(expression: expression, constraints: JsonObject) {
+		//return INDFLAYER_SEARCH("asset", expression, null, constraints);
+	};
 	//#endregion Assets
 	//#region Assets/Dispatch
 	/**
@@ -1215,7 +1311,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeAssetDispatch(json: JsonObject) { return MINDFLAYER_MERGE("assetDispatch", json, "assets/" + json["id"] + "/dispatch"); };
+	mergeAssetDispatch(json: JsonObject) {
+		return this.command<RepAssetDispatchMerge>(new PayAssetDispatchMerge({
+			assetDispatch: json,
+		}));
+	}
 	/**
 	 * Optimizes the given asset's dispatch jobs and returns the new order and ETAs based on back-end logic.
 	 * @expose
@@ -1233,49 +1333,79 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchTasks(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("dispatchTask", companyId, "assets/dispatch/tasks", constraints); };
+	listDispatchTasks(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepDispatchTaskListByCompany>(new PayDispatchTaskListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a list of all dispatch tasks for the given asset.
 	 * @expose
 	 * @param {!number} assetId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchTasksByAsset(assetId: ulong) { return MINDFLAYER_LIST_BY_ASSET("dispatchTask", assetId); };
+	getDispatchTasksByAsset(assetId: ulong, constraints: JsonObject) { 
+		return this.command<RepDispatchTaskListByAsset>(new PayDispatchTaskListByAsset({
+			...constraints,
+			asset: { id: assetId },
+		}));
+	}
 	/**
 	 * Retrieves a given dispatch task from the server by its {@link trakit.fleetfreedom.DispatchTask#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchTask(id: ulong) { return MINDFLAYER_GET("dispatchTask", id); };
+	getDispatchTask(id: ulong) {
+		return this.command<RepDispatchTaskGet>(new PayDispatchTaskGet({
+			dispatchTask: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.DispatchTask}.
 	 * @expose
 	 * @param {!trakit.json.DispatchTask} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeDispatchTask(json: JsonObject) { return MINDFLAYER_MERGE("dispatchTask", json); };
+	mergeDispatchTask(json: JsonObject) {
+		return this.command<RepDispatchTaskMerge>(new PayDispatchTaskMerge({
+			dispatchTask: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.DispatchTask}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.DispatchTask>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeDispatchTask(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("dispatchTask", array); };
+	multiMergeDispatchTask(id: ulong) {
+		return this.command<RepDispatchTaskBatchMerge>(new PayDispatchTaskBatchMerge({
+			dispatchTask: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.DispatchTask}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeDispatchTask(id: ulong) { return MINDFLAYER_DELETE("dispatchTask", id); };
+	removeDispatchTask(id: ulong) {
+		return this.command<RepDispatchTaskDelete>(new PayDispatchTaskDelete({
+			dispatchTask: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.DispatchTask}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreDispatchTask(id: ulong) { return MINDFLAYER_RESTORE("dispatchTask", id); };
+	restoreDispatchTask(id: ulong) {
+		return this.command<RepDispatchTaskDelete>(new PayDispatchTaskRestore({
+			dispatchTask: { id },
+		}));
+	}
 	//#endregion Assets/DispatchTasks
 	//#region Assets/DispatchJobs
 	/**
@@ -1286,62 +1416,100 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchJobs(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("dispatchJob", companyId, "assets/dispatch/jobs", constraints); };
+	listDispatchJobs(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepDispatchJobListByCompany>(new PayDispatchJobListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a list of all dispatch Jobs for the given asset.
 	 * @expose
 	 * @param {!number} assetId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchJobsByAsset(assetId: ulong) { return MINDFLAYER_LIST_BY_ASSET("dispatchJob", assetId); };
+	getDispatchJobsByAsset(assetId: ulong, constraints: JsonObject) { 
+		return this.command<RepDispatchJobListByAsset>(new PayDispatchJobListByAsset({
+			...constraints,
+			asset: { id: assetId },
+		}));
+	}
 	/**
 	 * Retrieves a given dispatch job from the server by its {@link trakit.fleetfreedom.DispatchJob#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchJob(id: ulong) { return MINDFLAYER_GET("dispatchJob", id); };
+	getDispatchJob(id: ulong) {
+		return this.command<RepDispatchJobGet>(new PayDispatchJobGet({
+			dispatchJob: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.DispatchJob}.
 	 * @expose
 	 * @param {!trakit.json.DispatchJob} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeDispatchJob(json: JsonObject) { return MINDFLAYER_MERGE("dispatchJob", json); };
+	mergeDispatchJob(json: JsonObject) {
+		return this.command<RepDispatchJobMerge>(new PayDispatchJobMerge({
+			dispatchJob: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.DispatchJob}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.DispatchJob>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeDispatchJob(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("dispatchJob", array); };
+	multiMergeDispatchJob(id: ulong) {
+		return this.command<RepDispatchJobBatchMerge>(new PayDispatchJobBatchMerge({
+			dispatchJob: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.DispatchJob}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeDispatchJob(id: ulong) { return MINDFLAYER_DELETE("dispatchJob", id); };
+	removeDispatchJob(id: ulong) {
+		return this.command<RepDispatchJobDelete>(new PayDispatchJobDelete({
+			dispatchJob: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.DispatchJob}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreDispatchJob(id: ulong) { return MINDFLAYER_RESTORE("dispatchJob", id); };
+	restoreDispatchJob(id: ulong) {
+		return this.command<RepDispatchJobDelete>(new PayDispatchJobRestore({
+			dispatchJob: { id },
+		}));
+	}
 	/**
 	 * Completes or progresses a {@link trakit.fleetfreedom.DispatchJob} (from the perspective of a driver, but by a dispatcher).
 	 * @expose
 	 * @param {!trakit.json.DispatchJob} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	changeDispatchJob(json: JsonObject) { return MINDFLAYER_MERGE("dispatchJob", json, "dispatch/jobs/" + json["id"], "PUT"); };
+	changeDispatchJob(json: JsonObject) { 
+		return this.command<RepDispatchJobChange>(new PayDispatchJobChange({
+			dispatchJob: json,
+		}));
+	}
 	/**
 	 * Cancels a {@link trakit.fleetfreedom.DispatchJob} and removes it from the dispatcher's and driver's view.
 	 * @param {!trakit.json.DispatchJob} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	cancelDispatchJob(json: JsonObject) { return MINDFLAYER_MERGE("dispatchJob", json, "dispatch/jobs/" + json["id"] + "/cancel", "POST"); };
+	cancelDispatchJob(json: JsonObject) {
+		return this.command<RepDispatchJobCancel>(new PayDispatchJobCancel({
+			dispatchJob: json,
+		}));
+	}
 	//#endregion Assets/DispatchJobs
 	//#region Assets/Messages
 	/**
@@ -1352,49 +1520,79 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getAssetMessages(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("message", companyId, null, constraints); };
+	listAssetMessages(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepAssetMessageListByCompany>(new PayAssetMessageListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a list of all dispatch Jobs for the given asset.
 	 * @expose
 	 * @param {!number} assetId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getAssetMessagesByAsset(assetId: ulong) { return MINDFLAYER_LIST_BY_ASSET("message", assetId); };
+	getAssetMessagesByAsset(assetId: ulong, constraints: JsonObject) {
+		return this.command<RepAssetMessageListByAsset>(new PayAssetMessageListByAsset({
+			...constraints,
+			asset: { id: assetId },
+		}));
+	}
 	/**
 	 * Retrieves a given message from the server by its {@link trakit.fleetfreedom.Message#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getAssetMessage(id: ulong) { return MINDFLAYER_GET("message", id); };
+	getAssetMessage(id: ulong) {
+		return this.command<RepAssetMessageGet>(new PayAssetMessageGet({
+			message: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Message}.
 	 * @expose
 	 * @param {!trakit.json.Message} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeAssetMessage(json: JsonObject) { return MINDFLAYER_MERGE("assetMessage", json); };
+	mergeAssetMessage(json: JsonObject) {
+		return this.command<RepAssetMessageMerge>(new PayAssetMessageMerge({
+			assetMessage: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.Message}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.Message>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeAssetMessage(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("assetMessage", array); };
+	multiMergeAssetMessage(id: ulong) {
+		return this.command<RepAssetMessageBatchMerge>(new PayAssetMessageBatchMerge({
+			assetMessage: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Message}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeAssetMessage(id: ulong) { return MINDFLAYER_DELETE("assetMessage", id); };
+	removeAssetMessage(id: ulong) {
+		return this.command<RepAssetMessageDelete>(new PayAssetMessageDelete({
+			assetMessage: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Message}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreAssetMessage(id: ulong) { return MINDFLAYER_RESTORE("assetMessage", id); };
+	restoreAssetMessage(id: ulong) {
+		return this.command<RepAssetMessageDelete>(new PayAssetMessageRestore({
+			assetMessage: { id },
+		}));
+	}
 	//#endregion Assets/Messages
 
 	//#region Places
@@ -1406,35 +1604,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getPlaces(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("place", companyId, null, constraints); };
+	listPlaces(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepPlaceListByCompany>(new PayPlaceListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given place from the server by its {@link trakit.fleetfreedom.Place#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getPlace(id: ulong) { return MINDFLAYER_GET("place", id); };
+	getPlace(id: ulong) {
+		return this.command<RepPlaceGet>(new PayPlaceGet({
+			place: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Place}.
 	 * @expose
 	 * @param {!trakit.json.Place} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergePlace(json: JsonObject) { return MINDFLAYER_MERGE("place", json); };
+	mergePlace(json: JsonObject) {
+		return this.command<RepPlaceMerge>(new PayPlaceMerge({
+			place: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Place}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removePlace(id: ulong) { return MINDFLAYER_DELETE("place", id); };
+	removePlace(id: ulong) {
+		return this.command<RepPlaceDelete>(new PayPlaceDelete({
+			place: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Place}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restorePlace(id: ulong) { return MINDFLAYER_RESTORE("place", id); };
+	restorePlace(id: ulong) {
+		return this.command<RepPlaceDelete>(new PayPlaceRestore({
+			place: { id },
+		}));
+	}
 	//#endregion Places
 
 	//#region Providers
@@ -1446,63 +1665,100 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstrainProvider=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviders(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("provider", companyId, null, constraints); };
+	listProviders(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepProviderListByCompany>(new PayProviderListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given provider from the server by its {@link trakit.fleetfreedom.Provider#id}.
 	 * @expose
 	 * @param {!string} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProvider(id: ulong) { return MINDFLAYER_GET("provider", ESCAPE((id || "").trim())); };
+	getProvider(id: string) {
+		return this.command<RepProviderGet>(new PayProviderGet({
+			provider: { id },
+		}));
+	}
 	/**
 	 * Merges an {@link trakit.fleetfreedom.Provider}.
 	 * @expose
 	 * @param {!trakit.json.Provider} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeProvider(json: JsonObject) { return MINDFLAYER_MERGE("provider", json); };
+	mergeProvider(json: JsonObject) {
+		return this.command<RepProviderMerge>(new PayProviderMerge({
+			provider: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.Provider}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.Provider>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeProvider(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("provider", array); };
+	multiMergeProvider(array: JsonObject[]) {
+		return this.command<RepProviderBatchMerge>(new PayProviderBatchMerge({
+			providers: array,
+		}));
+	}
 	/**
 	 * Deletes a batch of {@link trakit.fleetfreedom.Provider}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.Provider>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 */
-	multiRemoveProvider(array: JsonObject[]) { return MINDFLAYER_MULTI_DELETE("provider", array); };
+	multiRemoveProvider(array: JsonObject[]) { 
+		return this.command<RepProviderBatchDelete>(new PayProviderBatchDelete({
+			providers: array,
+		}));
+	}
 	/**
 	 * Deletes an {@link trakit.fleetfreedom.Provider}.
 	 * @expose
 	 * @param {!string} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeProvider(id: ulong) { return MINDFLAYER_DELETE("provider", ESCAPE((id || "").trim())); };
+	removeProvider(id: string) {
+		return this.command<RepProviderDelete>(new PayProviderDelete({
+			provider: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Provider}.
 	 * @expose
 	 * @param {!string} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreProvider(id: ulong) { return MINDFLAYER_RESTORE("provider", ESCAPE((id || "").trim())); };
+	restoreProvider(id: string) {
+		return this.command<RepProviderDelete>(new PayProviderRestore({
+			provider: { id },
+		}));
+	}
 	/**
 	 * Suspends an {@link trakit.fleetfreedom.Provider}.
 	 * @expose
 	 * @param {!string} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	suspendProvider(id: ulong) { return MINDFLAYER_SUSPEND("provider", ESCAPE((id || "").trim())); };
+	suspendProvider(id: string) {
+		return this.command<RepProviderSuspend>(new PayProviderSuspend({
+			provider: { id },
+		}));
+	}
 	/**
 	 * Reactivates an {@link trakit.fleetfreedom.Provider}.
 	 * @expose
 	 * @param {!string} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	reviveProvider(id: ulong) { return MINDFLAYER_REVIVE("provider", ESCAPE((id || "").trim())); };
+	reviveProvider(id: string) {
+		return this.command<RepProviderSuspend>(new PayProviderReactivate({
+			provider: { id },
+		}));
+	}
 	/**
 	 * Searches all available companies for {@link trakit.fleetfreedom.Provider}s that match the given expression.
 	 * @expose
@@ -1510,7 +1766,9 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByString=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	searchProviders(expression: expression, constraints) { return MINDFLAYER_SEARCH("provider", expression, null, constraints); };
+	searchProviders(expression: expression, constraints: JsonObject) {
+		return //INDFLAYER_SEARCH("provider", expression, null, constraints);
+	};
 	//#endregion Provider
 	//#region Providers/Scripts
 	/**
@@ -1521,35 +1779,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderScripts(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("providerScript", companyId, null, constraints); };
+	listProviderScripts(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepProviderScriptListByCompany>(new PayProviderScriptListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given Provider Script from the server by its {@link trakit.fleetfreedom.ProviderScript#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderScript(id: ulong) { return MINDFLAYER_GET("providerScript", id); };
+	getProviderScript(id: ulong) {
+		return this.command<RepProviderScriptGet>(new PayProviderScriptGet({
+			providerScript: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ProviderScript}.
 	 * @expose
 	 * @param {!trakit.json.ProviderScript} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeProviderScript(json: JsonObject) { return MINDFLAYER_MERGE("providerScript", json); };
+	mergeProviderScript(json: JsonObject) {
+		return this.command<RepProviderScriptMerge>(new PayProviderScriptMerge({
+			providerScript: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ProviderScript}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeProviderScript(id: ulong) { return MINDFLAYER_DELETE("providerScript", id); };
+	removeProviderScript(id: ulong) {
+		return this.command<RepProviderScriptDelete>(new PayProviderScriptDelete({
+			providerScript: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.ProviderScript}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreProviderScript(id: ulong) { return MINDFLAYER_RESTORE("providerScript", id); };
+	restoreProviderScript(id: ulong) {
+		return this.command<RepProviderScriptDelete>(new PayProviderScriptRestore({
+			providerScript: { id },
+		}));
+	}
 	//#endregion Providers/Scripts
 	//#region Providers/Configs
 	/**
@@ -1560,42 +1839,67 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderConfigs(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("providerConfig", companyId, null, constraints); };
+	listProviderConfigs(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepProviderConfigListByCompany>(new PayProviderConfigListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given Provider Config from the server by its {@link trakit.fleetfreedom.ProviderConfig#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderConfig(id: ulong) { return MINDFLAYER_GET("providerConfig", id); };
+	getProviderConfig(id: ulong) {
+		return this.command<RepProviderConfigGet>(new PayProviderConfigGet({
+			providerConfig: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ProviderConfig}.
 	 * @expose
 	 * @param {!trakit.json.ProviderConfig} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeProviderConfig(json: JsonObject) { return MINDFLAYER_MERGE("providerConfig", json); };
+	mergeProviderConfig(json: JsonObject) {
+		return this.command<RepProviderConfigMerge>(new PayProviderConfigMerge({
+			providerConfig: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.ProviderConfig}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.ProviderConfig>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeProviderConfig(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("providerConfig", array); };
+	multiMergeProviderConfig(id: ulong) {
+		return this.command<RepProviderConfigBatchMerge>(new PayProviderConfigBatchMerge({
+			providerConfig: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ProviderConfig}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeProviderConfig(id: ulong) { return MINDFLAYER_DELETE("providerConfig", id); };
+	removeProviderConfig(id: ulong) {
+		return this.command<RepProviderConfigDelete>(new PayProviderConfigDelete({
+			providerConfig: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.ProviderConfig}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreProviderConfig(id: ulong) { return MINDFLAYER_RESTORE("providerConfig", id); };
+	restoreProviderConfig(id: ulong) {
+		return this.command<RepProviderConfigDelete>(new PayProviderConfigRestore({
+			providerConfig: { id },
+		}));
+	}
 	//#endregion Providers/Configs
 	//#region Providers/Configurations
 	/**
@@ -1606,42 +1910,67 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderConfigurations(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("providerConfiguration", companyId, null, constraints); };
+	listProviderConfigurations(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepProviderConfigurationListByCompany>(new PayProviderConfigurationListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given Provider Configuration from the server by its {@link trakit.fleetfreedom.ProviderConfiguration#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderConfiguration(id: ulong) { return MINDFLAYER_GET("providerConfiguration", id); };
+	getProviderConfiguration(id: ulong) {
+		return this.command<RepProviderConfigurationGet>(new PayProviderConfigurationGet({
+			providerConfiguration: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ProviderConfiguration}.
 	 * @expose
 	 * @param {!trakit.json.ProviderConfiguration} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeProviderConfiguration(json: JsonObject) { return MINDFLAYER_MERGE("providerConfiguration", json); };
+	mergeProviderConfiguration(json: JsonObject) {
+		return this.command<RepProviderConfigurationMerge>(new PayProviderConfigurationMerge({
+			providerConfiguration: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.ProviderConfiguration}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.ProviderConfiguration>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeProviderConfiguration(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("providerConfiguration", array); };
+	multiMergeProviderConfiguration(id: ulong) {
+		return this.command<RepProviderConfigurationBatchMerge>(new PayProviderConfigurationBatchMerge({
+			providerConfiguration: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ProviderConfiguration}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeProviderConfiguration(id: ulong) { return MINDFLAYER_DELETE("providerConfiguration", id); };
+	removeProviderConfiguration(id: ulong) {
+		return this.command<RepProviderConfigurationDelete>(new PayProviderConfigurationDelete({
+			providerConfiguration: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.ProviderConfiguration}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreProviderConfiguration(id: ulong) { return MINDFLAYER_RESTORE("providerConfiguration", id); };
+	restoreProviderConfiguration(id: ulong) {
+		return this.command<RepProviderConfigurationDelete>(new PayProviderConfigurationRestore({
+			providerConfiguration: { id },
+		}));
+	}
 	//#endregion Providers/Configurations
 	//#region Providers/Registrations
 	/**
@@ -1651,35 +1980,45 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {number=} companyId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderRegistrations(companyId: ulong) { return MINDFLAYER_LIST_BY_COMPANY("providerRegistration", companyId); };
+	listProviderRegistration(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepProviderRegistrationListByCompany>(new PayProviderRegistrationListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given Provider Registration from the server by its {@link trakit.fleetfreedom.ProviderRegistration#id}.
 	 * @expose
 	 * @param {!number} code
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getProviderRegistration(code: int) { return MINDFLAYER_GET("providerRegistration", code); };
+	getProviderRegistration(code: int) { 
+		return this.command<RepProviderRegistrationGet>(new PayProviderRegistrationGet({
+			providerRegistration: { id: code },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ProviderRegistration}.
 	 * @expose
 	 * @param {!trakit.json.ProviderRegistration} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeProviderRegistration(json: JsonObject) { return MINDFLAYER_MERGE("providerRegistration", json); };
+	mergeProviderRegistration(json: JsonObject) {
+		return this.command<RepProviderRegistrationMerge>(new PayProviderRegistrationMerge({
+			providerRegistration: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ProviderRegistration}.
 	 * @expose
 	 * @param {!number} code
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeProviderRegistration(code: int) { return MINDFLAYER_DELETE("providerRegistration", code); };
-	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ProviderRegistration}.
-	 * @expose
-	 * @param {!number} code
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	restoreProviderRegistration(code: int) { return MINDFLAYER_RESTORE("providerRegistration", code); };
+	removeProviderRegistration(code: int) { 
+		return this.command<RepProviderRegistrationDelete>(new PayProviderRegistrationDelete({
+			providerRegistration: { id: code },
+		}));
+	}
 	//#endregion Providers/Registrations
 
 	//#region Behaviours
@@ -1691,42 +2030,67 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getBehaviours(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("behaviour", companyId, null, constraints); };
+	listBehaviours(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepBehaviourListByCompany>(new PayBehaviourListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given behaviour from the server by its {@link trakit.fleetfreedom.Behaviour#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getBehaviour(id: ulong) { return MINDFLAYER_GET("behaviour", id); };
+	getBehaviour(id: ulong) {
+		return this.command<RepBehaviourGet>(new PayBehaviourGet({
+			behaviour: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Behaviour}.
 	 * @expose
 	 * @param {!trakit.json.Behaviour} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeBehaviour(json: JsonObject) { return MINDFLAYER_MERGE("behaviour", json); };
+	mergeBehaviour(json: JsonObject) {
+		return this.command<RepBehaviourMerge>(new PayBehaviourMerge({
+			behaviour: json,
+		}));
+	}
 	/**
 	 * Merges a batch of {@link trakit.fleetfreedom.Behaviour}s.
 	 * @expose
 	 * @param {!Array.<trakit.json.Behaviour>} array
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	multiMergeBehaviour(array: JsonObject[]) { return MINDFLAYER_MULTI_MERGE("behaviour", array); };
+	multiMergeBehaviour(id: ulong) {
+		return this.command<RepBehaviourBatchMerge>(new PayBehaviourBatchMerge({
+			behaviour: { id },
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Behaviour}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeBehaviour(id: ulong) { return MINDFLAYER_DELETE("behaviour", id); };
+	removeBehaviour(id: ulong) {
+		return this.command<RepBehaviourDelete>(new PayBehaviourDelete({
+			behaviour: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Behaviour}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreBehaviour(id: ulong) { return MINDFLAYER_RESTORE("behaviour", id); };
+	restoreBehaviour(id: ulong) {
+		return this.command<RepBehaviourDelete>(new PayBehaviourRestore({
+			behaviour: { id },
+		}));
+	}
 	//#endregion Behaviours
 	//#region Behaviours/Scripts
 	/**
@@ -1737,35 +2101,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getBehaviourScripts(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("behaviourScript", companyId, null, constraints); };
+	listBehaviourScripts(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepBehaviourScriptListByCompany>(new PayBehaviourScriptListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given script from the server by its {@link trakit.fleetfreedom.Behaviour#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getBehaviourScript(id: ulong) { return MINDFLAYER_GET("behaviourScript", id); };
+	getBehaviourScript(id: ulong) {
+		return this.command<RepBehaviourScriptGet>(new PayBehaviourScriptGet({
+			behaviourScript: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.Behaviour}.
 	 * @expose
 	 * @param {!trakit.json.Behaviour} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeBehaviourScript(json: JsonObject) { return MINDFLAYER_MERGE("behaviourScript", json); };
+	mergeBehaviourScript(json: JsonObject) {
+		return this.command<RepBehaviourScriptMerge>(new PayBehaviourScriptMerge({
+			behaviourScript: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.Behaviour}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeBehaviourScript(id: ulong) { return MINDFLAYER_DELETE("behaviourScript", id); };
+	removeBehaviourScript(id: ulong) {
+		return this.command<RepBehaviourScriptDelete>(new PayBehaviourScriptDelete({
+			behaviourScript: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.Behaviour}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreBehaviourScript(id: ulong) { return MINDFLAYER_RESTORE("behaviourScript", id); };
+	restoreBehaviourScript(id: ulong) {
+		return this.command<RepBehaviourScriptDelete>(new PayBehaviourScriptRestore({
+			behaviourScript: { id },
+		}));
+	}
 	//#endregion Behaviours/Scripts
 	//#region Behaviours/Logs
 	/**
@@ -1775,21 +2160,12 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} behaviourId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getBehaviourLogs(behaviourId: ulong) {
-		return CLIENT.mindflayer("behaviours/" + behaviourId + "/logs").next(function (/** SyncMindflayer */ msg) {
-			var response = MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD(BEHAVIOUR_LOG_TYPES, msg.response);
-			if (msg.response.errorCode === 0) {
-				BEHAVIOUR_LOG_PURGE(msg.response["behaviour"]["company"], function (log) {
-					return log.behaviourId === behaviourId;
-				});
-				response[BEHAVIOUR_LOG_TYPES] = msg.response[BEHAVIOUR_LOG_TYPES].map(function (json: JsonObject) {
-					return SyncClient_merged(BEHAVIOUR_LOG_TYPE, json);
-				});
-			}
-			me.fire(BEHAVIOUR_LOG_BEHAVE_EVENT, response);
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
+	listBehaviourLogs(behaviourId: ulong, constraints: JsonObject) {
+		return this.command<RepBehaviourLogListByBehaviour>(new PayBehaviourLogListByBehaviour({
+			...constraints,
+			behaviour: { id: behaviourId },
+		}));
+	}
 	/**
 	 * Deletes all the {@link trakit.fleetfreedom.BehaviourLog}s for the given behaviour.
 	 * @expose
@@ -1797,20 +2173,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	clearBehaviourLogs(behaviourId: ulong) {
-		return CLIENT.mindflayer("behaviours/" + behaviourId + "/logs", "DELETE").next(function (/** SyncMindflayer */ msg) {
-			if (msg.response.errorCode === 0) {
-				BEHAVIOUR_LOG_PURGE(msg.response["behaviour"]["company"], function (log) {
-					return log.behaviourId === behaviourId;
-				});
-				me.fire(BEHAVIOUR_LOG_BEHAVE_EVENT, {
-					"errorCode": msg.response.errorCode,
-					"message": msg.response.message,
-					"behaviourLogs": [],
-				});
-			}
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
+		return this.command<RepBehaviourLogBatchDelete>(new PayBehaviourLogBatchDelete({
+			behaviour: { id: behaviourId },
+		}));
+	}
 	/**
 	 * Retrieves a list of all BehaviourLogs in the given behaviour script.
 	 * If a company is not given it will use the currently selected company.
@@ -1818,42 +2184,24 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} scriptId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getBehaviourScriptLogs(scriptId: ulong) {
-		return CLIENT.mindflayer("behaviours/scripts/" + scriptId + "/logs").next(function (/** SyncMindflayer */ msg) {
-			var response = MINDFLAYER_RESPONSE_WITHOUT_PAYLOAD(BEHAVIOUR_LOG_TYPES, msg.response);
-			if (msg.response.errorCode === 0) {
-				BEHAVIOUR_LOG_PURGE(msg.response["behaviourScript"]["company"], function (log) {
-					return log.scriptId === scriptId;
-				});
-				response[BEHAVIOUR_LOG_TYPES] = msg.response[BEHAVIOUR_LOG_TYPES].map(function (json: JsonObject) {
-					return SyncClient_merged(BEHAVIOUR_LOG_TYPE, json);
-				});
-			}
-			me.fire(BEHAVIOUR_LOG_SCRIPT_EVENT, response);
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
+	listBehaviourScriptLogs(scriptId: ulong, constraints: JsonObject) {
+		return this.command<RepBehaviourLogListByScript>(new PayBehaviourLogListByScript({
+			...constraints,
+			behaviourScript: { id: scriptId },
+		}));
+	}
 	/**
 	 * Deletes all the {@link trakit.fleetfreedom.BehaviourLog}s for the given behaviour script.
 	 * @expose
 	 * @param {!number} scriptId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	clearBehaviourScriptLogs(scriptId: ulong) {
-		return CLIENT.mindflayer("behaviours/scripts/" + scriptId + "/logs", "DELETE").next(function (/** SyncMindflayer */ msg) {
-			if (msg.response.errorCode === 0) {
-				BEHAVIOUR_LOG_PURGE(msg.response["behaviourScript"]["company"], function (log) {
-					return log.scriptId === scriptId;
-				});
-				me.fire(BEHAVIOUR_LOG_SCRIPT_EVENT, {
-					"errorCode": msg.response.errorCode,
-					"message": msg.response.message,
-					"behaviourLogs": [],
-				});
-			}
-			return Promise[msg.response.errorCode === 0 ? "resolve" : "reject"](msg);
-		});
-	};
+	clearBehaviourScriptLogs(scriptId: ulong, constraints: JsonObject) {
+		return this.command<RepBehaviourLogBatchDelete>(new PayBehaviourLogBatchDelete({
+			...constraints,
+			behaviourScript: { id: scriptId },
+		}));
+	}
 	//#endregion Behaviours/Logs
 
 	//#region Reports/Templates
@@ -1865,35 +2213,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getReportTemplates(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("reportTemplate", companyId, null, constraints); };
+	listReportTemplates(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepReportTemplateListByCompany>(new PayReportTemplateListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given template from the server by its {@link trakit.fleetfreedom.ReportTemplate#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getReportTemplate(id: ulong) { return MINDFLAYER_GET("reportTemplate", id); };
+	getReportTemplate(id: ulong) {
+		return this.command<RepReportTemplateGet>(new PayReportTemplateGet({
+			reportTemplate: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ReportTemplate}.
 	 * @expose
 	 * @param {!trakit.json.ReportTemplate} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeReportTemplate(json: JsonObject) { return MINDFLAYER_MERGE("reportTemplate", json); };
+	mergeReportTemplate(json: JsonObject) {
+		return this.command<RepReportTemplateMerge>(new PayReportTemplateMerge({
+			reportTemplate: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ReportTemplate}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeReportTemplate(id: ulong) { return MINDFLAYER_DELETE("reportTemplate", id); };
+	removeReportTemplate(id: ulong) {
+		return this.command<RepReportTemplateDelete>(new PayReportTemplateDelete({
+			reportTemplate: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.ReportTemplate}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreReportTemplate(id: ulong) { return MINDFLAYER_RESTORE("reportTemplate", id); };
+	restoreReportTemplate(id: ulong) {
+		return this.command<RepReportTemplateDelete>(new PayReportTemplateRestore({
+			reportTemplate: { id },
+		}));
+	}
 	//#endregion Reports/Templates
 	//#region Reports/Schedules
 	/**
@@ -1904,35 +2273,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getReportSchedules(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("reportSchedule", companyId, null, constraints); }
+	listReportSchedules(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepReportScheduleListByCompany>(new PayReportScheduleListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given schedule from the server by its {@link trakit.fleetfreedom.ReportSchedule#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getReportSchedule(id: ulong) { return MINDFLAYER_GET("reportSchedule", id); };
+	getReportSchedule(id: ulong) {
+		return this.command<RepReportScheduleGet>(new PayReportScheduleGet({
+			reportSchedule: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ReportSchedule}.
 	 * @expose
 	 * @param {!trakit.json.ReportSchedule} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeReportSchedule(json: JsonObject) { return MINDFLAYER_MERGE("reportSchedule", json); };
+	mergeReportSchedule(json: JsonObject) {
+		return this.command<RepReportScheduleMerge>(new PayReportScheduleMerge({
+			reportSchedule: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ReportSchedule}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeReportSchedule(id: ulong) { return MINDFLAYER_DELETE("reportSchedule", id); };
+	removeReportSchedule(id: ulong) {
+		return this.command<RepReportScheduleDelete>(new PayReportScheduleDelete({
+			reportSchedule: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.ReportSchedule}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreReportSchedule(id: ulong) { return MINDFLAYER_RESTORE("reportSchedule", id); };
+	restoreReportSchedule(id: ulong) {
+		return this.command<RepReportScheduleDelete>(new PayReportScheduleRestore({
+			reportSchedule: { id },
+		}));
+	}
 	//#endregion Reports/Schedules
 	//#region Reports/Results
 	/**
@@ -1943,35 +2333,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getReportResults(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("reportResult", companyId, null, constraints); };
+	listReportResults(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepReportResultListByCompany>(new PayReportResultListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given report from the server by its {@link trakit.fleetfreedom.ReportResult#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getReportResult(id: ulong) { return MINDFLAYER_GET("reportResult", id); };
+	getReportResult(id: ulong) {
+		return this.command<RepReportResultGet>(new PayReportResultGet({
+			reportResult: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.ReportResult}.
 	 * @expose
 	 * @param {!trakit.json.ReportResult} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeReportResult(json: JsonObject) { return MINDFLAYER_MERGE("reportResult", json); };
+	mergeReportResult(json: JsonObject) {
+		return this.command<RepReportResultMerge>(new PayReportResultMerge({
+			reportResult: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.ReportResult}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeReportResult(id: ulong) { return MINDFLAYER_DELETE("reportResult", id); };
+	removeReportResult(id: ulong) {
+		return this.command<RepReportResultDelete>(new PayReportResultDelete({
+			reportResult: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.ReportResult}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreReportResult(id: ulong) { return MINDFLAYER_RESTORE("reportResult", id); };
+	restoreReportResult(id: ulong) {
+		return this.command<RepReportResultDelete>(new PayReportResultRestore({
+			reportResult: { id },
+		}));
+	}
 	//#endregion Reports/Results
 
 	//#region Maintenance/Schedules
@@ -1983,35 +2394,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getMaintenanceSchedules(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("maintenanceSchedule", companyId, null, constraints); };
+	listMaintenanceSchedules(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepMaintenanceScheduleListByCompany>(new PayMaintenanceScheduleListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given schedule from the server by its {@link trakit.fleetfreedom.MaintenanceSchedule#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getMaintenanceSchedule(id: ulong) { return MINDFLAYER_GET("maintenanceSchedule", id); };
+	getMaintenanceSchedule(id: ulong) {
+		return this.command<RepMaintenanceScheduleGet>(new PayMaintenanceScheduleGet({
+			maintenanceSchedule: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.MaintenanceSchedule}.
 	 * @expose
 	 * @param {!trakit.json.MaintenanceSchedule} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeMaintenanceSchedule(json: JsonObject) { return MINDFLAYER_MERGE("maintenanceSchedule", json); };
+	mergeMaintenanceSchedule(json: JsonObject) {
+		return this.command<RepMaintenanceScheduleMerge>(new PayMaintenanceScheduleMerge({
+			maintenanceSchedule: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.MaintenanceSchedule}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeMaintenanceSchedule(id: ulong) { return MINDFLAYER_DELETE("maintenanceSchedule", id); };
+	removeMaintenanceSchedule(id: ulong) {
+		return this.command<RepMaintenanceScheduleDelete>(new PayMaintenanceScheduleDelete({
+			maintenanceSchedule: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.MaintenanceSchedule}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreMaintenanceSchedule(id: ulong) { return MINDFLAYER_RESTORE("maintenanceSchedule", id); };
+	restoreMaintenanceSchedule(id: ulong) {
+		return this.command<RepMaintenanceScheduleDelete>(new PayMaintenanceScheduleRestore({
+			maintenanceSchedule: { id },
+		}));
+	}
 	//#endregion Maintenance/Schedules
 	//#region Maintenance/Jobs
 	/**
@@ -2022,34 +2454,55 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstrainMaintenanceJob=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getMaintenanceJobs(companyId: ulong, constraints) { return MINDFLAYER_LIST_BY_COMPANY("maintenanceJob", companyId, null, constraints); };
+	listMaintenanceJobs(companyId: ulong, constraints: JsonObject) {
+		return this.command<RepMaintenanceJobListByCompany>(new PayMaintenanceJobListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
 	/**
 	 * Retrieves a given job from the server by its {@link trakit.fleetfreedom.MaintenanceJob#id}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getMaintenanceJob(id: ulong) { return MINDFLAYER_GET("maintenanceJob", id); };
+	getMaintenanceJob(id: ulong) {
+		return this.command<RepMaintenanceJobGet>(new PayMaintenanceJobGet({
+			maintenanceJob: { id },
+		}));
+	}
 	/**
 	 * Merges a {@link trakit.fleetfreedom.MaintenanceJob}.
 	 * @expose
 	 * @param {!trakit.json.MaintenanceJob} json
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	mergeMaintenanceJob(json: JsonObject) { return MINDFLAYER_MERGE("maintenanceJob", json); };
+	mergeMaintenanceJob(json: JsonObject) {
+		return this.command<RepMaintenanceJobMerge>(new PayMaintenanceJobMerge({
+			maintenanceJob: json,
+		}));
+	}
 	/**
 	 * Deletes a {@link trakit.fleetfreedom.MaintenanceJob}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	removeMaintenanceJob(id: ulong) { return MINDFLAYER_DELETE("maintenanceJob", id); };
+	removeMaintenanceJob(id: ulong) {
+		return this.command<RepMaintenanceJobDelete>(new PayMaintenanceJobDelete({
+			maintenanceJob: { id },
+		}));
+	}
 	/**
 	 * Restores a deleted {@link trakit.fleetfreedom.MaintenanceJob}.
 	 * @expose
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	restoreMaintenanceJob(id: ulong) { return MINDFLAYER_RESTORE("maintenanceJob", id); };
+	restoreMaintenanceJob(id: ulong) {
+		return this.command<RepMaintenanceJobDelete>(new PayMaintenanceJobRestore({
+			maintenanceJob: { id },
+		}));
+	}
 	//#endregion Maintenance/Jobs
 }
