@@ -5,6 +5,13 @@
 	PayAssetGet,
 	PayAssetListByCompany,
 	PayAssetMerge,
+	PayAssetMessageBatchMerge,
+	PayAssetMessageDelete,
+	PayAssetMessageGet,
+	PayAssetMessageListByAsset,
+	PayAssetMessageListByCompany,
+	PayAssetMessageMerge,
+	PayAssetMessageRestore,
 	PayAssetReactivate,
 	PayAssetRestore,
 	PayAssetSuspend,
@@ -39,13 +46,19 @@
 	PayContactMerge,
 	PayContactRestore,
 	PayDispatchJobBatchMerge,
+	PayDispatchJobCancel,
+	PayDispatchJobChange,
 	PayDispatchJobDelete,
 	PayDispatchJobGet,
+	PayDispatchJobListByAsset,
+	PayDispatchJobListByCompany,
 	PayDispatchJobMerge,
 	PayDispatchJobRestore,
 	PayDispatchTaskBatchMerge,
 	PayDispatchTaskDelete,
 	PayDispatchTaskGet,
+	PayDispatchTaskListByAsset,
+	PayDispatchTaskListByCompany,
 	PayDispatchTaskMerge,
 	PayDispatchTaskRestore,
 	PayFormTemplateDelete,
@@ -101,6 +114,10 @@
 	PayProviderGet,
 	PayProviderListByCompany,
 	PayProviderMerge,
+	PayProviderRegistrationDelete,
+	PayProviderRegistrationGet,
+	PayProviderRegistrationListByCompany,
+	PayProviderRegistrationMerge,
 	PayProviderRestore,
 	PayProviderScriptDelete,
 	PayProviderScriptGet,
@@ -113,6 +130,9 @@
 	PayReportResultMerge,
 	PayReportResultRestore,
 	PayReportScheduleDelete,
+	PayReportScheduleGet,
+	PayReportScheduleListByCompany,
+	PayReportScheduleMerge,
 	PayReportScheduleRestore,
 	PayReportTemplateDelete,
 	PayReportTemplateGet,
@@ -142,6 +162,12 @@
 	RepAssetGet,
 	RepAssetListByCompany,
 	RepAssetMerge,
+	RepAssetMessageBatchMerge,
+	RepAssetMessageDelete,
+	RepAssetMessageGet,
+	RepAssetMessageListByAsset,
+	RepAssetMessageListByCompany,
+	RepAssetMessageMerge,
 	RepAssetSuspend,
 	RepBehaviourBatchMerge,
 	RepBehaviourDelete,
@@ -172,10 +198,14 @@
 	RepDispatchJobBatchMerge,
 	RepDispatchJobDelete,
 	RepDispatchJobGet,
+	RepDispatchJobListByAsset,
+	RepDispatchJobListByCompany,
 	RepDispatchJobMerge,
 	RepDispatchTaskBatchMerge,
 	RepDispatchTaskDelete,
 	RepDispatchTaskGet,
+	RepDispatchTaskListByAsset,
+	RepDispatchTaskListByCompany,
 	RepDispatchTaskMerge,
 	RepFormResultDelete,
 	RepFormResultGet,
@@ -209,6 +239,8 @@
 	RepPlaceGet,
 	RepPlaceListByCompany,
 	RepPlaceMerge,
+	RepProviderBatchDelete,
+	RepProviderBatchMerge,
 	RepProviderConfigBatchMerge,
 	RepProviderConfigDelete,
 	RepProviderConfigGet,
@@ -219,6 +251,10 @@
 	RepProviderConfigurationGet,
 	RepProviderConfigurationListByCompany,
 	RepProviderConfigurationMerge,
+	RepProviderDelete,
+	RepProviderGet,
+	RepProviderMerge,
+	RepProviderRegistrationDelete,
 	RepProviderRegistrationGet,
 	RepProviderRegistrationListByCompany,
 	RepProviderRegistrationMerge,
@@ -1756,28 +1792,28 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 			provider: { id },
 		}));
 	}
-	/**
-	 * Suspends an {@link trakit.fleetfreedom.Provider}.
-	 * @expose
-	 * @param {!string} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	suspendProvider(id: string) {
-		return this.command<RepProviderSuspend>(new PayProviderSuspend({
-			provider: { id },
-		}));
-	}
-	/**
-	 * Reactivates an {@link trakit.fleetfreedom.Provider}.
-	 * @expose
-	 * @param {!string} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	reviveProvider(id: string) {
-		return this.command<RepProviderSuspend>(new PayProviderReactivate({
-			provider: { id },
-		}));
-	}
+	///**
+	// * Suspends an {@link trakit.fleetfreedom.Provider}.
+	// * @expose
+	// * @param {!string} id
+	// * @return {!Promise<SyncMindflayer>}
+	// **/
+	//suspendProvider(id: string) {
+	//	return this.command<RepProviderSuspend>(new PayProviderSuspend({
+	//		provider: { id },
+	//	}));
+	//}
+	///**
+	// * Reactivates an {@link trakit.fleetfreedom.Provider}.
+	// * @expose
+	// * @param {!string} id
+	// * @return {!Promise<SyncMindflayer>}
+	// **/
+	//reviveProvider(id: string) {
+	//	return this.command<RepProviderSuspend>(new PayProviderReactivate({
+	//		provider: { id },
+	//	}));
+	//}
 	/**
 	 * Searches all available companies for {@link trakit.fleetfreedom.Provider}s that match the given expression.
 	 * @expose

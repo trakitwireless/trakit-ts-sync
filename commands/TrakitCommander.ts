@@ -38,7 +38,7 @@ export abstract class TrakitCommander<TRequest> {
 	/**
 	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
 	 */
-	account!: RepSelfGet;
+	account: RepSelfGet = new RepSelfGet;
     
 	/**
 	 * {@link url} of the underlying Trak-iT API service.
@@ -67,7 +67,15 @@ export abstract class TrakitCommander<TRequest> {
 		return route;
 	}
 
-	constructor(baseAddress?: url | nothing, account?: RepSelfGet | nothing) {
+	constructor(
+		baseAddress?: url | nothing,
+		account?: RepSelfGet
+			| Machine
+			| { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing
+	) {
 		this.baseAddress = new URL(baseAddress || self.location?.origin);
 		this.setAuth(account || new RepSelfGet);
 	}
