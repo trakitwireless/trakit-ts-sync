@@ -1,27 +1,24 @@
 import {
-	ErrorCode,
 	IPayListByAsset,
 	IPayListByBillingProfile,
 	IPayListByCompany,
-	IPayListByDate,
-	IPayListById,
-	IPayListByKey,
+	PayListByDate,
+	PayListById,
+	PayListByKey,
 	IPayListByLabels,
 	IPayListByReferences,
 	IPayListByUser,
 	IPaySingle,
-	Payload,
-	Reply,
+	Payload
 } from "@trakit/commands";
 import {
-	JsonObject,
 	nothing,
 	url,
-	utility,
- } from "@trakit/objects";
-import { TrakitObjectCommander } from "./TrakitObjectCommander";
+	utility
+} from "@trakit/objects";
 import { SUBSCRIPTION_LIST_BY_ASSET, SUBSCRIPTION_LIST_BY_BILLING_PROFILE, SUBSCRIPTION_LIST_BY_COMPANY } from "common/Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
+import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.
@@ -161,25 +158,25 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 									break;
 							}
 							// type IPayListByDate
-							if (utility.isntNaN((payload as any as IPayListByDate)?.after?.valueOf())) {
-								query += "&after=" + encodeURIComponent(((payload as any as IPayListByDate).after as Date).toISOString());
+							if (utility.isntNaN((payload as any as PayListByDate)?.after?.valueOf())) {
+								query += "&after=" + encodeURIComponent(((payload as any as PayListByDate).after as Date).toISOString());
 							}
-							if (utility.isntNaN((payload as any as IPayListByDate)?.before?.valueOf())) {
-								query += "&before=" + encodeURIComponent(((payload as any as IPayListByDate).before as Date).toISOString());
+							if (utility.isntNaN((payload as any as PayListByDate)?.before?.valueOf())) {
+								query += "&before=" + encodeURIComponent(((payload as any as PayListByDate).before as Date).toISOString());
 							}
 							// type IPayListById
-							if (utility.isntNaN((payload as any as IPayListById)?.lowest)) {
-								query += "&lowest=" + (payload as any as IPayListById).lowest;
+							if (utility.isntNaN((payload as any as PayListById)?.lowest)) {
+								query += "&lowest=" + (payload as any as PayListById).lowest;
 							}
-							if (utility.isntNaN((payload as any as IPayListById)?.highest)) {
-								query += "&highest=" + (payload as any as IPayListById).highest;
+							if (utility.isntNaN((payload as any as PayListById)?.highest)) {
+								query += "&highest=" + (payload as any as PayListById).highest;
 							}
 							//// type IPayListByKey
-							if ((payload as any as IPayListByKey)?.first) {
-								query += "&first=" + (payload as any as IPayListByKey).first;
+							if ((payload as any as PayListByKey)?.first) {
+								query += "&first=" + (payload as any as PayListByKey).first;
 							}
-							if ((payload as any as IPayListByKey)?.last) {
-								query += "&last=" + (payload as any as IPayListByKey).last;
+							if ((payload as any as PayListByKey)?.last) {
+								query += "&last=" + (payload as any as PayListByKey).last;
 							}
 							// type IPayListByLabels
 							if ((payload as any as IPayListByLabels)?.labels?.length) {
@@ -239,15 +236,15 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 		if (body && verb !== "GET") {
 			init.body = JSON.stringify(body);
 		}
-		if (this._machine) {
-			headers.set("Authorization", "HMAC256 " + this._machine.createHmacSignature(
+		if (this.account.machine) {
+			headers.set("Authorization", "HMAC256 " + this.account.machine.createHmacSignature(
 				route,
 				verb,
 				(init.body as string)?.length ?? 0,
 				new Date
 			));
-		} else if (this._sessionId) {
-			route.searchParams.set("ghostId", this._sessionId);
+		} else if (this.account.ghostId) {
+			route.searchParams.set("ghostId", this.account.ghostId);
 		}
 		if (headers.size > 0) {
 			init.headers = new Headers([...headers.entries()]);
