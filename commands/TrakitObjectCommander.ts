@@ -12,7 +12,12 @@
 	PayBehaviourDelete,
 	PayBehaviourGet,
 	PayBehaviourListByCompany,
-	PayBehaviourLogBatchDelete,
+	PayBehaviourLogBatchDeleteByAsset,
+	PayBehaviourLogBatchDeleteByBehaviour,
+	PayBehaviourLogBatchDeleteByScript,
+	PayBehaviourLogListByAsset,
+	PayBehaviourLogListByBehaviour,
+	PayBehaviourLogListByScript,
 	PayBehaviourMerge,
 	PayBehaviourRestore,
 	PayBehaviourScriptDelete,
@@ -137,7 +142,12 @@
 	RepBehaviourDelete,
 	RepBehaviourGet,
 	RepBehaviourListByCompany,
-	RepBehaviourLogBatchDelete,
+	RepBehaviourLogBatchDeleteByAsset,
+	RepBehaviourLogBatchDeleteByBehaviour,
+	RepBehaviourLogBatchDeleteByScript,
+	RepBehaviourLogListByAsset,
+	RepBehaviourLogListByBehaviour,
+	RepBehaviourLogListByScript,
 	RepBehaviourMerge,
 	RepBehaviourScriptDelete,
 	RepBehaviourScriptGet,
@@ -2160,6 +2170,30 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} behaviourId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
+	listBehaviourAssetLogs(behaviourId: ulong, constraints: JsonObject) {
+		return this.command<RepBehaviourLogListByAsset>(new PayBehaviourLogListByAsset({
+			...constraints,
+			behaviour: { id: behaviourId },
+		}));
+	}
+	/**
+	 * Deletes all the {@link trakit.fleetfreedom.BehaviourLog}s for the given behaviour.
+	 * @expose
+	 * @param {!number} behaviourId
+	 * @return {!Promise<SyncMindflayer>}
+	 **/
+	clearBehaviourAssetLogs(behaviourId: ulong) {
+		return this.command<RepBehaviourLogBatchDeleteByAsset>(new PayBehaviourLogBatchDeleteByAsset({
+			behaviour: { id: behaviourId },
+		}));
+	}
+	/**
+	 * Retrieves a list of all BehaviourLogs in the given behaviour.
+	 * If a company is not given it will use the currently selected company.
+	 * @expose
+	 * @param {!number} behaviourId
+	 * @return {!Promise<SyncMindflayer>}
+	 **/
 	listBehaviourLogs(behaviourId: ulong, constraints: JsonObject) {
 		return this.command<RepBehaviourLogListByBehaviour>(new PayBehaviourLogListByBehaviour({
 			...constraints,
@@ -2173,7 +2207,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	clearBehaviourLogs(behaviourId: ulong) {
-		return this.command<RepBehaviourLogBatchDelete>(new PayBehaviourLogBatchDelete({
+		return this.command<RepBehaviourLogBatchDeleteByBehaviour>(new PayBehaviourLogBatchDeleteByBehaviour({
 			behaviour: { id: behaviourId },
 		}));
 	}
@@ -2197,7 +2231,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	clearBehaviourScriptLogs(scriptId: ulong, constraints: JsonObject) {
-		return this.command<RepBehaviourLogBatchDelete>(new PayBehaviourLogBatchDelete({
+		return this.command<RepBehaviourLogBatchDeleteByScript>(new PayBehaviourLogBatchDeleteByScript({
 			...constraints,
 			behaviourScript: { id: scriptId },
 		}));
