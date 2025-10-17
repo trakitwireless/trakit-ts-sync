@@ -605,7 +605,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 					this.resetKeepAlive();
 					break;
 				case TrakitSocketStatus.closed:
-					this.open().then(() => this._relayRequest(request).then(resolve, reject), reject);
+					this.open().then(() => this._relayRequest(request).then(resolve)).catch(reject);
 					break;
 				default:
 					reject({
