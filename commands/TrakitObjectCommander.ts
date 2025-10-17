@@ -2,6 +2,7 @@
 	ErrorCode,
 	PayAssetBatchMerge,
 	PayAssetDelete,
+	PayAssetDispatchMerge,
 	PayAssetGet,
 	PayAssetListByCompany,
 	PayAssetMerge,
@@ -36,7 +37,10 @@
 	PayCompanyGeneralListByCompany,
 	PayCompanyGet,
 	PayCompanyMerge,
+	PayCompanyResellerDelete,
 	PayCompanyResellerGet,
+	PayCompanyResellerMerge,
+	PayCompanyResellerRestore,
 	PayCompanyRestore,
 	PayContactBatchDelete,
 	PayContactBatchMerge,
@@ -45,6 +49,9 @@
 	PayContactListByCompany,
 	PayContactMerge,
 	PayContactRestore,
+	PayDashcamGet,
+	PayDashcamListByCompany,
+	PayDashcamLiveListByCompany,
 	PayDispatchJobBatchMerge,
 	PayDispatchJobCancel,
 	PayDispatchJobChange,
@@ -61,6 +68,17 @@
 	PayDispatchTaskListByCompany,
 	PayDispatchTaskMerge,
 	PayDispatchTaskRestore,
+	PayDocumentDelete,
+	PayDocumentGet,
+	PayDocumentListByCompany,
+	PayDocumentMerge,
+	PayDocumentRestore,
+	PayFormResultBatchMerge,
+	PayFormResultDelete,
+	PayFormResultGet,
+	PayFormResultListByCompany,
+	PayFormResultMerge,
+	PayFormResultRestore,
 	PayFormTemplateDelete,
 	PayFormTemplateGet,
 	PayFormTemplateListByCompany,
@@ -158,7 +176,9 @@
 	PayUserListByCompany,
 	PayUserMerge,
 	PayUserRestore,
+	RepAssetBatchMerge,
 	RepAssetDelete,
+	RepAssetDispatchMerge,
 	RepAssetGet,
 	RepAssetListByCompany,
 	RepAssetMerge,
@@ -188,13 +208,18 @@
 	RepCompanyGeneralListByCompany,
 	RepCompanyGet,
 	RepCompanyMerge,
+	RepCompanyResellerDelete,
 	RepCompanyResellerGet,
+	RepCompanyResellerMerge,
 	RepContactBatchDelete,
 	RepContactBatchMerge,
 	RepContactDelete,
 	RepContactGet,
 	RepContactListByCompany,
 	RepContactMerge,
+	RepDashcamGet,
+	RepDashcamListByCompany,
+	RepDashcamLiveListByCompany,
 	RepDispatchJobBatchMerge,
 	RepDispatchJobDelete,
 	RepDispatchJobGet,
@@ -207,8 +232,14 @@
 	RepDispatchTaskListByAsset,
 	RepDispatchTaskListByCompany,
 	RepDispatchTaskMerge,
+	RepDocumentDelete,
+	RepDocumentGet,
+	RepDocumentListByCompany,
+	RepDocumentMerge,
+	RepFormResultBatchMerge,
 	RepFormResultDelete,
 	RepFormResultGet,
+	RepFormResultListByCompany,
 	RepFormResultMerge,
 	RepFormTemplateDelete,
 	RepFormTemplateGet,
@@ -505,7 +536,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listCompanies(id: ulong, constraints: JsonObject) {
+	listCompanies(id: ulong, constraints?: JsonObject) {
 		return this.command<RepCompanyGeneralListByCompany>(new PayCompanyGeneralListByCompany({
 			...constraints,
 			company: { id },
@@ -597,7 +628,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	restoreReseller(id: ulong) {
-		return this.command<RepCompanyResellerRestore>(new PayCompanyResellerRestore({
+		return this.command<RepCompanyResellerDelete>(new PayCompanyResellerRestore({
 			company: { id },
 		}));
 	}
@@ -612,7 +643,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listContacts(companyId: ulong, constraints: JsonObject) {
+	listContacts(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepContactListByCompany>(new PayContactListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -694,7 +725,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByString=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listUsers(companyId: ulong, constraints: JsonObject) {
+	listUsers(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepUserListByCompany>(new PayUserListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -754,7 +785,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listUserGroups(companyId: ulong, constraints: JsonObject) {
+	listUserGroups(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepUserGroupListByCompany>(new PayUserGroupListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -814,7 +845,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByString=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listMachines(companyId: ulong, constraints: JsonObject) {
+	listMachines(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepMachineListByCompany>(new PayMachineListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -873,7 +904,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {number=} companyId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listSessions(companyId: ulong, constraints: JsonObject) {
+	listSessions(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepSessionListByCompany>(new PaySessionListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -885,7 +916,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!string} login
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listSessionsByUser(login: email, constraints: JsonObject) {
+	listSessionsByUser(login: email, constraints?: JsonObject) {
 		return this.command<RepSessionListByUser>(new PaySessionListByUser({
 			...constraints,
 			user: { login },
@@ -913,7 +944,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listIcons(companyId: ulong, constraints: JsonObject) {
+	listIcons(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepIconListByCompany>(new PayIconListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -973,7 +1004,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listPictures(companyId: ulong, constraints: JsonObject) {
+	listPictures(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepPictureListByCompany>(new PayPictureListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1033,7 +1064,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listDocuments(companyId: ulong, constraints: JsonObject) {
+	listDocuments(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDocumentListByCompany>(new PayDocumentListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1093,7 +1124,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listFormTemplates(companyId: ulong, constraints: JsonObject) {
+	listFormTemplates(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepFormTemplateListByCompany>(new PayFormTemplateListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1153,7 +1184,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listFormResults(companyId: ulong, constraints: JsonObject) {
+	listFormResults(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepFormResultListByCompany>(new PayFormResultListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1224,8 +1255,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listDashcamDatas(companyId: ulong, constraints: JsonObject) {
-		return this.command<RepDashcamDataListByCompany>(new PayDashcamDataListByCompany({
+	listDashcamDatas(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepDashcamListByCompany>(new PayDashcamListByCompany({
 			...constraints,
 			company: { id: companyId },
 		}));
@@ -1237,7 +1268,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	getDashcamData(guid: guid) { 
-		return this.command<RepDashcamDataGet>(new PayDashcamDataGet({
+		return this.command<RepDashcamGet>(new PayDashcamGet({
 			dashcam: { guid },
 		}));
 	}
@@ -1248,7 +1279,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {number=} companyId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listDashcamLives(companyId: ulong, constraints: JsonObject) {
+	listDashcamLives(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDashcamLiveListByCompany>(new PayDashcamLiveListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1265,7 +1296,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstrainAsset=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listAssets(companyId: ulong, constraints: JsonObject) {
+	listAssets(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepAssetListByCompany>(new PayAssetListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1355,7 +1386,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	searchAssets(expression: expression, constraints: JsonObject) {
+	searchAssets(expression: expression, constraints?: JsonObject) {
 		//return INDFLAYER_SEARCH("asset", expression, null, constraints);
 	};
 	//#endregion Assets
@@ -1377,7 +1408,9 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} id
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	previewAssetDispatch(json: JsonObject) { return CLIENT.medusa("assets/" + json["asset"]["id"] + "/dispatch/waypoints", "POST", json); };
+	previewAssetDispatch(json: JsonObject) {
+		//return CLIENT.medusa("assets/" + json["asset"]["id"] + "/dispatch/waypoints", "POST", json);
+	};
 	//#endregion Assets/Dispatch
 	//#region Assets/DispatchTasks
 	/**
@@ -1388,7 +1421,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listDispatchTasks(companyId: ulong, constraints: JsonObject) {
+	listDispatchTasks(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDispatchTaskListByCompany>(new PayDispatchTaskListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1400,7 +1433,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} assetId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchTasksByAsset(assetId: ulong, constraints: JsonObject) { 
+	getDispatchTasksByAsset(assetId: ulong, constraints?: JsonObject) { 
 		return this.command<RepDispatchTaskListByAsset>(new PayDispatchTaskListByAsset({
 			...constraints,
 			asset: { id: assetId },
@@ -1471,7 +1504,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listDispatchJobs(companyId: ulong, constraints: JsonObject) {
+	listDispatchJobs(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDispatchJobListByCompany>(new PayDispatchJobListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1483,7 +1516,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} assetId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getDispatchJobsByAsset(assetId: ulong, constraints: JsonObject) { 
+	getDispatchJobsByAsset(assetId: ulong, constraints?: JsonObject) { 
 		return this.command<RepDispatchJobListByAsset>(new PayDispatchJobListByAsset({
 			...constraints,
 			asset: { id: assetId },
@@ -1551,7 +1584,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	changeDispatchJob(json: JsonObject) { 
-		return this.command<RepDispatchJobChange>(new PayDispatchJobChange({
+		return this.command<RepDispatchJobMerge>(new PayDispatchJobChange({
 			dispatchJob: json,
 		}));
 	}
@@ -1561,7 +1594,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
 	cancelDispatchJob(json: JsonObject) {
-		return this.command<RepDispatchJobCancel>(new PayDispatchJobCancel({
+		return this.command<RepDispatchJobMerge>(new PayDispatchJobCancel({
 			dispatchJob: json,
 		}));
 	}
@@ -1575,7 +1608,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listAssetMessages(companyId: ulong, constraints: JsonObject) {
+	listAssetMessages(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepAssetMessageListByCompany>(new PayAssetMessageListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1587,7 +1620,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} assetId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	getAssetMessagesByAsset(assetId: ulong, constraints: JsonObject) {
+	getAssetMessagesByAsset(assetId: ulong, constraints?: JsonObject) {
 		return this.command<RepAssetMessageListByAsset>(new PayAssetMessageListByAsset({
 			...constraints,
 			asset: { id: assetId },
@@ -1659,7 +1692,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listPlaces(companyId: ulong, constraints: JsonObject) {
+	listPlaces(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepPlaceListByCompany>(new PayPlaceListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1720,7 +1753,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstrainProvider=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listProviders(companyId: ulong, constraints: JsonObject) {
+	listProviders(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderListByCompany>(new PayProviderListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1821,7 +1854,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByString=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	searchProviders(expression: expression, constraints: JsonObject) {
+	searchProviders(expression: expression, constraints?: JsonObject) {
 		return //INDFLAYER_SEARCH("provider", expression, null, constraints);
 	};
 	//#endregion Provider
@@ -1834,7 +1867,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listProviderScripts(companyId: ulong, constraints: JsonObject) {
+	listProviderScripts(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderScriptListByCompany>(new PayProviderScriptListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1894,7 +1927,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listProviderConfigs(companyId: ulong, constraints: JsonObject) {
+	listProviderConfigs(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderConfigListByCompany>(new PayProviderConfigListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -1965,7 +1998,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listProviderConfigurations(companyId: ulong, constraints: JsonObject) {
+	listProviderConfigurations(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderConfigurationListByCompany>(new PayProviderConfigurationListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2035,7 +2068,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {number=} companyId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listProviderRegistration(companyId: ulong, constraints: JsonObject) {
+	listProviderRegistration(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderRegistrationListByCompany>(new PayProviderRegistrationListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2085,7 +2118,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listBehaviours(companyId: ulong, constraints: JsonObject) {
+	listBehaviours(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourListByCompany>(new PayBehaviourListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2156,7 +2189,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listBehaviourScripts(companyId: ulong, constraints: JsonObject) {
+	listBehaviourScripts(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourScriptListByCompany>(new PayBehaviourScriptListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2215,7 +2248,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} behaviourId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listBehaviourAssetLogs(behaviourId: ulong, constraints: JsonObject) {
+	listBehaviourAssetLogs(behaviourId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogListByAsset>(new PayBehaviourLogListByAsset({
 			...constraints,
 			behaviour: { id: behaviourId },
@@ -2239,7 +2272,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} behaviourId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listBehaviourLogs(behaviourId: ulong, constraints: JsonObject) {
+	listBehaviourLogs(behaviourId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogListByBehaviour>(new PayBehaviourLogListByBehaviour({
 			...constraints,
 			behaviour: { id: behaviourId },
@@ -2263,7 +2296,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} scriptId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listBehaviourScriptLogs(scriptId: ulong, constraints: JsonObject) {
+	listBehaviourScriptLogs(scriptId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogListByScript>(new PayBehaviourLogListByScript({
 			...constraints,
 			behaviourScript: { id: scriptId },
@@ -2275,7 +2308,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {!number} scriptId
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	clearBehaviourScriptLogs(scriptId: ulong, constraints: JsonObject) {
+	clearBehaviourScriptLogs(scriptId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogBatchDeleteByScript>(new PayBehaviourLogBatchDeleteByScript({
 			...constraints,
 			behaviourScript: { id: scriptId },
@@ -2292,7 +2325,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listReportTemplates(companyId: ulong, constraints: JsonObject) {
+	listReportTemplates(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepReportTemplateListByCompany>(new PayReportTemplateListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2352,7 +2385,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listReportSchedules(companyId: ulong, constraints: JsonObject) {
+	listReportSchedules(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepReportScheduleListByCompany>(new PayReportScheduleListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2412,7 +2445,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsByDts=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listReportResults(companyId: ulong, constraints: JsonObject) {
+	listReportResults(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepReportResultListByCompany>(new PayReportResultListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2473,7 +2506,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstraintsById=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listMaintenanceSchedules(companyId: ulong, constraints: JsonObject) {
+	listMaintenanceSchedules(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepMaintenanceScheduleListByCompany>(new PayMaintenanceScheduleListByCompany({
 			...constraints,
 			company: { id: companyId },
@@ -2533,7 +2566,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * @param {ParamListConstrainMaintenanceJob=} constraints
 	 * @return {!Promise<SyncMindflayer>}
 	 **/
-	listMaintenanceJobs(companyId: ulong, constraints: JsonObject) {
+	listMaintenanceJobs(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepMaintenanceJobListByCompany>(new PayMaintenanceJobListByCompany({
 			...constraints,
 			company: { id: companyId },
