@@ -77,7 +77,7 @@ export abstract class TrakitCommander<TRequest> {
 			| nothing
 	) {
 		this.baseAddress = new URL(baseAddress || self.location?.origin);
-		this.setAuth(account || new RepSelfGet);
+		this.setAuth(account);
 	}
 
 	//#region Authorization

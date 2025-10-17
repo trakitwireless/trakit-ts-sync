@@ -318,23 +318,18 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 
 		// cancel all commands (sorting into the order in which they were sent, with "disconnection" last)
 		for (const reqId of [...this.#requestsPending.keys()].sort()) {
-			if (reqId === CMD_DISCONNECTION) {
-				this.#requestSettle(reqId, {
-					...response,
-					"errorDetails": {
-						...errorDetails,
-					},
-				});
-			} else {
-				this.#requestSettle(reqId, {
-					...response,
-					"reqId": reqId,
-					"errorCode": ErrorCode.unknown,
-					"errorDetails": {
-						...errorDetails,
-					},
-				});
-			}
+			this.#requestSettle(reqId,
+				reqId === CMD_DISCONNECTION
+					? response
+					: {
+						...response,
+						"reqId": reqId,
+						"errorCode": ErrorCode.unknown,
+						"errorDetails": {
+							...errorDetails,
+						},
+					}
+			);
 		}
 
 		// fire event
@@ -504,10 +499,12 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 				case TrakitSocketStatus.closed:
 					const endpoint = this.createBaseUrl();
 					if (this.account.machine) {
-						endpoint.searchParams.delete("shadowSig");
 						endpoint.searchParams.delete("shadowKey");
-						endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
-						endpoint.searchParams.append("shadowKey", this.account.machine.key);    // sign without key
+						if (this.account.machine.secret?.length) {
+							endpoint.searchParams.delete("shadowSig");// sign without key or sig
+							endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
+						}
+						endpoint.searchParams.append("shadowKey", this.account.machine.key);    
 					} else if (this.account.ghostId) {
 						endpoint.searchParams.set("ghostId", this.account.ghostId);
 					}
