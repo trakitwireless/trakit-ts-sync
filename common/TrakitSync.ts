@@ -1311,21 +1311,18 @@ export class TrakitSync {
 
 
 	constructor(useBeta = false) {
-		this.#socket = new TrakitSocketCommander(useBeta ? TrakitSocketCommander.URI_BETA : TrakitSocketCommander.URI_PROD);
 		this.#rest = new TrakitRestfulCommander(useBeta ? TrakitRestfulCommander.URI_BETA : TrakitRestfulCommander.URI_PROD);
+		this.#socket = new TrakitSocketCommander(useBeta ? TrakitSocketCommander.URI_BETA : TrakitSocketCommander.URI_PROD);
 	}
 	/**
 	 * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.
 	 * Does not terminate the {@link Worker}.
 	 **/
 	dispose() {
-		const action = (response: Reply) => {
-			this.#socket?.dispose();
-			// this.#rest?.dispose();
-			(this.#rest as any) =
-				(this.#socket as any) = null;
-		};
-		this.#socket.close().then(action, action);
+		// this.#rest?.dispose();
+		this.#socket.dispose();
+		(this.#rest as any) =
+			(this.#socket as any) = null;
 	}
 
 
