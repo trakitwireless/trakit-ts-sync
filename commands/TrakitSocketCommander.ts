@@ -5,8 +5,12 @@ import {
 	RepSelfGet,
 } from "@trakit/commands";
 import {
+	Contact,
 	JsonObject,
+	Machine,
+	storage,
 	url,
+	User,
 	utility
 } from '@trakit/objects';
 import { createClientErrorResponse } from "./TrakitCommander";
@@ -195,7 +199,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * Also takes into account a null connection, and an open connection that has not yet received the first message.
 	 **/
 	get state(): TrakitSocketStatus {
-		switch (this.#socket?.readyState ?? 3) {
+		switch (this.#socket?.readyState ?? WebSocket.CLOSED) {
 			case 0: return TrakitSocketStatus.opening;
 			case 1: return !this.#socketReady ? TrakitSocketStatus.opening : TrakitSocketStatus.open;
 			case 2: return TrakitSocketStatus.closing;
@@ -437,9 +441,50 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * @param msgContent The JSON object containing the account information.
 	 */
 	#socketAccount(msgContent: JsonObject): void {
+		const msgUser = { ...msgContent.user as JsonObject },
+			msgContact = msgUser.contact as JsonObject,
+			msgMachine = msgContent.machine as JsonObject;
+		if (msgContent.user) {
+			if (msgContact) {
+				this.#socketMerged("contactMerged", msgContact);
+				msgUser.contact = msgContact["id"];
+			}
+			this.#socketMerged("userMerged", msgUser);
+		}
+		if (msgMachine) this.#socketMerged("machineMerged", msgMachine);
 		this.setAuth(this.account = new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
+	}
+
+	/**
+	 * This needs to be moved somewhere generic to be used by REST service as well.
+	 * Might be a way to import the HIERARCHY#SyncClient_merged from Medusa.
+	 * @param msgName 
+	 * @param msgContent 
+	 */
+	#socketMerged(msgName: string, msgContent: JsonObject): void {
+		let type: any | null = null,
+			map: Map<any, any> | null = null;
+		switch (msgName) {
+			case "contactMerged":
+				type = Contact;
+				map = storage.contacts;
+				break;
+			case "userMerged":
+				type = User;
+				map = storage.users;
+				break;
+			case "machineMerged":
+				type = Machine;
+				map = storage.machines;
+				break;
+		}
+		if (map) {
+			let obj = map.get(msgContent["id"]);
+			if (!obj) map.set(msgContent["id"], obj = new type());
+			obj.fromJSON(msgContent);
+		}
 	}
 	//#endregion Internal WebSocket control
 
