@@ -1,10 +1,10 @@
 import { SubscriptionType } from "@trakit/commands";
-import { url } from "@trakit/objects";
+import { classes, url } from "@trakit/objects";
 
 /**
  * Names of objects that span multiple regions (in serialized order).
  */
-export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
+export const SUBSCRIPTION_SPLITS: { [key in classes | string]: SubscriptionType[] } = {
 	/* company */
 	"Company": [
 		SubscriptionType.companyGeneral,
@@ -22,7 +22,7 @@ export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
 	//"CompanyDirectory": [
 	//	SubscriptionType.companyDirectory,
 	//],
-	"CompanyLabels": [
+	"CompanyStyles": [
 		SubscriptionType.companyLabels,
 	],
 	"CompanyPolicies": [
@@ -118,9 +118,9 @@ export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
 		SubscriptionType.placeGeneral,
 		//SubscriptionType.placeExtended,
 	],
-	"PlaceGeneral": [
-		SubscriptionType.placeGeneral,
-	],
+	//"PlaceGeneral": [
+	//	SubscriptionType.placeGeneral,
+	//],
 	//"PlaceExtended": [
 	//    SubscriptionType.placeExtended,
 	//],
@@ -178,10 +178,10 @@ export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
 	"BillingReport": [
 		SubscriptionType.billingReport,
 	],
-	"BillingHosting": [
+	"BillableHostingRule": [
 		SubscriptionType.billingHosting,
 	],
-	"BillingLicense": [
+	"BillableHostingLicense": [
 		SubscriptionType.billingLicense,
 	],
 };
@@ -189,13 +189,13 @@ export const SUBSCRIPTION_SPLITS: { [key: string]: SubscriptionType[] } = {
 /**
  * A mapping of RESTful service routes to get things listed by company.
  **/
-export const SUBSCRIPTION_LIST_BY_COMPANY: { [key: string]: url } = {
+export const SUBSCRIPTION_LIST_BY_COMPANY: { [key in classes|string]: url } = {
 	/* company */
 	"Company": "/companies/generals?parent={companyId}",
 	"CompanyGeneral": "/companies/generals?parent={companyId}",
 	//"CompanySettings": "/companies/settings?parent={companyId}",
 	"CompanyDirectory": "/companies/directory?parent={companyId}",
-	"CompanyLabels": "/companies/labels?parent={companyId}",
+	"CompanyStyles": "/companies/styles?parent={companyId}",
 	"CompanyPolicies": "/companies/policies?parent={companyId}",
 	"CompanyReseller": "/companies/resellers?parent={companyId}",
 	/* accounts */
@@ -295,29 +295,3 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: { [key: string]: url } = {
 export const SUBSCRIPTION_LIST_BY_USER: { [key: string]: url } = {
 	"Session": "/users/{userLogin}/sessions",
 };
-
-
-/**
- * Returns the name of the identifying key for the given Zombie type.
- * @param type 
- * @returns 
- */
-export function syncKeyName(type: string) {
-	switch (type) {
-		case "User":
-		case "UserGeneral":
-		case "UserAdvanced":
-			return "login";
-		case "ProviderRegistration":
-			return "code";
-		case "Session":
-			return "handle";
-		case "Machine":
-			return "key";
-		case "Dashcam":
-		case "DashcamLive":
-			return "guid";
-		default:
-			return "id";
-	}
-}
