@@ -295,3 +295,29 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: { [key: string]: url } = {
 export const SUBSCRIPTION_LIST_BY_USER: { [key: string]: url } = {
 	"Session": "/users/{userLogin}/sessions",
 };
+
+
+/**
+ * Returns the name of the identifying key for the given Zombie type.
+ * @param type 
+ * @returns 
+ */
+export function syncKeyName(type: string) {
+	switch (type) {
+		case "User":
+		case "UserGeneral":
+		case "UserAdvanced":
+			return "login";
+		case "ProviderRegistration":
+			return "code";
+		case "Session":
+			return "handle";
+		case "Machine":
+			return "key";
+		case "Dashcam":
+		case "DashcamLive":
+			return "guid";
+		default:
+			return "id";
+	}
+}

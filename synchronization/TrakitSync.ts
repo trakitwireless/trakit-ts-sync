@@ -3,9 +3,9 @@ import {
 	BaseComponent,
 	ulong
 } from '@trakit/objects';
-import { TrakitRestfulCommander } from "commands/TrakitRestfulCommander";
-import { TrakitSocketCommander, TrakitSocketStatus } from "../commands/TrakitSocketCommander";
-import { SubscribedRegions } from "../worker/SubscribedRegions";
+import { TrakitRestfulCommander } from "synchronization/TrakitRestfulCommander";
+import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
+import { SubscribedRegions } from "./SubscribedRegions";
 
 
 /**

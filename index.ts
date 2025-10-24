@@ -5,8 +5,8 @@
  * @copyright Trak-iT Wireless Inc. 2025
  */
 
-import { TrakitRestfulCommander } from "./commands/TrakitRestfulCommander";
-import { TrakitSocketCommander } from "./commands/TrakitSocketCommander";
+import { TrakitRestfulCommander } from "./synchronization/TrakitRestfulCommander";
+import { TrakitSocketCommander } from "./synchronization/TrakitSocketCommander";
 
 /**
  * Version number for this release.

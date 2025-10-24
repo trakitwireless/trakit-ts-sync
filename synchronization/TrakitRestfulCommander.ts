@@ -16,7 +16,7 @@ import {
 	url,
 	utility
 } from "@trakit/objects";
-import { SUBSCRIPTION_LIST_BY_ASSET, SUBSCRIPTION_LIST_BY_BILLING_PROFILE, SUBSCRIPTION_LIST_BY_COMPANY } from "common/Subscriptions";
+import { SUBSCRIPTION_LIST_BY_ASSET, SUBSCRIPTION_LIST_BY_BILLING_PROFILE, SUBSCRIPTION_LIST_BY_COMPANY } from "synchronization/Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
