@@ -6,8 +6,10 @@ import {
 } from "@trakit/commands";
 import {
 	Contact,
+	guid,
 	JsonObject,
 	Machine,
+	nothing,
 	storage,
 	url,
 	User,
@@ -147,7 +149,7 @@ function getCommand(payload: Payload): string {
 /**
  * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
  **/
-export class TrakitSocketCommander extends TrakitObjectCommander<{ command: string, params?: JsonObject }> {
+export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonObject]> {
 	/**
 	 * Production RESTful service URL.
 	 * This service is covered by the SLA and should be used for serices and code running in your own production environment.
@@ -510,15 +512,22 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	/**
 	 * Flag set to specifically send "noop" messages on a timer to ensure the firewall doesn't prematurely kill the underlying WebSocket.
 	 **/
-	keepAliveEnabled: boolean = true;
+	keepAliveEnabled: boolean = false;
 	/**
 	 * Handle for the timer associated with performing the keep-alive operation.
 	 **/
 	#timerKeepAlive: number = 0;
 	//#endregion Keep-Alive
 
-	constructor(url?: string) {
-		super(url || TrakitSocketCommander.URI_PROD);
+	constructor(
+		baseAddress?: URL | url | nothing,
+		account?: RepSelfGet | { machine: { key: string } }
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing
+	) {
+		super(baseAddress ?? TrakitSocketCommander.URI_PROD, account);
 	}
 	/**
 	 * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
@@ -549,7 +558,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 							endpoint.searchParams.delete("shadowSig");// sign without key or sig
 							endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
 						}
-						endpoint.searchParams.append("shadowKey", this.account.machine.key);    
+						endpoint.searchParams.append("shadowKey", this.account.machine.key);
 					} else if (this.account.ghostId) {
 						endpoint.searchParams.set("ghostId", this.account.ghostId);
 					}
@@ -607,11 +616,11 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * @param payload The payload to include in the request.
 	 * @returns A request object configured with the specified parameters.
 	 */
-	override _createRequest(payload: Payload): { command: string; params?: JsonObject; } {
-		return {
-			command: getCommand(payload),
-			params: payload.toJSON(),
-		};
+	override _createRequest(payload: Payload): [string, JsonObject] {
+		return [
+			getCommand(payload),
+			payload.toJSON(),
+		];
 	}
 	/**
 	 * Sends a command and parameters to Trak-iT's WebSocket service.
@@ -621,8 +630,9 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * @param params	Optional object or value for the command.
 	 * @returns 		A Promise which is resolved when a response is received, otherwise it is rejected.
 	 **/
-	override _relayRequest(request: { command: string, params?: JsonObject }): Promise<JsonObject> {
-		request.params = request.params || {};
+	override _relayRequest(request: [string, JsonObject]): Promise<JsonObject> {
+		const command = request[0],
+			params = request[1] || {};
 		return new Promise((resolve, reject) => {
 			// get the socket state inside the resolver because it could be invoked multiple times.
 			const state = this.state;
@@ -637,13 +647,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 							}),
 							TIMEOUT_COMMAND
 						);
-					(request.params as JsonObject).reqId = reqId;
+					params.reqId = reqId;
 					this.#requestsPending.set(reqId, (response: JsonObject) => {
 						clearTimeout(timer);
 						resolve(response);
 					});
 					try {
-						this.#socket.send(request.command + " " + JSON.stringify(request.params));
+						this.#socket.send(command + " " + JSON.stringify(params));
 					} catch (ex: Error | any) {
 						this.#requestSettle(reqId, createClientErrorResponse(ex));
 					}
@@ -673,7 +683,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 		this.#timerKeepAlive = this.keepAliveEnabled
 			&& this.#socketOperable
 			? setTimeout(
-				() => this._relayRequest({ command: "noop" }),
+				() => this._relayRequest(["noop", {}]),
 				TIMEOUT_NOOP
 			)
 			: 0;
