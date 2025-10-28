@@ -151,6 +151,11 @@ export abstract class TrakitCommander<TRequest> {
 				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
 			}
 			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
+			try {
+				(reply as ReplyGet | ReplyList).store?.();
+			} catch (ex: Error | any) {
+				console.error("Error storing reply:", ex);
+			}
 		});
 	}
 
