@@ -38,7 +38,7 @@ export abstract class TrakitCommander<TRequest> {
 	/**
 	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
 	 */
-	account: RepSelfGet = new RepSelfGet;
+	account!: RepSelfGet;
     
 	/**
 	 * {@link url} of the underlying Trak-iT API service.
@@ -68,13 +68,12 @@ export abstract class TrakitCommander<TRequest> {
 	}
 
 	constructor(
-		baseAddress?: url | nothing,
-		account?: RepSelfGet
-			| Machine
-			| { key: string }
-			| { ghostId: guid }
-			| guid
-			| nothing
+		baseAddress?: URL | url | nothing,
+		account?: RepSelfGet | { machine: { key: string } }
+				| Machine | { key: string }
+				| { ghostId: guid }
+				| guid
+				| nothing
 	) {
 		this.baseAddress = new URL(baseAddress || self.location?.origin);
 		this.setAuth(account);
@@ -86,29 +85,36 @@ export abstract class TrakitCommander<TRequest> {
 	 * @param value  The session id (string), {@link Machine} object, or {@link RepSelfGet} object.
 	 */
 	setAuth(
-		value?: RepSelfGet
-			| Machine
-			| { key: string }
-			| { ghostId: guid }
-			| guid
-			| nothing
+		value?: RepSelfGet | { machine: { key: string } }
+				| Machine | { key: string }
+				| { ghostId: guid }
+				| guid
+				| nothing
 	): void {
 		if (value instanceof RepSelfGet) {
 			this.account = value;
+		} else if (typeof value === "string") {
+			this.setAuth({
+				ghostId: value,
+			});
+		} else if (value instanceof Machine || (value as { key: string })?.key) {
+			this.setAuth({
+				machine: ((value as any).toJSON?.() ?? value) as { key: string },
+			});
+		} else if ((value as any)?.machine?.key) {
+			this.setAuth(new RepSelfGet({
+				errorCode: ErrorCode.success,
+				message: "Authenticated via Machine",
+				...value,
+			}));
+		} else if ((value as any)?.ghostId) {
+			this.setAuth(new RepSelfGet({
+				errorCode: ErrorCode.success,
+				message: "Authenticated via Session",
+				...value,
+			}));
 		} else {
-			this.account.machine = null;
-			this.account.ghostId = "";
-			if (typeof value === "string") {
-				this.account.ghostId = value as guid;
-			} else if (value instanceof Machine) {
-				this.account.machine = value;
-			} else if ((value as any)?.key) {
-				this.setAuth(new Machine(value));
-			} else if ((value as any)?.machine?.key) {
-				this.setAuth((value as any).machine as { key: string });
-			} else if ((value as any)?.ghostId) {
-				this.setAuth((value as any).ghostId as guid);
-			}
+			this.account = new RepSelfGet;
 		}
 	}
 	//#endregion Authorization
