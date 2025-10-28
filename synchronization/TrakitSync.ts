@@ -1,4 +1,4 @@
-﻿import { PaySubscriptionDelete, PaySubscriptionMerge, Reply, RepSelfGet, RepSubscription, SubscriptionType } from "@trakit/commands";
+﻿import { Payload, PaySubscriptionDelete, PaySubscriptionMerge, Reply, RepSelfGet, RepSubscription, SubscriptionType } from "@trakit/commands";
 import {
 	BaseComponent,
 	ulong
@@ -6,6 +6,7 @@ import {
 import { TrakitRestfulCommander } from "synchronization/TrakitRestfulCommander";
 import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
 import { SubscribedRegions } from "./SubscribedRegions";
+import { TrakitCommander } from "./TrakitCommander";
 
 
 /**
@@ -1208,7 +1209,7 @@ const TIMEOUT_SUBSCRIPTION = 10 * 1000;	// 10 seconds
  * It handles synchronizing regions, maintaining a connection to Trak-iT's WebSocket, and send HTTP requests to Trak-iT's RESTful service.
  * This class also maintains a queue of up-going messages.
  **/
-export class TrakitSync {
+export class TrakitSync extends TrakitCommander<any> {
 	/**
 	 * The Trak-iT WebSocket's main connection.
 	 **/
@@ -1311,8 +1312,19 @@ export class TrakitSync {
 
 
 	constructor(useBeta = false) {
-		this.#rest = new TrakitRestfulCommander(useBeta ? TrakitRestfulCommander.URI_BETA : TrakitRestfulCommander.URI_PROD);
-		this.#socket = new TrakitSocketCommander(useBeta ? TrakitSocketCommander.URI_BETA : TrakitSocketCommander.URI_PROD);
+		super("", new RepSelfGet);
+		this.#rest = new TrakitRestfulCommander(
+			useBeta
+				? TrakitRestfulCommander.URI_BETA
+				: TrakitRestfulCommander.URI_PROD,
+			this.account
+		);
+		this.#socket = new TrakitSocketCommander(
+			useBeta
+				? TrakitSocketCommander.URI_BETA
+				: TrakitSocketCommander.URI_PROD,
+			this.account
+		);
 	}
 	/**
 	 * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.
@@ -1330,17 +1342,22 @@ export class TrakitSync {
 
 
 
-	//override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-	//	const action = payload.getAction();
-	//	switch (action.object) {
-	//		case "Subscription":
-	//		case "Self":
-	//			return this.#socket.command<TReply>(payload);
-	//		default:
-	//			return this.#rest.command<TReply>(payload);
-	//	}
-	//}
-
+	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
+		const action = payload.getAction();
+		switch (action.object) {
+			case "Subscription":
+			case "Self":
+				return this.#socket.command<TReply>(payload);
+			default:
+				return this.#rest.command<TReply>(payload);
+		}
+	}
+	override _createRequest(payload: Payload): any {
+		throw new Error("Method not implemented.");
+	}
+	override _relayRequest(request: Payload): Promise<any> {
+		throw new Error("Method not implemented.");
+	}
 
 
 
