@@ -326,6 +326,7 @@ import {
 	guid,
 	int,
 	JsonObject,
+	Machine,
 	nothing,
 	serialization,
 	SystemsOfUnits,
@@ -378,8 +379,15 @@ import { TrakitCommander } from './TrakitCommander';
  * The base class used to help define interaction with all Trak-iT API services.
  */
 export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TRequest> {
-	constructor(baseAddress?: url | nothing) {
-		super(baseAddress);
+	constructor(
+		baseAddress?: URL | url | nothing,
+		account?: RepSelfGet | { machine: { key: string } }
+				| Machine | { key: string }
+				| { ghostId: guid }
+				| guid
+				| nothing
+	) {
+		super(baseAddress, account);
 	}
 	
 	//#region Self
@@ -387,19 +395,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 * Requests the details of the {@link User} or {@link Machine} currently identified.
 	 * @returns The account details or null.
 	 */
-	public async listSelfDetails(): Promise<RepSelfGet> {
-		const reply = await this.command<RepSelfGet>(new PaySelfGet());
-		switch (reply.errorCode) {
-			case ErrorCode.success:
-			case ErrorCode.passwordExpired:
-			case ErrorCode.sessionExpired:
-			case ErrorCode.userNotLoggedIn:
-				this.account = reply;
-				break;
-			default:
-				this.account = new RepSelfGet;
-				break;
-		}
+	public async selfDetails(): Promise<RepSelfGet> {
+		this.account = await this.command<RepSelfGet>(new PaySelfGet());
 		this.setAuth(this.account);
 		return this.account;
 	}
@@ -417,9 +414,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 			password: password,
 			userAgent: userAgent,
 		}));
-		if (this.account.errorCode == ErrorCode.success) {
-			this.setAuth(this.account.ghostId);
-		}
+		this.setAuth(this.account);
 		return this.account;
 	}
 	/**
@@ -429,7 +424,6 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	public async logout(): Promise<RepSelfLogout> {
 		const reply = this.command<RepSelfLogout>(new PaySelfLogout());
 		this.setAuth();
-		this.account = new RepSelfGet;
 		return reply;
 	}
 
