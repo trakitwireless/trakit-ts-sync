@@ -5,16 +5,29 @@ import {
 	RepSelfGet,
 } from "@trakit/commands";
 import {
+	Asset,
+	classes,
 	Contact,
+	Dashcam,
+	DashcamLive,
+	email,
+	guid,
+	IDeserializable,
+	IRequestable,
+	ISerializable,
 	JsonObject,
 	Machine,
+	objects,
+	Session,
 	storage,
+	ulong,
 	url,
 	User,
 	utility
 } from '@trakit/objects';
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
+import { syncKey } from "./JSON";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -65,6 +78,11 @@ export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
  */
 const RESPONSE_SUFFIX = "Response",
     UNKNOWN_COMMAND = "unknownCommand" + RESPONSE_SUFFIX;
+
+
+const OBJECT_OPERATION = /(?:Merged|Deleted|Suspended)$/,
+	OBJECT_DELETION = /Deleted$/,
+	OBJECT_GET_RESPONSE = /^get([A-Za-z]+?)(List)?Response$/;
 
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
@@ -366,11 +384,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 		this.#lastReceived = new Date;
 
 		/**
-		 * Will fire an event of the message name when true (default).
-		 * This value is only set to false for "noopResponse".
-		 **/
-		let msgEvent = true;
-		/**
 		 * The name of the message received by the underlying WebSocket.
 		 * This value is only changed for the "connectionResponse" to "connection" to properly fire that event.
 		 **/
@@ -379,7 +392,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 		 * The JSON parsed from the message received by the underlying WebSocket.
 		 **/
 		const msgContent = JSON.parse(event.data.substring(msgName.length + 1)) as JsonObject;
-
+	
 		// first, set this value
 		this.#lastMessage = msgName;
 		switch (msgName) {
@@ -391,8 +404,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 				this.#requestSettle(CMD_CONNECTION, msgContent);
 				// then we fire event here, not below
 				this.onOpen?.(this.account);
-				// because we are firing the "connection" event instead of the "message" event at the end.
-				msgEvent = false;
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":
@@ -402,25 +413,34 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 				this.#socketOperable = msgContent["errorCode"] === 0;
 				break;
 			case "sessionMachineMerged":
-				this.account?.machine?.fromJSON(msgContent);
+				this.account.machine?.fromJSON(msgContent);
 				break;
 			case "sessionGeneralMerged":
-				this.account?.user?.general?.fromJSON(msgContent);
+				this.account.user?.general?.fromJSON(msgContent);
 				break;
 			case "sessionAdvancedMerged":
-				this.account?.user?.advanced?.fromJSON(msgContent);
-				break;
-			case "noopResponse":
-				// the "no operation" messages do not need an event
-				msgEvent = false;
+				this.account.user?.advanced?.fromJSON(msgContent);
 				break;
 			case "logoutResponse":
 			case "sessionEnded":
+				this.#socketAccount(msgContent);
 				this.close();
 				break;
 		}
 
-		if (msgEvent) {
+		const objectName = OBJECT_GET_RESPONSE.exec(msgName) ?? [];
+		if (objectName?.length > 1 && !objectName[2]) {
+			this.#socketMerged(
+				objectName[1] + (msgContent["errorCode"] === 0 ? "Merged" : "Deleted"),
+				msgContent
+			);
+		}
+
+		/**
+		 * For the "connectionResponse", because already fired the "onOpen" event instead of the "message" event.
+		 * For the "noopResponse", because the "no operation" messages do not need an event.
+		 **/
+		if (!(msgName === "connectionResponse" || msgName === "noopResponse")) {
 			/**
 			 * The function that will settle (resolve or reject) the Promise for the pending command.
 			 **/
@@ -452,7 +472,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 			this.#socketMerged("userMerged", msgUser);
 		}
 		if (msgMachine) this.#socketMerged("machineMerged", msgMachine);
-		this.setAuth(this.account = new RepSelfGet(msgContent));
+		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
 	}
@@ -464,26 +484,43 @@ export class TrakitSocketCommander extends TrakitObjectCommander<{ command: stri
 	 * @param msgContent 
 	 */
 	#socketMerged(msgName: string, msgContent: JsonObject): void {
-		let type: any | null = null,
-			map: Map<any, any> | null = null;
-		switch (msgName) {
-			case "contactMerged":
-				type = Contact;
-				map = storage.contacts;
+		const typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(OBJECT_OPERATION, "") as classes,
+			key = syncKey(msgContent, typeName);
+		let map = storage[typeName],
+			init: (json: JsonObject) => IRequestable = (json: JsonObject) => {
+				const obj = new objects[typeName] as IRequestable & IDeserializable;
+				obj.fromJSON(json);
+				return obj;
+			};
+		switch (typeName) {
+			case "Asset":
+			case "AssetGeneral":
+			case "AssetAdvanced":
+				init = Asset.fromJSON;
 				break;
-			case "userMerged":
-				type = User;
-				map = storage.users;
+			case "Session":
+				init = Session.fromJSON;
 				break;
-			case "machineMerged":
-				type = Machine;
-				map = storage.machines;
+			//case "Dashcam":
+			//	init = Dashcam.fromJSON;
+			//	break;
+			//case "DashcamLive":
+			//	init = DashcamLive.fromJSON;
+			//	break;
+			default:
 				break;
 		}
 		if (map) {
-			let obj = map.get(msgContent["id"]);
-			if (!obj) map.set(msgContent["id"], obj = new type());
-			obj.fromJSON(msgContent);
+			const obj = map.get(key) as IRequestable & IDeserializable;
+			if (obj) {
+				if (OBJECT_DELETION.test(msgName)) {
+					map.delete(key);
+				} else {
+					obj.fromJSON(msgContent);
+				}
+			} else {
+				map.set(key, init(msgContent));
+			}
 		}
 	}
 	//#endregion Internal WebSocket control
