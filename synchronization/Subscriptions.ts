@@ -29,11 +29,7 @@ export const SUBSCRIPTION_SPLITS: { [key in classes | string]: SubscriptionType[
 		SubscriptionType.companyPolicies,
 	],
 	"CompanyReseller": [
-		SubscriptionType.companyGeneral,
-		//SubscriptionType.companySettings,
-		//SubscriptionType.companyDirectory,
-		SubscriptionType.companyLabels,
-		SubscriptionType.companyPolicies,
+		SubscriptionType.companyReseller,
 	],
 	/* accounts */
 	"Contact": [
