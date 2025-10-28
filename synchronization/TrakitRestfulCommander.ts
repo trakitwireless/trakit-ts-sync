@@ -9,9 +9,12 @@ import {
 	IPayListByReferences,
 	IPayListByUser,
 	IPaySingle,
-	Payload
+	Payload,
+	RepSelfGet
 } from "@trakit/commands";
 import {
+	guid,
+	Machine,
 	nothing,
 	url,
 	utility
@@ -49,8 +52,15 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 */
 	static readonly URI_BETA: url = "https://mindflayer.trakit.ca/";
 
-	constructor(baseAddress: url | nothing) {
-		super(baseAddress || TrakitRestfulCommander.URI_PROD);
+	constructor(
+		baseAddress?: URL | url | nothing,
+		account?: RepSelfGet | { machine: { key: string } }
+				| Machine | { key: string }
+				| { ghostId: guid }
+				| guid
+				| nothing
+	) {
+		super(baseAddress ?? TrakitRestfulCommander.URI_PROD, account);
 		this.headers.set("Content-Type", "application/json");
 	}
 
