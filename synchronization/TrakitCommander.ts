@@ -2,6 +2,7 @@
 	ErrorCode,
 	Payload,
 	Reply,
+	ReplySync,
 	RepSelfGet,
 } from '@trakit/commands';
 import {
@@ -150,11 +151,11 @@ export abstract class TrakitCommander<TRequest> {
 			} catch (ex: Error | any) {
 				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
 			}
-			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
-			try {
-				(reply as ReplyGet | ReplyList).store?.();
-			} catch (ex: Error | any) {
-				console.error("Error storing reply:", ex);
+			if (reply.errorCode === ErrorCode.success) {
+				(reply as unknown as ReplySync).store?.();
+				resolve(reply);
+			} else {
+				reject(reply);
 			}
 		});
 	}
