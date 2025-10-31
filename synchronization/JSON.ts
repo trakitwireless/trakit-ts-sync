@@ -128,8 +128,8 @@ const VERSION_KEYS_COMPANY = {
 	"General": 0,
 	//"Settings": 1,
 	"Directory": 2,
-	"Labels": 3,
-	"Policies": 4,
+	"Style": 3,
+	"Policy": 4,
 	"Reseller": 5,
 };
 /**
@@ -148,7 +148,7 @@ const VERSION_KEYS_PROVIDER = {
  * @param {Array.<boolean>=} updated		An empty array given to the function which is then populated with true for each part of the object that was updated.
  * @returns {trakit.fleetfreedom.MVCObject}
  **/
-export function SyncClient_merged(type:classes, json:JsonObject, updated: boolean[]) {
+export function SyncClient_merged(type: classes, json: JsonObject, updated: boolean[]) {
 	/**
 	 * The company that owns the object being merged.
 	 * @type {trakit.fleetfreedom.Company}
@@ -182,9 +182,9 @@ export function SyncClient_merged(type:classes, json:JsonObject, updated: boolea
 						VERSION_KEYS_ASSET[type.slice("Asset".length) as keyof typeof VERSION_KEYS_ASSET]
 					)
 				);
-			} else if (json["kind"]) {
+			} else {
 				// only asset+assetGeneral has kind, so only creates if it has kind
-				object = (objects.Asset as typeof Asset).fromJSON(
+				object = new Asset(
 					VERSION_KEYS_FIXER(
 						json,
 						VERSION_KEYS_ASSET[type.slice("Asset".length) as keyof typeof VERSION_KEYS_ASSET]
@@ -243,11 +243,16 @@ export function SyncClient_merged(type:classes, json:JsonObject, updated: boolea
 		case "CompanyGeneral":
 		//case "CompanySettings":
 		case "CompanyDirectory":
-		case "CompanyStyles":
-		case "CompanyPolicies":
+		case "CompanyStyle":
+		case "CompanyPolicy":
 			object = getOrAddCompanyById(json["id"] as ulong, json["parent"] as ulong);
 			oldVersion = [...object.v];
-			object.fromJSON(VERSION_KEYS_FIXER(json, VERSION_KEYS_COMPANY[type.slice("Company".length) as keyof typeof VERSION_KEYS_COMPANY]));
+			object.fromJSON(
+				VERSION_KEYS_FIXER(
+					json,
+					VERSION_KEYS_COMPANY[type.slice("Company".length) as keyof typeof VERSION_KEYS_COMPANY]
+				)
+			);
 			break;
 		case "CompanyReseller":
 			json = {
@@ -258,7 +263,12 @@ export function SyncClient_merged(type:classes, json:JsonObject, updated: boolea
 			};
 			object = getOrAddCompanyById(json["id"] as ulong, json["parent"] as ulong);
 			oldVersion = object.v.slice(VERSION_KEYS_COMPANY["Reseller"]);
-			company.fromJSON(VERSION_KEYS_FIXER(json, VERSION_KEYS_COMPANY[type.slice("Company".length) as keyof typeof VERSION_KEYS_COMPANY]));
+			company.fromJSON(
+				VERSION_KEYS_FIXER(
+					json,
+					VERSION_KEYS_COMPANY[type.slice("Company".length) as keyof typeof VERSION_KEYS_COMPANY]
+				)
+			);
 			object = object.reseller;	// return reseller instead of company
 			break;
 

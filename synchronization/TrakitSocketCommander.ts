@@ -485,44 +485,36 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param msgContent 
 	 */
 	#socketMerged(msgName: string, msgContent: JsonObject): void {
-		const typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(OBJECT_OPERATION, "") as classes,
-			key = syncKey(msgContent, typeName);
-		let map = storage[typeName],
-			init: (json: JsonObject) => IRequestable = (json: JsonObject) => {
-				const obj = new objects[typeName] as IRequestable & IDeserializable;
-				obj.fromJSON(json);
-				return obj;
+		let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(OBJECT_OPERATION, "") as classes,
+			merge: () => void = () => {
+				const key = syncKey(msgContent, typeName),
+					map = storage[typeName],
+					obj = map.get(key) as IRequestable & IDeserializable;
+				if (obj) {
+					obj.fromJSON(msgContent);
+				} else {
+					const init = new objects[typeName]() as IRequestable & IDeserializable;
+					init.fromJSON(msgContent);
+					map.set(key, init);
+				}
 			};
-		switch (typeName) {
-			case "Asset":
-			case "AssetGeneral":
-			case "AssetAdvanced":
-				init = Asset.fromJSON;
+		switch (typeName as string) {
+			case "CompanyLabels":
+				typeName = "CompanyStyle";
+				break;
+			case "CompanyPolicies":
+				typeName = "CompanyPolicy";
 				break;
 			case "Session":
-				init = Session.fromJSON;
-				break;
-			//case "Dashcam":
-			//	init = Dashcam.fromJSON;
-			//	break;
-			//case "DashcamLive":
-			//	init = DashcamLive.fromJSON;
-			//	break;
-			default:
+				merge = () => {
+					storage.Session.set(
+						syncKey(msgContent, typeName),
+						Session.fromJSON(msgContent)
+					);
+				};
 				break;
 		}
-		if (map) {
-			const obj = map.get(key) as IRequestable & IDeserializable;
-			if (obj) {
-				if (OBJECT_DELETION.test(msgName)) {
-					map.delete(key);
-				} else {
-					obj.fromJSON(msgContent);
-				}
-			} else {
-				map.set(key, init(msgContent));
-			}
-		}
+		merge();
 	}
 	//#endregion Internal WebSocket control
 
