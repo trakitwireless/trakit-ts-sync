@@ -83,7 +83,7 @@ const RESPONSE_SUFFIX = "Response",
 
 const OBJECT_OPERATION = /(?:Merged|Deleted|Suspended)$/,
 	OBJECT_DELETION = /Deleted$/,
-	OBJECT_GET_RESPONSE = /^get([A-Za-z]+?)(List)?Response$/;
+	OBJECT_GET_RESPONSE = /^get(.+?)(List)?(By.+)?Response$/;
 
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
@@ -430,11 +430,15 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		}
 
 		const objectName = OBJECT_GET_RESPONSE.exec(msgName) ?? [];
-		if (objectName?.length > 1 && !objectName[2]) {
-			this.#socketMerged(
-				objectName[1] + (msgContent["errorCode"] === 0 ? "Merged" : "Deleted"),
-				msgContent
-			);
+		if (objectName?.length > 1) {
+			if (objectName[2]) {
+				// it's a list response
+			} else {
+				this.#socketMerged(
+					objectName[1] + (msgContent["errorCode"] === 0 ? "Merged" : "Deleted"),
+					msgContent
+				);
+			}
 		}
 
 		/**
