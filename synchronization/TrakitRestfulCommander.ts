@@ -99,7 +99,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 			// no break => fall through to default for DispatchJob where filter is not Cancel or Change
 			default:
 				route = [...action.object.match(SPLITTER) as string[]]
-					.map(utility.plural)
+					.map(utility.pluralize)
 					.join("/");
 				/*
 				"Get"

@@ -1,9 +1,11 @@
 import {
+	ActionType,
 	ErrorCode,
 	Payload,
 	Reply,
 	RepSelfGet,
 } from "@trakit/commands";
+//import * as commands from "@trakit/commands";
 import {
 	Asset,
 	classes,
@@ -75,15 +77,53 @@ export const CMD_CONNECTION = "connection";
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
- * command name reply suffix and unknown command response name
+ * 
  */
-const RESPONSE_SUFFIX = "Response",
-    UNKNOWN_COMMAND = "unknownCommand" + RESPONSE_SUFFIX;
+const MESSAGE_PARSER = /^((?:multi)?get|merge|remove|restore|suspend|revive)?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/i;
+
+function createStoreAction(msgName: string) {
+	/*								0	1				2				3			4			5
+	getAssetsListResponse			[,	'get',			'Assets',		'List',		,			'Response']
+	getAssetsListByDerpResponse		[,	'get',			'Assets',		'List',		'Derp',		'Response']
+	mergeAssetResponse				[,	'merge',		'Asset',		,			,			'Response']
+	multiMergeAssetResponse			[,	'multiMerge',	'Asset',		,			,			'Response']
+	removeAssetResponse				[,	'remove',		'Asset',		,			,			'Response']
+	restoreAssetResponse			[,	'restore',		'Asset',		,			,			'Response']
+	suspendAssetResponse			[,	'suspend',		'Asset',		,			,			'Response']
+	reviveAssetResponse				[,	'revive',		'Asset',		,			,			'Response']
+	assetGeneralMerged				[,	,				'assetGeneral',	,			,			'Merged']
+	assetDeleted					[,	,				'asset',		,			,			'Deleted']
+	assetSuspended					[,	,				'asset',		,			,			'Suspended']
+	broadcast						null
+	sessionEnded					null
+	*/
+	const match = MESSAGE_PARSER.exec(msgName);
+	if (!match) return;
+	
+	let action: ActionType,
+		object: string = utility.capitalize(utility.singularize(match[2])),
+		filter: string = match[4] ? utility.capitalize(match[4]) : "",
+		batch: boolean = match[1].startsWith("multi");
+	if (batch) match[1] = match[1].slice(5);
+	switch (match[1]) {
+		case "get":
+			action = match[3] ? "List" : "Get";
+			break;
+		case "remove":
+			action = "Delete";
+			break;
+		case "revive":
+			action = "Reactivate";
+			break;
+		default:
+			action = utility.capitalize(match[1]) as ActionType;
+			break;
+	}
+	
 
 
-const OBJECT_OPERATION = /(?:Merged|Deleted|Suspended)$/,
-	OBJECT_DELETION = /Deleted$/,
-	OBJECT_GET_RESPONSE = /^get(.+?)(List)?(By.+)?Response$/;
+
+}
 
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
@@ -152,7 +192,7 @@ function getCommand(payload: Payload): string {
 		case "Reactivate":
 			return "revive" + action.object;
 		case "List":
-			return "get" + utility.plural(action.object) + "List"
+			return "get" + utility.pluralize(action.object) + "List"
 				+ (
 					(action.filter || "Company") != "Company"
 						? "By" + action.filter
@@ -429,8 +469,15 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				break;
 		}
 
-		const objectName = OBJECT_GET_RESPONSE.exec(msgName) ?? [];
-		if (objectName?.length > 1) {
+		const objectName = MESSAGE_PARSER.exec(msgName) ?? [];
+		if (objectName.length > 1) {
+
+
+
+			// we need something better
+			
+
+
 			if (objectName[2]) {
 				// it's a list response
 			} else {
@@ -489,7 +536,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param msgContent 
 	 */
 	#socketMerged(msgName: string, msgContent: JsonObject): void {
-		let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(OBJECT_OPERATION, "") as classes,
+		let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(MESSAGE_PARSER, "") as classes,
 			merge: () => void = () => {
 				const key = syncKey(msgContent, typeName),
 					map = storage[typeName],
