@@ -15,7 +15,7 @@ import {
 	url,
 	utility
 } from '@trakit/objects';
-import { createClientErrorResponse } from "./TrakitCommander";
+import { createClientErrorResponse, TrakitCommander } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
 /**
@@ -311,11 +311,11 @@ sessionAdvancedMerged					[					'sessionAdvanced'					'Merged']
 noopResponse							[					'noop'								'Response']
 */
 
-/**
- * Regex parser for response message names.
- */
-const RESPONSE_MESSAGE_PARSER = /^((?:multi)?(?:get|[mM]erge|[rR]emove|updateOwn|clear|suspend|revive|restore))?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/;
 
+/**
+ * Regex parser for response message names (not command responses, those are handled by the {@link TrakitCommander.command} function).
+ */
+const RESPONSE_MESSAGE_PARSER = /^(.+?)(Merged|Deleted|Suspended)$/;
 /**
  * Translated type name to object name to account for some legacy message names.
  * @param typeName 
@@ -337,95 +337,132 @@ function makeObjectName(typeName: string): classes {
 	return typeName as classes;
 }
 
+///**
+// * Returns a {@link Reply} object based on the message name and constructs it using the content received.
+// * @param match 
+// * @param msgContent 
+// * @returns 
+// */
+//function getResponse(match: [string, string, string, string, string, string], msgContent: JsonObject): Reply | nothing {
+//	let responseName = "Rep" + makeObjectName(match[2]),
+//		json: JsonObject | null = null;
+//	switch (match[5]) {
+//		case "Response":
+//			json = msgContent;
+//			switch (match[1]) {
+//				case "merge":
+//				case "multiMerge":
+//				case "restore":
+//				case "revive":
+//				case "updateOwn":
+//					// do nothing, wait for objects to update and process those messages
+//					return;	// not break
+				
+//				case "get":
+//					// create a "Rep__Get" or "Rep__List" response
+//					if (match[2] === "SessionDetails") {
+//						responseName = "RepSelfGet";	// full override with "=" not "+="
+//					} else {
+//						responseName += match[3] ?? "Get";
+//						if (match[4]) responseName += "By" + match[4];
+//					}
+//					break;
+//				case "remove":
+//					// create a "Rep__Delete" response
+//					responseName += "Delete";
+//					break;
+//				case "suspend":
+//					// create a "Rep__Suspend" response
+//					responseName += "Suspend";
+//					break;
+//				case "clear":
+//				case "multiRemove":
+//					// create a "Rep__BatchDelete" response
+//					responseName += "BatchDelete";
+//					if (match[4]) responseName += "By" + match[4];
+//					break;
+//				default:
+//					switch (match[2]) {
+//						case "login":
+//						case "logout":
+//						case "connection":
+//							responseName = "RepSelfGet";	// full override with "=" not "+="
+//							break;
+//						default:
+//							// unprocessable response like noop
+//							return;	// not break
+//					}
+//			}
+//			break;
+//		case "Merged":
+//		case "Deleted":
+//		case "Suspended":
+//			switch (match[2]) {
+//				case "sessionMachine":
+//				case "sessionGeneral":
+//				case "sessionAdvanced":
+//					// self stuff
+//					return;	// not break
+//				default:
+//					responseName += match[5] === "Merged"
+//						? "Get"
+//						: match[5].slice(0, -1).slice(0, 7);
+//					json = {
+//						"errorCode": ErrorCode.success,
+//						"message": match[5] + " event",
+//						[match[2]]: msgContent,
+//					};
+//					break;
+//			}
+//			break;
+//	}
+//	const FakeReply = json && commands[responseName as keyof typeof commands] as new (json?: JsonObject) => ReplySync;
+//	if (FakeReply) {
+//		const reply = new FakeReply(json as JsonObject);
+//		reply.store?.();
+//		return reply;
+//		//return (reply as ReplySyncGet<IRequestable>).getObject?.()
+//		//	?? (reply as ReplySyncList<IRequestable>).getCollection?.();
+//	}
+//}
 
 /**
- * Returns a {@link Reply} object based on the message name and constructs it using the content received.
- * @param match 
- * @param msgContent 
- * @returns 
+ * Constructs a {@link ReplySync} object based on the message name and stores the contents.
+ * @param msgNamePieces
+ * @param msgContent
+ * @returns
  */
-function getResponse(match: [string, string, string, string, string, string], msgContent: JsonObject): Reply | nothing {
-	let responseName = "Rep" + makeObjectName(match[2]),
-		json: JsonObject | null = null;
-	switch (match[5]) {
-		case "Response":
-			json = msgContent;
-			switch (match[1]) {
-				case "merge":
-				case "multiMerge":
-				case "restore":
-				case "revive":
-				case "updateOwn":
-					// do nothing, wait for objects to update and process those messages
-					return;	// not break
-				
-				case "get":
-					// create a "Rep__Get" or "Rep__List" response
-					if (match[2] === "SessionDetails") {
-						responseName = "RepSelfGet";	// full override with "=" not "+="
-					} else {
-						responseName += match[3] ?? "Get";
-						if (match[4]) responseName += "By" + match[4];
-					}
-					break;
-				case "remove":
-					// create a "Rep__Delete" response
-					responseName += "Delete";
-					break;
-				case "suspend":
-					// create a "Rep__Suspend" response
-					responseName += "Suspend";
-					break;
-				case "clear":
-				case "multiRemove":
-					// create a "Rep__BatchDelete" response
-					responseName += "BatchDelete";
-					if (match[4]) responseName += "By" + match[4];
-					break;
-				default:
-					switch (match[2]) {
-						case "login":
-						case "logout":
-						case "connection":
-							responseName = "RepSelfGet";	// full override with "=" not "+="
-							break;
-						default:
-							// unprocessable response like noop
-							return;	// not break
-					}
-			}
-			break;
+function storeSyncMessage(msgNamePieces: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
+	switch (msgNamePieces[1]) {
+		case "sessionMachine":
+		case "sessionGeneral":
+		case "sessionAdvanced":
+			// self stuff, ignore
+			return;	// not break
+	}
+	let responseName = "Rep" + makeObjectName(msgNamePieces[1]),
+		json = {
+			"errorCode": ErrorCode.success,
+			"message": msgNamePieces[2] + " event",
+			[msgNamePieces[1]]: msgContent,
+		};
+	switch (msgNamePieces[2]) {
 		case "Merged":
+			responseName += "Get";
+			break;
 		case "Deleted":
 		case "Suspended":
-			switch (match[2]) {
-				case "sessionMachine":
-				case "sessionGeneral":
-				case "sessionAdvanced":
-					// self stuff
-					return;	// not break
-				default:
-					responseName += match[5] === "Merged"
-						? "Get"
-						: match[5].slice(0, -1).slice(0, 7);
-					json = {
-						"errorCode": ErrorCode.success,
-						"message": match[5] + " event",
-						[match[2]]: msgContent,
-					};
-					break;
-			}
+			responseName += msgNamePieces[2].slice(0, -1).slice(0, 7);
 			break;
 	}
-	const FakeReply = json && commands[responseName as keyof typeof commands] as new (json?: JsonObject) => ReplySync;
+	const FakeReply = commands[responseName as keyof typeof commands] as new (json: JsonObject) => ReplySync;
 	if (FakeReply) {
-		const reply = new FakeReply(json as JsonObject);
+		const reply = new FakeReply(json);
 		reply.store?.();
 		return reply;
-		//return (reply as ReplySyncGet<IRequestable>).getObject?.()
-		//	?? (reply as ReplySyncList<IRequestable>).getCollection?.();
 	}
 }
+
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
  * @param payload 
@@ -607,9 +644,9 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param reqId The ID of the request to settle.
 	 * @param msgContent The content of the message to resolve or reject the promise.
 	 */
-	#requestSettle(reqId: string | number, msgContent: JsonObject): void {
+	#requestSettle(reqId: string | number, msgContent: JsonObject): boolean {
 		this.#requestsPending.get(reqId)?.(msgContent);
-		this.#requestsPending.delete(reqId);
+		return this.#requestsPending.delete(reqId);
 	}
     
 	/**
@@ -752,7 +789,9 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.#socketAccount(msgContent);
 				break;
 			case "updateOwnPasswordResponse":
-				this.#socketOperable = msgContent["errorCode"] === 0;
+				if (!this.#socketOperable) {
+					this.#socketOperable = msgContent["errorCode"] === 0;
+				}
 				break;
 			case "sessionMachineMerged":
 				this.account.machine?.fromJSON(msgContent);
@@ -770,16 +809,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.close();
 				break;
 		}
-
-		// store the received object if applicable
-		const messageParts = RESPONSE_MESSAGE_PARSER.exec(msgName) as string[];
-		if (messageParts?.length) {
-			getResponse(
-				messageParts as [string, string, string, string, string, string],
-				msgContent
-			);
-		}
-
 		/**
 		 * For the "connectionResponse", because already fired the "onOpen" event instead of the "message" event.
 		 * For the "noopResponse", because the "no operation" messages do not need an event.
@@ -788,7 +817,17 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			/**
 			 * The function that will settle (resolve or reject) the Promise for the pending command.
 			 **/
-			this.#requestSettle(msgContent["reqId"] as number, msgContent);
+			const isCommandResponse = this.#requestSettle(msgContent["reqId"] as number, msgContent);
+			/**
+			 * Stores the received object if applicable.
+			 */
+			if (!isCommandResponse) {
+				// store the received object if applicable
+				const messageParts = RESPONSE_MESSAGE_PARSER.exec(msgName) as string[];
+				if (messageParts?.length) {
+					storeSyncMessage(messageParts as [unknown, string, string], msgContent);
+				}
+			}
 
 			/**
 			 * Fires the "message" event.
@@ -810,22 +849,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			msgMachine = msgContent.machine as JsonObject;
 		if (msgContent.user) {
 			if (msgContact) {
-				getResponse(
-					["", "", "contact", "", "", "Merged"],
-					msgContact
-				);
+				storeSyncMessage([, "contact", "Merged"], msgContact);
 				msgUser.contact = msgContact["id"];
 			}
-			getResponse(
-				["", "", "user", "", "", "Merged"],
-				msgUser
-			);
+			storeSyncMessage([, "user", "Merged"], msgUser);
 		}
 		if (msgMachine) {
-			getResponse(
-				["", "", "machine", "", "", "Merged"],
-				msgMachine
-			);
+			storeSyncMessage([, "machine", "Merged"], msgMachine);
 		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
