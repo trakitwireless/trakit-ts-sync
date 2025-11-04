@@ -63,256 +63,6 @@ export const CMD_CONNECTION = "connection";
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
-clearBehaviourLogsByAsset
-clearBehaviourLogsByBehaviour
-clearBehaviourLogsByScript
-getAsset
-getAssetMessage
-getAssetMessagesList
-getAssetMessagesListByCompany
-getAssetsList
-getAssetsListByReference
-getAssetsListByReferences
-getBehaviour
-getBehaviourLogsListByAsset
-getBehaviourLogsListByBehaviour
-getBehaviourLogsListByScript
-getBehaviourScript
-getBehaviourScriptsList
-getBehavioursList
-getBillingProfile
-getBillingProfilesList
-getBillingReport
-getBillingReportsList
-getBillingReportsListByCompany
-getCompaniesList
-getCompany
-getCompanyReseller
-getContact
-getContactsList
-getDispatchTask
-getDispatchTasksList
-getDispatchTasksListByCompany
-getDispatchTasksListByReference
-getDispatchTasksListByReferences
-getDocument
-getDocumentsList
-getHostingLicense
-getHostingLicensesList
-getHostingRule
-getHostingRulesList
-getIcon
-getIconsList
-getMachine
-getMachinesList
-getMaintenanceJob
-getMaintenanceJobsList
-getMaintenanceJobsListByAsset
-getMaintenanceJobsListBySchedule
-getMaintenanceSchedule
-getMaintenanceSchedulesList
-getPicture
-getPicturesList
-getPlace
-getPlacesList
-getPlacesListByReference
-getProvider
-getProviderConfig
-getProviderConfigType
-getProviderConfigTypesList
-getProviderConfigsList
-getProviderConfiguration
-getProviderConfigurationsList
-getProviderRegistration
-getProviderRegistrationsList
-getProviderRegistrationsListByKind
-getProviderScript
-getProviderScriptsList
-getProvidersList
-getProvidersListByConfiguration
-getReportResult
-getReportResultsList
-getReportResultsListByTemplate
-getReportSchedule
-getReportSchedulesList
-getReportSchedulesListByTemplate
-getReportTemplate
-getReportTemplatesList
-getSession
-getSessionDetails
-getSessionsList
-getSessionsListByUser
-getSubscriptionsList
-getTimezone
-getTimezonesList
-getUser
-getUserGroup
-getUserGroupsList
-getUsersList
-killSession
-login
-logout
-mergeAsset
-mergeAssetMessage
-mergeBehaviour
-mergeBehaviourScript
-mergeBillingProfile
-mergeCompany
-mergeCompanyReseller
-mergeContact
-mergeDispatchTask
-mergeDocument
-mergeHostingLicense
-mergeHostingRule
-mergeIcon
-mergeMachine
-mergeMaintenanceJob
-mergeMaintenanceSchedule
-mergePicture
-mergePlace
-mergeProvider
-mergeProviderConfig
-mergeProviderConfiguration
-mergeProviderRegistration
-mergeProviderScript
-mergeReportResult
-mergeReportSchedule
-mergeReportTemplate
-mergeUser
-mergeUserGroup
-multiMergeAssetMessage
-multiMergeDispatchTask
-multiRemoveDispatchTask
-noop
-removeAsset
-removeAssetMessage
-removeBehaviour
-removeBehaviourScript
-removeBillingProfile
-removeBillingReport
-removeCompany
-removeCompanyReseller
-removeContact
-removeDispatchTask
-removeDocument
-removeHostingLicense
-removeHostingRule
-removeIcon
-removeMachine
-removeMaintenanceJob
-removeMaintenanceSchedule
-removePicture
-removePlace
-removeProvider
-removeProviderConfig
-removeProviderConfiguration
-removeProviderRegistration
-removeProviderScript
-removeReportResult
-removeReportSchedule
-removeReportTemplate
-removeUser
-removeUserGroup
-restoreAsset
-restoreAssetMessage
-restoreBehaviour
-restoreBehaviourScript
-restoreBillingProfile
-restoreBillingReport
-restoreCompany
-restoreCompanyReseller
-restoreContact
-restoreDispatchTask
-restoreDocument
-restoreHostingLicense
-restoreHostingRule
-restoreIcon
-restoreMachine
-restoreMaintenanceJob
-restoreMaintenanceSchedule
-restorePicture
-restorePlace
-restoreProvider
-restoreProviderConfig
-restoreProviderConfiguration
-restoreProviderScript
-restoreReportResult
-restoreReportSchedule
-restoreReportTemplate
-restoreUser
-restoreUserGroup
-reviveAsset
-reviveProvider
-subscribe
-suspendAsset
-suspendProvider
-unsubscribe
-updateOwnContact
-updateOwnPassword
-updateOwnPreferences
-
-[
-	"getAssetsListResponse",
-	"getAssetsListByDerpResponse",
-	"clearBehaviourLogsByBehaviourResponse",
-	"mergeAssetResponse",
-	"multiMergeAssetResponse",
-	"removeAssetResponse",
-	"restoreAssetResponse",
-	"suspendAssetResponse",
-	"reviveAssetResponse",
-	"assetGeneralMerged",
-	"assetDeleted",
-	"assetSuspended",
-	"subscribeResponse",
-	"broadcast",
-	"sessionEnded",
-	"updateOwnContactResponse",
-	"updateOwnPasswordResponse",
-	"updateOwnPreferencesResponse",
-	"loginResponse",
-	"logoutResponse",
-	"connectionResponse",
-	"noopResponse",
-	"sessionMachineMerged",
-	"sessionGeneralMerged",
-	"sessionAdvancedMerged",
-	"noopResponse",
-].map(s => MESSAGE_PARSER.exec(s));
-
-examples:
-										0	1				2				3		4			5
-getAssetsListResponse					[	'get'			'Assets'		'List'				'Response']
-getAssetsListByDerpResponse				[	'get'			'Assets'		'List'	'Derp'		'Response']
-getAssetMessage							[	'get'			'AssetMessage'						'Response']
-clearBehaviourLogsByBehaviourResponse	[	'clear'			'BehaviourLogs'			'Behaviour'	'Response']
-mergeAssetResponse						[	'merge'			'Asset'								'Response']
-multiMergeAssetResponse					[	'multiMerge'	'Asset'								'Response']
-removeAssetResponse						[	'remove'		'Asset'								'Response']
-restoreAssetResponse					[	'restore'		'Asset'								'Response']
-suspendAssetResponse					[	'suspend'		'Asset'								'Response']
-reviveAssetResponse						[	'revive'		'Asset'								'Response']
-assetGeneralMerged						[					'assetGeneral'						'Merged']
-assetDeleted							[					'asset'								'Deleted']
-assetSuspended							[					'asset'								'Suspended']
-subscribeResponse						[					'subscribe'							'Response']
-broadcast								null
-sessionEnded							null
-updateOwnContactResponse				[					'updateOwnContact'					'Response']
-updateOwnPasswordResponse				[					'updateOwnPassword'					'Response']
-updateOwnPreferencesResponse			[					'updateOwnPreferences'				'Response']
-loginResponse							[					'login'								'Response']
-logoutResponse							[					'logout'							'Response']
-connectionResponse						[					'connection'						'Response']
-noopResponse							[					'noop'								'Response']
-sessionMachineMerged					[					'sessionMachine'					'Merged']
-sessionGeneralMerged					[					'sessionGeneral'					'Merged']
-sessionAdvancedMerged					[					'sessionAdvanced'					'Merged']
-noopResponse							[					'noop'								'Response']
-*/
-
-
-/**
  * Regex parser for response message names (not command responses, those are handled by the {@link TrakitCommander.command} function).
  */
 const RESPONSE_MESSAGE_PARSER = /^(.+?)(Merged|Deleted|Suspended)$/;
@@ -335,132 +85,6 @@ function makeObjectName(typeName: string): classes {
 			break;
 	}
 	return typeName as classes;
-}
-
-///**
-// * Returns a {@link Reply} object based on the message name and constructs it using the content received.
-// * @param match 
-// * @param msgContent 
-// * @returns 
-// */
-//function getResponse(match: [string, string, string, string, string, string], msgContent: JsonObject): Reply | nothing {
-//	let responseName = "Rep" + makeObjectName(match[2]),
-//		json: JsonObject | null = null;
-//	switch (match[5]) {
-//		case "Response":
-//			json = msgContent;
-//			switch (match[1]) {
-//				case "merge":
-//				case "multiMerge":
-//				case "restore":
-//				case "revive":
-//				case "updateOwn":
-//					// do nothing, wait for objects to update and process those messages
-//					return;	// not break
-				
-//				case "get":
-//					// create a "Rep__Get" or "Rep__List" response
-//					if (match[2] === "SessionDetails") {
-//						responseName = "RepSelfGet";	// full override with "=" not "+="
-//					} else {
-//						responseName += match[3] ?? "Get";
-//						if (match[4]) responseName += "By" + match[4];
-//					}
-//					break;
-//				case "remove":
-//					// create a "Rep__Delete" response
-//					responseName += "Delete";
-//					break;
-//				case "suspend":
-//					// create a "Rep__Suspend" response
-//					responseName += "Suspend";
-//					break;
-//				case "clear":
-//				case "multiRemove":
-//					// create a "Rep__BatchDelete" response
-//					responseName += "BatchDelete";
-//					if (match[4]) responseName += "By" + match[4];
-//					break;
-//				default:
-//					switch (match[2]) {
-//						case "login":
-//						case "logout":
-//						case "connection":
-//							responseName = "RepSelfGet";	// full override with "=" not "+="
-//							break;
-//						default:
-//							// unprocessable response like noop
-//							return;	// not break
-//					}
-//			}
-//			break;
-//		case "Merged":
-//		case "Deleted":
-//		case "Suspended":
-//			switch (match[2]) {
-//				case "sessionMachine":
-//				case "sessionGeneral":
-//				case "sessionAdvanced":
-//					// self stuff
-//					return;	// not break
-//				default:
-//					responseName += match[5] === "Merged"
-//						? "Get"
-//						: match[5].slice(0, -1).slice(0, 7);
-//					json = {
-//						"errorCode": ErrorCode.success,
-//						"message": match[5] + " event",
-//						[match[2]]: msgContent,
-//					};
-//					break;
-//			}
-//			break;
-//	}
-//	const FakeReply = json && commands[responseName as keyof typeof commands] as new (json?: JsonObject) => ReplySync;
-//	if (FakeReply) {
-//		const reply = new FakeReply(json as JsonObject);
-//		reply.store?.();
-//		return reply;
-//		//return (reply as ReplySyncGet<IRequestable>).getObject?.()
-//		//	?? (reply as ReplySyncList<IRequestable>).getCollection?.();
-//	}
-//}
-
-/**
- * Constructs a {@link ReplySync} object based on the message name and stores the contents.
- * @param msgNamePieces
- * @param msgContent
- * @returns
- */
-function storeSyncMessage(msgNamePieces: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
-	switch (msgNamePieces[1]) {
-		case "sessionMachine":
-		case "sessionGeneral":
-		case "sessionAdvanced":
-			// self stuff, ignore
-			return;	// not break
-	}
-	let responseName = "Rep" + makeObjectName(msgNamePieces[1]),
-		json = {
-			"errorCode": ErrorCode.success,
-			"message": msgNamePieces[2] + " event",
-			[msgNamePieces[1]]: msgContent,
-		};
-	switch (msgNamePieces[2]) {
-		case "Merged":
-			responseName += "Get";
-			break;
-		case "Deleted":
-		case "Suspended":
-			responseName += msgNamePieces[2].slice(0, -1).slice(0, 7);
-			break;
-	}
-	const FakeReply = commands[responseName as keyof typeof commands] as new (json: JsonObject) => ReplySync;
-	if (FakeReply) {
-		const reply = new FakeReply(json);
-		reply.store?.();
-		return reply;
-	}
 }
 
 /**
@@ -538,6 +162,33 @@ function getCommand(payload: Payload): string {
 				);
 		default:
 			throw error;
+	}
+}
+/**
+ * Constructs a {@link ReplySync} object based on the message name and stores the contents.
+ * @param match
+ * @param msgContent
+ * @returns
+ */
+function storeSyncMessage(match: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
+	switch (match[1]) {
+		case "sessionMachine":
+		case "sessionGeneral":
+		case "sessionAdvanced":
+			// self stuff, ignore
+			return;	// not break
+	}
+	const name = "Rep" + makeObjectName(match[1]) + (match[2] === "Merged" ? "Get" : match[2].slice(0, -1).slice(0, 7)),
+		json = {
+			"errorCode": ErrorCode.success,
+			"message": match[2] + " event",
+			[match[1]]: msgContent,
+		},
+		FakeReply = commands[name as keyof typeof commands] as new (json: JsonObject) => ReplySync;
+	if (FakeReply) {
+		const reply = new FakeReply(json);
+		reply.store?.();	// may not have this method... should we throw in that case?
+		return reply;
 	}
 }
 
