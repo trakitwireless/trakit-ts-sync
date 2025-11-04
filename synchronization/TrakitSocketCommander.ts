@@ -1,39 +1,22 @@
+import * as commands from "@trakit/commands";
 import {
-	ActionType,
 	ErrorCode,
 	Payload,
 	Reply,
 	ReplySync,
-	ReplySyncGet,
-	ReplySyncList,
-	RepSelfGet,
+	RepSelfGet
 } from "@trakit/commands";
-import * as commands from "@trakit/commands";
 import {
-	Asset,
 	classes,
-	Contact,
-	Dashcam,
-	DashcamLive,
-	email,
 	guid,
-	IDeserializable,
-	IRequestable,
-	ISerializable,
 	JsonObject,
 	Machine,
-	objects,
-	Session,
 	nothing,
-	storage,
-	ulong,
 	url,
-	User,
 	utility
 } from '@trakit/objects';
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
-import { syncKey } from "./JSON";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -849,44 +832,44 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			&& !this.account.user?.passwordExpired;
 	}
 
-	/**
-	 * This needs to be moved somewhere generic to be used by REST service as well.
-	 * Might be a way to import the HIERARCHY#SyncClient_merged from Medusa.
-	 * @param msgName 
-	 * @param msgContent 
-	 */
-	#socketMerged(msgName: string, msgContent: JsonObject): void {
-		let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(RESPONSE_MESSAGE_PARSER, "") as classes,
-			merge: () => void = () => {
-				const key = syncKey(msgContent, typeName),
-					map = storage[typeName],
-					obj = map.get(key) as IRequestable & IDeserializable;
-				if (obj) {
-					obj.fromJSON(msgContent);
-				} else {
-					const init = new objects[typeName]() as IRequestable & IDeserializable;
-					init.fromJSON(msgContent);
-					map.set(key, init);
-				}
-			};
-		switch (typeName as string) {
-			case "CompanyLabels":
-				typeName = "CompanyStyle";
-				break;
-			case "CompanyPolicies":
-				typeName = "CompanyPolicy";
-				break;
-			case "Session":
-				merge = () => {
-					storage.Session.set(
-						syncKey(msgContent, typeName),
-						Session.fromJSON(msgContent)
-					);
-				};
-				break;
-		}
-		merge();
-	}
+	///**
+	// * This needs to be moved somewhere generic to be used by REST service as well.
+	// * Might be a way to import the HIERARCHY#SyncClient_merged from Medusa.
+	// * @param msgName 
+	// * @param msgContent 
+	// */
+	//#socketMerged(msgName: string, msgContent: JsonObject): void {
+	//	let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(RESPONSE_MESSAGE_PARSER, "") as classes,
+	//		merge: () => void = () => {
+	//			const key = syncKey(msgContent, typeName),
+	//				map = storage[typeName],
+	//				obj = map.get(key) as IRequestable & IDeserializable;
+	//			if (obj) {
+	//				obj.fromJSON(msgContent);
+	//			} else {
+	//				const init = new objects[typeName]() as IRequestable & IDeserializable;
+	//				init.fromJSON(msgContent);
+	//				map.set(key, init);
+	//			}
+	//		};
+	//	switch (typeName as string) {
+	//		case "CompanyLabels":
+	//			typeName = "CompanyStyle";
+	//			break;
+	//		case "CompanyPolicies":
+	//			typeName = "CompanyPolicy";
+	//			break;
+	//		case "Session":
+	//			merge = () => {
+	//				storage.Session.set(
+	//					syncKey(msgContent, typeName),
+	//					Session.fromJSON(msgContent)
+	//				);
+	//			};
+	//			break;
+	//	}
+	//	merge();
+	//}
 	//#endregion Internal WebSocket control
 
 	//#region Reconnection
