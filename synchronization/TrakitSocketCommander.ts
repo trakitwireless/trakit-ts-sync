@@ -79,26 +79,73 @@ export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 /**
  * 
  */
-const MESSAGE_PARSER = /^((?:multi)?get|merge|remove|restore|suspend|revive)?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/i;
+const MESSAGE_PARSER = /^(get|merge|remove|restore|suspend|revive|multiMerge|multiRemove|clear)?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/i;
 
 function createStoreAction(msgName: string) {
-	/*								0	1				2				3			4			5
-	getAssetsListResponse			[,	'get',			'Assets',		'List',		,			'Response']
-	getAssetsListByDerpResponse		[,	'get',			'Assets',		'List',		'Derp',		'Response']
-	mergeAssetResponse				[,	'merge',		'Asset',		,			,			'Response']
-	multiMergeAssetResponse			[,	'multiMerge',	'Asset',		,			,			'Response']
-	removeAssetResponse				[,	'remove',		'Asset',		,			,			'Response']
-	restoreAssetResponse			[,	'restore',		'Asset',		,			,			'Response']
-	suspendAssetResponse			[,	'suspend',		'Asset',		,			,			'Response']
-	reviveAssetResponse				[,	'revive',		'Asset',		,			,			'Response']
-	assetGeneralMerged				[,	,				'assetGeneral',	,			,			'Merged']
-	assetDeleted					[,	,				'asset',		,			,			'Deleted']
-	assetSuspended					[,	,				'asset',		,			,			'Suspended']
-	broadcast						null
-	sessionEnded					null
+	/*										0	1				2				3		4			5
+	getAssetsListResponse					[	'get'			'Assets'		'List'				'Response']
+	getAssetsListByDerpResponse				[	'get'			'Assets'		'List'	'Derp'		'Response']
+	clearBehaviourLogsByBehaviourResponse	[	'clear'			'BehaviourLogs'			'Behaviour'	'Response']
+	mergeAssetResponse						[	'merge'			'Asset'								'Response']
+	multiMergeAssetResponse					[	'multiMerge'	'Asset'								'Response']
+	removeAssetResponse						[	'remove'		'Asset'								'Response']
+	restoreAssetResponse					[	'restore'		'Asset'								'Response']
+	suspendAssetResponse					[	'suspend'		'Asset'								'Response']
+	reviveAssetResponse						[	'revive'		'Asset'								'Response']
+	assetGeneralMerged						[					'assetGeneral'						'Merged']
+	assetDeleted							[					'asset'								'Deleted']
+	assetSuspended							[					'asset'								'Suspended']
+	subscribeResponse						[					'subscribe'							'Response']
+	broadcast								null
+	sessionEnded							null
+	updateOwnContactResponse				[					'updateOwnContact'					'Response']
+	updateOwnPasswordResponse				[					'updateOwnPassword'					'Response']
+	updateOwnPreferencesResponse			[					'updateOwnPreferences'				'Response']
+	loginResponse							[					'login'								'Response']
+	logoutResponse							[					'logout'							'Response']
+	connectionResponse						[					'connection'						'Response']
+	noopResponse							[					'noop'								'Response']
+	sessionMachineMerged					[					'sessionMachine'					'Merged']
+	sessionGeneralMerged					[					'sessionGeneral'					'Merged']
+	sessionAdvancedMerged					[					'sessionAdvanced'					'Merged']
+	noopResponse							[					'noop'								'Response']
 	*/
 	const match = MESSAGE_PARSER.exec(msgName);
-	if (!match) return;
+	switch (match?.[5]) {
+		case "Response":
+			switch (match[1]) {
+				case "get":
+					break;
+				case "merge":
+				case "multiMerge":
+					break;
+				case "remove":
+				case "multiRemove":
+					break;
+				case "restore":
+					break;
+				case "suspend":
+					break;
+				case "revive":
+					break;
+			}
+			break;
+		case "Merged":
+			switch (match[2]) {
+				case "sessionGeneral":
+				case "sessionAdvanced":
+					// self stuff
+					break;
+				default:
+					utility.capitalize(match[2]);
+					break;
+			}
+			break;
+		case "Deleted":
+			break;
+		case "Suspended":
+			break;
+	}
 	
 	let action: ActionType,
 		object: string = utility.capitalize(utility.singularize(match[2])),
