@@ -3,6 +3,9 @@ import {
 	ErrorCode,
 	Payload,
 	Reply,
+	ReplySync,
+	ReplySyncGet,
+	ReplySyncList,
 	RepSelfGet,
 } from "@trakit/commands";
 import * as commands from "@trakit/commands";
@@ -77,7 +80,6 @@ export const CMD_CONNECTION = "connection";
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
- *
 clearBehaviourLogsByAsset
 clearBehaviourLogsByBehaviour
 clearBehaviourLogsByScript
@@ -265,75 +267,105 @@ unsubscribe
 updateOwnContact
 updateOwnPassword
 updateOwnPreferences
+
+[
+	"getAssetsListResponse",
+	"getAssetsListByDerpResponse",
+	"clearBehaviourLogsByBehaviourResponse",
+	"mergeAssetResponse",
+	"multiMergeAssetResponse",
+	"removeAssetResponse",
+	"restoreAssetResponse",
+	"suspendAssetResponse",
+	"reviveAssetResponse",
+	"assetGeneralMerged",
+	"assetDeleted",
+	"assetSuspended",
+	"subscribeResponse",
+	"broadcast",
+	"sessionEnded",
+	"updateOwnContactResponse",
+	"updateOwnPasswordResponse",
+	"updateOwnPreferencesResponse",
+	"loginResponse",
+	"logoutResponse",
+	"connectionResponse",
+	"noopResponse",
+	"sessionMachineMerged",
+	"sessionGeneralMerged",
+	"sessionAdvancedMerged",
+	"noopResponse",
+].map(s => MESSAGE_PARSER.exec(s));
+
+examples:
+										0	1				2				3		4			5
+getAssetsListResponse					[	'get'			'Assets'		'List'				'Response']
+getAssetsListByDerpResponse				[	'get'			'Assets'		'List'	'Derp'		'Response']
+getAssetMessage							[	'get'			'AssetMessage'						'Response']
+clearBehaviourLogsByBehaviourResponse	[	'clear'			'BehaviourLogs'			'Behaviour'	'Response']
+mergeAssetResponse						[	'merge'			'Asset'								'Response']
+multiMergeAssetResponse					[	'multiMerge'	'Asset'								'Response']
+removeAssetResponse						[	'remove'		'Asset'								'Response']
+restoreAssetResponse					[	'restore'		'Asset'								'Response']
+suspendAssetResponse					[	'suspend'		'Asset'								'Response']
+reviveAssetResponse						[	'revive'		'Asset'								'Response']
+assetGeneralMerged						[					'assetGeneral'						'Merged']
+assetDeleted							[					'asset'								'Deleted']
+assetSuspended							[					'asset'								'Suspended']
+subscribeResponse						[					'subscribe'							'Response']
+broadcast								null
+sessionEnded							null
+updateOwnContactResponse				[					'updateOwnContact'					'Response']
+updateOwnPasswordResponse				[					'updateOwnPassword'					'Response']
+updateOwnPreferencesResponse			[					'updateOwnPreferences'				'Response']
+loginResponse							[					'login'								'Response']
+logoutResponse							[					'logout'							'Response']
+connectionResponse						[					'connection'						'Response']
+noopResponse							[					'noop'								'Response']
+sessionMachineMerged					[					'sessionMachine'					'Merged']
+sessionGeneralMerged					[					'sessionGeneral'					'Merged']
+sessionAdvancedMerged					[					'sessionAdvanced'					'Merged']
+noopResponse							[					'noop'								'Response']
+*/
+
+/**
+ * Regex parser for response message names.
  */
 const RESPONSE_MESSAGE_PARSER = /^((?:multi)?(?:get|[mM]erge|[rR]emove|updateOwn|clear|suspend|revive|restore))?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/;
 
-function getResponse(msgName: string, msgContent: JsonObject): Reply | nothing {
-	/*
-	[
-		"getAssetsListResponse",
-		"getAssetsListByDerpResponse",
-		"clearBehaviourLogsByBehaviourResponse",
-		"mergeAssetResponse",
-		"multiMergeAssetResponse",
-		"removeAssetResponse",
-		"restoreAssetResponse",
-		"suspendAssetResponse",
-		"reviveAssetResponse",
-		"assetGeneralMerged",
-		"assetDeleted",
-		"assetSuspended",
-		"subscribeResponse",
-		"broadcast",
-		"sessionEnded",
-		"updateOwnContactResponse",
-		"updateOwnPasswordResponse",
-		"updateOwnPreferencesResponse",
-		"loginResponse",
-		"logoutResponse",
-		"connectionResponse",
-		"noopResponse",
-		"sessionMachineMerged",
-		"sessionGeneralMerged",
-		"sessionAdvancedMerged",
-		"noopResponse",
-	].map(s => MESSAGE_PARSER.exec(s));
-	 */
-	/*										0	1				2				3		4			5
-	getAssetsListResponse					[	'get'			'Assets'		'List'				'Response']
-	getAssetsListByDerpResponse				[	'get'			'Assets'		'List'	'Derp'		'Response']
-	getAssetMessage							[	'get'			'AssetMessage'						'Response']
-	clearBehaviourLogsByBehaviourResponse	[	'clear'			'BehaviourLogs'			'Behaviour'	'Response']
-	mergeAssetResponse						[	'merge'			'Asset'								'Response']
-	multiMergeAssetResponse					[	'multiMerge'	'Asset'								'Response']
-	removeAssetResponse						[	'remove'		'Asset'								'Response']
-	restoreAssetResponse					[	'restore'		'Asset'								'Response']
-	suspendAssetResponse					[	'suspend'		'Asset'								'Response']
-	reviveAssetResponse						[	'revive'		'Asset'								'Response']
-	assetGeneralMerged						[					'assetGeneral'						'Merged']
-	assetDeleted							[					'asset'								'Deleted']
-	assetSuspended							[					'asset'								'Suspended']
-	subscribeResponse						[					'subscribe'							'Response']
-	broadcast								null
-	sessionEnded							null
-	updateOwnContactResponse				[					'updateOwnContact'					'Response']
-	updateOwnPasswordResponse				[					'updateOwnPassword'					'Response']
-	updateOwnPreferencesResponse			[					'updateOwnPreferences'				'Response']
-	loginResponse							[					'login'								'Response']
-	logoutResponse							[					'logout'							'Response']
-	connectionResponse						[					'connection'						'Response']
-	noopResponse							[					'noop'								'Response']
-	sessionMachineMerged					[					'sessionMachine'					'Merged']
-	sessionGeneralMerged					[					'sessionGeneral'					'Merged']
-	sessionAdvancedMerged					[					'sessionAdvanced'					'Merged']
-	noopResponse							[					'noop'								'Response']
-	*/
-	const match = RESPONSE_MESSAGE_PARSER.exec(msgName);
-	let responseName = "Rep",
+/**
+ * Translated type name to object name to account for some legacy message names.
+ * @param typeName 
+ * @returns 
+ */
+function makeObjectName(typeName: string): classes {
+	typeName = utility.capitalize(typeName);
+	switch (typeName) {
+		case "CompanyLabels":
+			typeName = "CompanyStyle";
+			break;
+		case "CompanyPolicies":
+			typeName = "CompanyPolicy";
+			break;
+		default:
+			typeName = utility.singularize(typeName);
+			break;
+	}
+	return typeName as classes;
+}
+
+
+/**
+ * Returns a {@link Reply} object based on the message name and constructs it using the content received.
+ * @param match 
+ * @param msgContent 
+ * @returns 
+ */
+function getResponse(match: [string, string, string, string, string, string], msgContent: JsonObject): Reply | nothing {
+	let responseName = "Rep" + makeObjectName(match[2]),
 		json: JsonObject | null = null;
-	switch (match?.[5]) {
+	switch (match[5]) {
 		case "Response":
-			responseName += utility.singularize(match[2]);
 			json = msgContent;
 			switch (match[1]) {
 				case "merge":
@@ -390,25 +422,26 @@ function getResponse(msgName: string, msgContent: JsonObject): Reply | nothing {
 					// self stuff
 					return;	// not break
 				default:
-					responseName += utility.capitalize(match[2])
-						+ (
-							match[5] === "Merged"
-								? "Get"
-								: match[5].slice(0, -1).slice(0, 7)
-						);
+					responseName += match[5] === "Merged"
+						? "Get"
+						: match[5].slice(0, -1).slice(0, 7);
 					json = {
 						"errorCode": ErrorCode.success,
 						"message": match[5] + " event",
-						[utility.capitalize(match[2], false)]: msgContent,
+						[match[2]]: msgContent,
 					};
 					break;
 			}
 			break;
 	}
-	const reply = commands[responseName as keyof typeof commands] as new (json?: JsonObject) => Reply;
-	return json && reply
-		? new reply(json)
-		: null;
+	const FakeReply = json && commands[responseName as keyof typeof commands] as new (json?: JsonObject) => ReplySync;
+	if (FakeReply) {
+		const reply = new FakeReply(json as JsonObject);
+		reply.store?.();
+		return reply;
+		//return (reply as ReplySyncGet<IRequestable>).getObject?.()
+		//	?? (reply as ReplySyncList<IRequestable>).getCollection?.();
+	}
 }
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
@@ -750,27 +783,18 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			case "logoutResponse":
 			case "sessionEnded":
 				this.#socketAccount(msgContent);
+				this.#socketOperable = false;
 				this.close();
 				break;
 		}
 
-		const objectName = RESPONSE_MESSAGE_PARSER.exec(msgName) ?? [];
-		if (objectName.length > 1) {
-
-
-
-			// we need something better
-			
-
-
-			if (objectName[2]) {
-				// it's a list response
-			} else {
-				this.#socketMerged(
-					objectName[1] + (msgContent["errorCode"] === 0 ? "Merged" : "Deleted"),
-					msgContent
-				);
-			}
+		// store the received object if applicable
+		const messageParts = RESPONSE_MESSAGE_PARSER.exec(msgName) as string[];
+		if (messageParts?.length) {
+			getResponse(
+				messageParts as [string, string, string, string, string, string],
+				msgContent
+			);
 		}
 
 		/**
@@ -803,12 +827,23 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			msgMachine = msgContent.machine as JsonObject;
 		if (msgContent.user) {
 			if (msgContact) {
-				this.#socketMerged("contactMerged", msgContact);
+				getResponse(
+					["", "", "contact", "", "", "Merged"],
+					msgContact
+				);
 				msgUser.contact = msgContact["id"];
 			}
-			this.#socketMerged("userMerged", msgUser);
+			getResponse(
+				["", "", "user", "", "", "Merged"],
+				msgUser
+			);
 		}
-		if (msgMachine) this.#socketMerged("machineMerged", msgMachine);
+		if (msgMachine) {
+			getResponse(
+				["", "", "machine", "", "", "Merged"],
+				msgMachine
+			);
+		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
