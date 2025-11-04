@@ -5,7 +5,7 @@ import {
 	Reply,
 	RepSelfGet,
 } from "@trakit/commands";
-//import * as commands from "@trakit/commands";
+import * as commands from "@trakit/commands";
 import {
 	Asset,
 	classes,
@@ -77,14 +77,232 @@ export const CMD_CONNECTION = "connection";
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
- * 
+ *
+clearBehaviourLogsByAsset
+clearBehaviourLogsByBehaviour
+clearBehaviourLogsByScript
+getAsset
+getAssetMessage
+getAssetMessagesList
+getAssetMessagesListByCompany
+getAssetsList
+getAssetsListByReference
+getAssetsListByReferences
+getBehaviour
+getBehaviourLogsListByAsset
+getBehaviourLogsListByBehaviour
+getBehaviourLogsListByScript
+getBehaviourScript
+getBehaviourScriptsList
+getBehavioursList
+getBillingProfile
+getBillingProfilesList
+getBillingReport
+getBillingReportsList
+getBillingReportsListByCompany
+getCompaniesList
+getCompany
+getCompanyReseller
+getContact
+getContactsList
+getDispatchTask
+getDispatchTasksList
+getDispatchTasksListByCompany
+getDispatchTasksListByReference
+getDispatchTasksListByReferences
+getDocument
+getDocumentsList
+getHostingLicense
+getHostingLicensesList
+getHostingRule
+getHostingRulesList
+getIcon
+getIconsList
+getMachine
+getMachinesList
+getMaintenanceJob
+getMaintenanceJobsList
+getMaintenanceJobsListByAsset
+getMaintenanceJobsListBySchedule
+getMaintenanceSchedule
+getMaintenanceSchedulesList
+getPicture
+getPicturesList
+getPlace
+getPlacesList
+getPlacesListByReference
+getProvider
+getProviderConfig
+getProviderConfigType
+getProviderConfigTypesList
+getProviderConfigsList
+getProviderConfiguration
+getProviderConfigurationsList
+getProviderRegistration
+getProviderRegistrationsList
+getProviderRegistrationsListByKind
+getProviderScript
+getProviderScriptsList
+getProvidersList
+getProvidersListByConfiguration
+getReportResult
+getReportResultsList
+getReportResultsListByTemplate
+getReportSchedule
+getReportSchedulesList
+getReportSchedulesListByTemplate
+getReportTemplate
+getReportTemplatesList
+getSession
+getSessionDetails
+getSessionsList
+getSessionsListByUser
+getSubscriptionsList
+getTimezone
+getTimezonesList
+getUser
+getUserGroup
+getUserGroupsList
+getUsersList
+killSession
+login
+logout
+mergeAsset
+mergeAssetMessage
+mergeBehaviour
+mergeBehaviourScript
+mergeBillingProfile
+mergeCompany
+mergeCompanyReseller
+mergeContact
+mergeDispatchTask
+mergeDocument
+mergeHostingLicense
+mergeHostingRule
+mergeIcon
+mergeMachine
+mergeMaintenanceJob
+mergeMaintenanceSchedule
+mergePicture
+mergePlace
+mergeProvider
+mergeProviderConfig
+mergeProviderConfiguration
+mergeProviderRegistration
+mergeProviderScript
+mergeReportResult
+mergeReportSchedule
+mergeReportTemplate
+mergeUser
+mergeUserGroup
+multiMergeAssetMessage
+multiMergeDispatchTask
+multiRemoveDispatchTask
+noop
+removeAsset
+removeAssetMessage
+removeBehaviour
+removeBehaviourScript
+removeBillingProfile
+removeBillingReport
+removeCompany
+removeCompanyReseller
+removeContact
+removeDispatchTask
+removeDocument
+removeHostingLicense
+removeHostingRule
+removeIcon
+removeMachine
+removeMaintenanceJob
+removeMaintenanceSchedule
+removePicture
+removePlace
+removeProvider
+removeProviderConfig
+removeProviderConfiguration
+removeProviderRegistration
+removeProviderScript
+removeReportResult
+removeReportSchedule
+removeReportTemplate
+removeUser
+removeUserGroup
+restoreAsset
+restoreAssetMessage
+restoreBehaviour
+restoreBehaviourScript
+restoreBillingProfile
+restoreBillingReport
+restoreCompany
+restoreCompanyReseller
+restoreContact
+restoreDispatchTask
+restoreDocument
+restoreHostingLicense
+restoreHostingRule
+restoreIcon
+restoreMachine
+restoreMaintenanceJob
+restoreMaintenanceSchedule
+restorePicture
+restorePlace
+restoreProvider
+restoreProviderConfig
+restoreProviderConfiguration
+restoreProviderScript
+restoreReportResult
+restoreReportSchedule
+restoreReportTemplate
+restoreUser
+restoreUserGroup
+reviveAsset
+reviveProvider
+subscribe
+suspendAsset
+suspendProvider
+unsubscribe
+updateOwnContact
+updateOwnPassword
+updateOwnPreferences
  */
-const MESSAGE_PARSER = /^(get|merge|remove|restore|suspend|revive|multiMerge|multiRemove|clear)?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/i;
+const RESPONSE_MESSAGE_PARSER = /^((?:multi)?(?:get|[mM]erge|[rR]emove|updateOwn|clear|suspend|revive|restore))?(.+?)(List)?(?:By(.+))?(Merged|Deleted|Suspended|Response)$/;
 
-function createStoreAction(msgName: string) {
+function getResponse(msgName: string, msgContent: JsonObject): Reply | nothing {
+	/*
+	[
+		"getAssetsListResponse",
+		"getAssetsListByDerpResponse",
+		"clearBehaviourLogsByBehaviourResponse",
+		"mergeAssetResponse",
+		"multiMergeAssetResponse",
+		"removeAssetResponse",
+		"restoreAssetResponse",
+		"suspendAssetResponse",
+		"reviveAssetResponse",
+		"assetGeneralMerged",
+		"assetDeleted",
+		"assetSuspended",
+		"subscribeResponse",
+		"broadcast",
+		"sessionEnded",
+		"updateOwnContactResponse",
+		"updateOwnPasswordResponse",
+		"updateOwnPreferencesResponse",
+		"loginResponse",
+		"logoutResponse",
+		"connectionResponse",
+		"noopResponse",
+		"sessionMachineMerged",
+		"sessionGeneralMerged",
+		"sessionAdvancedMerged",
+		"noopResponse",
+	].map(s => MESSAGE_PARSER.exec(s));
+	 */
 	/*										0	1				2				3		4			5
 	getAssetsListResponse					[	'get'			'Assets'		'List'				'Response']
 	getAssetsListByDerpResponse				[	'get'			'Assets'		'List'	'Derp'		'Response']
+	getAssetMessage							[	'get'			'AssetMessage'						'Response']
 	clearBehaviourLogsByBehaviourResponse	[	'clear'			'BehaviourLogs'			'Behaviour'	'Response']
 	mergeAssetResponse						[	'merge'			'Asset'								'Response']
 	multiMergeAssetResponse					[	'multiMerge'	'Asset'								'Response']
@@ -110,68 +328,88 @@ function createStoreAction(msgName: string) {
 	sessionAdvancedMerged					[					'sessionAdvanced'					'Merged']
 	noopResponse							[					'noop'								'Response']
 	*/
-	const match = MESSAGE_PARSER.exec(msgName);
+	const match = RESPONSE_MESSAGE_PARSER.exec(msgName);
+	let responseName = "Rep",
+		json: JsonObject | null = null;
 	switch (match?.[5]) {
 		case "Response":
+			responseName += utility.singularize(match[2]);
+			json = msgContent;
 			switch (match[1]) {
-				case "get":
-					break;
 				case "merge":
 				case "multiMerge":
+				case "restore":
+				case "revive":
+				case "updateOwn":
+					// do nothing, wait for objects to update and process those messages
+					return;	// not break
+				
+				case "get":
+					// create a "Rep__Get" or "Rep__List" response
+					if (match[2] === "SessionDetails") {
+						responseName = "RepSelfGet";	// full override with "=" not "+="
+					} else {
+						responseName += match[3] ?? "Get";
+						if (match[4]) responseName += "By" + match[4];
+					}
 					break;
 				case "remove":
-				case "multiRemove":
-					break;
-				case "restore":
+					// create a "Rep__Delete" response
+					responseName += "Delete";
 					break;
 				case "suspend":
+					// create a "Rep__Suspend" response
+					responseName += "Suspend";
 					break;
-				case "revive":
+				case "clear":
+				case "multiRemove":
+					// create a "Rep__BatchDelete" response
+					responseName += "BatchDelete";
+					if (match[4]) responseName += "By" + match[4];
 					break;
+				default:
+					switch (match[2]) {
+						case "login":
+						case "logout":
+						case "connection":
+							responseName = "RepSelfGet";	// full override with "=" not "+="
+							break;
+						default:
+							// unprocessable response like noop
+							return;	// not break
+					}
 			}
 			break;
 		case "Merged":
+		case "Deleted":
+		case "Suspended":
 			switch (match[2]) {
+				case "sessionMachine":
 				case "sessionGeneral":
 				case "sessionAdvanced":
 					// self stuff
-					break;
+					return;	// not break
 				default:
-					utility.capitalize(match[2]);
+					responseName += utility.capitalize(match[2])
+						+ (
+							match[5] === "Merged"
+								? "Get"
+								: match[5].slice(0, -1).slice(0, 7)
+						);
+					json = {
+						"errorCode": ErrorCode.success,
+						"message": match[5] + " event",
+						[utility.capitalize(match[2], false)]: msgContent,
+					};
 					break;
 			}
 			break;
-		case "Deleted":
-			break;
-		case "Suspended":
-			break;
 	}
-	
-	let action: ActionType,
-		object: string = utility.capitalize(utility.singularize(match[2])),
-		filter: string = match[4] ? utility.capitalize(match[4]) : "",
-		batch: boolean = match[1].startsWith("multi");
-	if (batch) match[1] = match[1].slice(5);
-	switch (match[1]) {
-		case "get":
-			action = match[3] ? "List" : "Get";
-			break;
-		case "remove":
-			action = "Delete";
-			break;
-		case "revive":
-			action = "Reactivate";
-			break;
-		default:
-			action = utility.capitalize(match[1]) as ActionType;
-			break;
-	}
-	
-
-
-
+	const reply = commands[responseName as keyof typeof commands] as new (json?: JsonObject) => Reply;
+	return json && reply
+		? new reply(json)
+		: null;
 }
-
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
  * @param payload 
@@ -516,7 +754,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				break;
 		}
 
-		const objectName = MESSAGE_PARSER.exec(msgName) ?? [];
+		const objectName = RESPONSE_MESSAGE_PARSER.exec(msgName) ?? [];
 		if (objectName.length > 1) {
 
 
@@ -583,7 +821,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param msgContent 
 	 */
 	#socketMerged(msgName: string, msgContent: JsonObject): void {
-		let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(MESSAGE_PARSER, "") as classes,
+		let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(RESPONSE_MESSAGE_PARSER, "") as classes,
 			merge: () => void = () => {
 				const key = syncKey(msgContent, typeName),
 					map = storage[typeName],
