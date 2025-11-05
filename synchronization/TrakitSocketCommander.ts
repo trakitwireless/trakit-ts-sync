@@ -171,13 +171,6 @@ function getCommand(payload: Payload): string {
  * @returns
  */
 function storeSyncMessage(match: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
-	switch (match[1]) {
-		case "sessionMachine":
-		case "sessionGeneral":
-		case "sessionAdvanced":
-			// self stuff, ignore
-			return;	// not break
-	}
 	const name = "Rep" + makeObjectName(match[1]) + (match[2] === "Merged" ? "Get" : match[2].slice(0, -1).slice(0, 7)),
 		json = {
 			"errorCode": ErrorCode.success,
@@ -468,11 +461,12 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			/**
 			 * The function that will settle (resolve or reject) the Promise for the pending command.
 			 **/
-			const isCommandResponse = this.#requestSettle(msgContent["reqId"] as number, msgContent);
+			const isCommandResponse = msgName.endsWith("Response")
+									&& this.#requestSettle(msgContent["reqId"] as number, msgContent);
 			/**
 			 * Stores the received object if applicable.
 			 */
-			if (!isCommandResponse) {
+			if (!isCommandResponse && !msgName.startsWith("session")) { // ignore self stuff
 				// store the received object if applicable
 				const messageParts = RESPONSE_MESSAGE_PARSER.exec(msgName) as string[];
 				if (messageParts?.length) {
@@ -653,6 +647,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		return new Promise<Reply>((resolve, reject) => {
 			const state = this.state;
 			switch (state) {
+				case TrakitSocketStatus.opening:
 				case TrakitSocketStatus.open:
 					this.reconnectEnabled = false;
 					this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
