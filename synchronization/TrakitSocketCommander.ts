@@ -619,7 +619,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
 					this.#socket.onclose = (ev) => this.#socketClose(ev);
 					this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
-						(response["errorCode"] === 0 ? resolve : reject)(this.account as RepSelfGet);
+						(response["errorCode"] === 0 ? resolve : reject)(this.account);
 					});
 					break;
 				default:
