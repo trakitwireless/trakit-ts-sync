@@ -203,37 +203,33 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	static readonly URI_BETA: url = "wss://kraken.trakit.ca/";
 
+	// last time a connection was established (with a connectionResponse message).
 	#lastConnected: Date = new Date(NaN);
+	// last time any message was received.
 	#lastReceived: Date = new Date(NaN);
+	// name of the last message received.
 	#lastMessage: string = "";
+	// last time any message was sent.
 	#lastSent: Date = new Date(NaN);
 
 	/**
 	 * Timestamp recorded right after establishing a connection and receiving the `connectionResponse` message.
 	 */
-	get lastConnected(): Date {
-		return this.#lastConnected;
-	}
+	get lastConnected(): Date { return this.#lastConnected; }
 	/**
 	 * A timestamp from the last time we received any kind of message from the underlying WebSocket (requested or otherwise).
 	 * Does not reset when we send a message, only on receive.
 	 * This is used by the keep-alive process.
 	 **/
-	get lastReceived(): Date {
-		return this.#lastReceived;
-	}
+	get lastReceived(): Date { return this.#lastReceived; }
 	/**
 	 * The name of the most recent message received by the underlying WebSocket.
 	 **/
-	get lastMessage(): string {
-		return this.#lastMessage;
-	}
+	get lastMessage(): string { return this.#lastMessage; }
 	/**
 	 * Timestamp recorded right after sending the most recent message.
 	 */
-	get lastSent(): Date {
-		return this.#lastSent;
-	}
+	get lastSent(): Date { return this.#lastSent; }
 
 	/**
 	 * Returns a {@link TrakitSocketStatus} about the underlying WebSocket.
@@ -462,7 +458,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			 * The function that will settle (resolve or reject) the Promise for the pending command.
 			 **/
 			const isCommandResponse = msgName.endsWith("Response")
-									&& this.#requestSettle(msgContent["reqId"] as number, msgContent);
+				&& this.#requestSettle(msgContent["reqId"] as number, msgContent);
 			/**
 			 * Stores the received object if applicable.
 			 */
