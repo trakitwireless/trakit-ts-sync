@@ -1,9 +1,17 @@
-﻿import { Payload, PaySubscriptionDelete, PaySubscriptionMerge, Reply, RepSelfGet, RepSubscription, SubscriptionType } from "@trakit/commands";
+﻿import {
+	Payload,
+	PaySubscriptionDelete,
+	PaySubscriptionMerge,
+	Reply,
+	RepSelfGet,
+	RepSubscription,
+	SubscriptionType
+} from "@trakit/commands";
 import {
 	BaseComponent,
 	ulong
 } from '@trakit/objects';
-import { TrakitRestfulCommander } from "synchronization/TrakitRestfulCommander";
+import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
 import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
 import { SubscribedRegions } from "./SubscribedRegions";
 import { TrakitCommander } from "./TrakitCommander";

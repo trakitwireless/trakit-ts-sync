@@ -102,17 +102,11 @@ export abstract class TrakitCommander<TRequest> {
 			this.setAuth({
 				machine: ((value as any).toJSON?.() ?? value) as { key: string },
 			});
-		} else if ((value as any)?.machine?.key) {
+		} else if ((value as any)?.machine?.key || (value as any)?.ghostId) {
 			this.setAuth(new RepSelfGet({
 				errorCode: ErrorCode.success,
-				message: "Authenticated via Machine",
-				...value,
-			}));
-		} else if ((value as any)?.ghostId) {
-			this.setAuth(new RepSelfGet({
-				errorCode: ErrorCode.success,
-				message: "Authenticated via Session",
-				...value,
+				message: `Authenticated via ${(value as any)?.machine?.key ? "Machine" : "Session"}`,
+				...((value as any).toJSON?.() ?? value),
 			}));
 		} else {
 			this.account = new RepSelfGet;
