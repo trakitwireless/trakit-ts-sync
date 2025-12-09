@@ -9,6 +9,7 @@
 } from "@trakit/commands";
 import {
 	BaseComponent,
+	classes,
 	guid,
 	Machine,
 	nothing,
@@ -1378,28 +1379,27 @@ export class TrakitSync extends TrakitCommander<any> {
 
 
 
-	///**
-	// * Handles the "connection" event from the Trak-iT WebSocket.
-	// * This will update the global {@link SESSION_ID}, sends a {@link SyncMessage} to the {@link SyncClient},
-	// * and re-subscribe to any regions that were subscribed to before the disconnection occured.
-	// * Also restarts the subscription expirer.
-	// * @param account 
-	// */
-	//#onOpen() {
-	//	this.#subscriptions.forEach((subscribed, company) => {
-	//		// remove all regions from in-sync list; ALL OF THEM.
-	//		// but, re-sync to the ones that were not going to expire
-	//		// this will also auto-get lists of objects
-	//		this.sync(new SyncSubscriptions(
-	//			true,
-	//			company,
-	//			subscribed.reset()
-	//		));
-	//	});
-	//	// start expired subscription timer
-	//	this.#subscriptionExpirer();
-	//	this.onAccount?.(this.#socket.account);
-	//}
+	/**
+	 * Handles the "connection" event from the Trak-iT WebSocket.
+	 * This will update the global {@link SESSION_ID}, sends a {@link SyncMessage} to the {@link SyncClient},
+	 * and re-subscribe to any regions that were subscribed to before the disconnection occured.
+	 * Also restarts the subscription expirer.
+	 * @param account 
+	 */
+	#onOpen(account: RepSelfGet) {
+		this.#subscriptions.forEach((subscribed, companyId) => {
+			// remove all regions from in-sync list; ALL OF THEM.
+			// but, re-sync to the ones that were not going to expire
+			// this will also auto-get lists of objects
+			this.sync(
+				companyId,
+				subscribed.reset()
+			);
+		});
+		// start expired subscription timer
+		this.#subscriptionExpirer();
+		this.onAccount?.(account);
+	}
 	///**
 	// * Handles the "disconnection" event from the Trak-iT WebSocket.
 	// * Stops the subscription expirer (it is restarted on re-connection).
@@ -1493,19 +1493,31 @@ export class TrakitSync extends TrakitCommander<any> {
 	/**
 	 * Begins synchronizing the given regions.
 	 * If all regions are in-sync, will resolve immediately with the arrays of content.  (How do I do that?)
-	 * @param msg
 	 **/
-	async sync(msg: SyncSubscriptions) {
-		const subscribed = this.#getCurrentSubscriptions(msg.company),
+	async sync(companyId: ulong, subscriptions: classes[]) {
+		const subscribed = this.#getCurrentSubscriptions(companyId),
 			alreadySubscribed = subscribed.regions,
-			requestedSubscriptions: SubscriptionType[] = msg.subs.map((region: string) => {
-				return SUBSCRIPTION_SPLITS[region as keyof typeof SUBSCRIPTION_SPLITS] || [region];
-			}).reduce((acc, val) => acc.concat(val), []),
-			subscriptionUrls = requestedSubscriptions.map((s: string) => SUBSCRIPTION_LIST_BY_COMPANY[s as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || ""),
-			temporarySubscriptions: SubscriptionType[] = [],
-			newSubscriptions: SubscriptionType[] = [];
+			newSubscriptions = subscriptions.filter(sub => !alreadySubscribed.includes(sub));
+		if (newSubscriptions.length > 0) {
+			
+
+
+
+
+			
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			subscriptionUrls = requestedSubscriptions.map((s: string) => SUBSCRIPTION_LIST_BY_COMPANY[s as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "");
         
-		for (let subType of SUBSCRIPTION_LIST_BY_COMPANY ) {
+		for (let subType of SUBSCRIPTION_LIST_BY_COMPANY) {
 			// here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
 			// example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
 			// but the assetAdvanced must be temporary since we didn't ask for it
@@ -1629,7 +1641,7 @@ export class TrakitSync extends TrakitCommander<any> {
 	 * This allows the service to re-request sync on a region within a few seconds (or minutes, haven't decided), like when switching sections.
 	 * @param msg
 	 **/
-	desync(msg: SyncSubscriptions) {
+	desync(companyId: ulong, subscriptions: SubscriptionType[]) {
 		const subscribed = this.#getCurrentSubscriptions(msg.company),
 			regions = msg.subs.map((region) => SUBSCRIPTION_SPLITS[region] || [region])
 				.reduce((acc, val) => acc.concat(val), [])
