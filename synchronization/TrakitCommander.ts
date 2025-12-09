@@ -40,11 +40,10 @@ export abstract class TrakitCommander<TRequest> {
 	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
 	 */
 	account!: RepSelfGet;
-    
 	/**
 	 * {@link url} of the underlying Trak-iT API service.
 	 */
-	baseAddress: URL;
+	baseAddress: URL | null;
 	/**
 	 * Additional (optional) values added to the query-string of the connection request.
 	 */
@@ -59,8 +58,10 @@ export abstract class TrakitCommander<TRequest> {
 	 * @param path  Optional path to append to the base address.
 	 * @returns     The constructed URL string.
 	 */
-	protected createBaseUrl(path: string | null = null): URL {
-		const route = new URL(path ?? "", this.baseAddress),
+	protected createBaseUrl(path: URL | url | nothing = null): URL {
+		const route = this.baseAddress
+			? new URL(path ?? "", this.baseAddress)
+			: new URL(path as url),
 			query = new Map(this.query);
 		for (const [key, value] of query) {
 			route.searchParams.append(key, value);
@@ -76,7 +77,9 @@ export abstract class TrakitCommander<TRequest> {
 				| guid
 				| nothing
 	) {
-		this.baseAddress = new URL(baseAddress || self.location?.origin);
+		this.baseAddress = baseAddress
+			? new URL(baseAddress)
+			: null;
 		this.setAuth(account);
 	}
 
