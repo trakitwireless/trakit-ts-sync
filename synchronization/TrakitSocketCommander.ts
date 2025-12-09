@@ -253,9 +253,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	}
 
 	/**
-	 * Gets invoked any time the WebSocket connection is opened.
+	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
 	 */
 	onOpen: ((this: TrakitSocketCommander, message: RepSelfGet) => any) | null = null;
+	/**
+	 * Gets invoked any time the connection's account information is updated while the connection is open.
+	 */
+	onAccount: ((this: TrakitSocketCommander, message: RepSelfGet) => any) | null = null;
 	/**
 	 * Gets invoked any time the WebSocket connection is closed.
 	 */
@@ -427,6 +431,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			case "loginResponse":
 			case "getSessionDetailsResponse":
 				this.#socketAccount(msgContent);
+				this.onAccount?.(this.account);
 				break;
 			case "updateOwnPasswordResponse":
 				if (!this.#socketOperable) {
@@ -435,18 +440,23 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				break;
 			case "sessionMachineMerged":
 				this.account.machine?.fromJSON(msgContent);
+				this.onAccount?.(this.account);
 				break;
 			case "sessionGeneralMerged":
 				this.account.user?.general?.fromJSON(msgContent);
+				this.onAccount?.(this.account);
 				break;
 			case "sessionAdvancedMerged":
 				this.account.user?.advanced?.fromJSON(msgContent);
+				this.onAccount?.(this.account);
 				break;
 			case "logoutResponse":
+				this.close();
+				// no break
 			case "sessionEnded":
 				this.#socketAccount(msgContent);
 				this.#socketOperable = false;
-				this.close();
+				this.onAccount?.(this.account);
 				break;
 		}
 		/**
