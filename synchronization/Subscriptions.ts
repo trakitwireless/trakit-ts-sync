@@ -1,10 +1,10 @@
-import { Payload, SubscriptionType } from "@trakit/commands";
+import { SubscriptionType } from "@trakit/commands";
 import { SyncName, url, utility } from "@trakit/objects";
 
 /**
- * Names of objects that span multiple regions (in serialized order).
+ * A mapping of object names to their required subscription types.
  */
-export const SUBSCRIPTION_SPLITS: { [key in SyncName | string]: SubscriptionType[] } = {
+export const OBJECT_SUBSCRIPTIONS: { [key in SyncName | string]: SubscriptionType[] } = {
 	/* company */
 	"Company": [
 		SubscriptionType.companyGeneral,
@@ -22,10 +22,10 @@ export const SUBSCRIPTION_SPLITS: { [key in SyncName | string]: SubscriptionType
 	//"CompanyDirectory": [
 	//	SubscriptionType.companyDirectory,
 	//],
-	"CompanyStyles": [
+	"CompanyStyle": [
 		SubscriptionType.companyLabels,
 	],
-	"CompanyPolicies": [
+	"CompanyPolicy": [
 		SubscriptionType.companyPolicies,
 	],
 	"CompanyReseller": [
@@ -183,16 +183,47 @@ export const SUBSCRIPTION_SPLITS: { [key in SyncName | string]: SubscriptionType
 };
 
 /**
+ * A mapping of object names to their component parts.
+ */
+export const OBJECT_COMPOUNDS: { [key in SyncName | string]: SyncName[] } = {
+	"Company": [
+		"CompanyGeneral",
+		//"CompanySetting",
+		"CompanyDirectory",
+		"CompanyStyle",
+		"CompanyPolicy",
+	],
+	"Asset": [
+		"AssetGeneral",
+		"AssetAdvanced",
+		"AssetDispatch",
+	],
+	//"Place": [
+	//	"PlaceGeneral",
+	//	"PlaceExtended",
+	//],
+	"Provider": [
+		"ProviderGeneral",
+		"ProviderAdvanced",
+		"ProviderControl",
+	],
+	"User": [
+		"UserGeneral",
+		"UserAdvanced",
+	],
+};
+
+/**
  * A mapping of RESTful service routes to get things listed by company.
  **/
-export const SUBSCRIPTION_LIST_BY_COMPANY: { [key in SyncName|string]: url } = {
+export const OBJECT_LIST_BY_COMPANY: { [key in SyncName | string]: url } = {
 	/* company */
 	"Company": "/companies/generals?parent={companyId}",
 	"CompanyGeneral": "/companies/generals?parent={companyId}",
 	//"CompanySettings": "/companies/settings?parent={companyId}",
 	"CompanyDirectory": "/companies/directory?parent={companyId}",
-	"CompanyStyles": "/companies/styles?parent={companyId}",
-	"CompanyPolicies": "/companies/policies?parent={companyId}",
+	"CompanyStyle": "/companies/styles?parent={companyId}",
+	"CompanyPolicy": "/companies/policies?parent={companyId}",
 	"CompanyReseller": "/companies/resellers?parent={companyId}",
 	/* accounts */
 	"Contact": "/companies/{companyId}/contacts",
@@ -218,14 +249,14 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: { [key in SyncName|string]: url } = {
 	//	"AssetAlert",
 	/* dispatch */
 	"DispatchTask": "/companies/{companyId}/assets/dispatch/tasks",
-	"DispatchTemplate": "/companies/{companyId}/assets/dispatch/templates",
+	//"DispatchTemplate": "/companies/{companyId}/assets/dispatch/templates",
 	"DispatchJob": "/companies/{companyId}/assets/dispatch/jobs",
 	/* maintenance */
 	"MaintenanceSchedule": "/companies/{companyId}/maintenance/schedules",
 	"MaintenanceJob": "/companies/{companyId}/maintenance/jobs",
 	/* places */
 	"Place": "/companies/{companyId}/places",
-	"PlaceGeneral": "/companies/{companyId}/places",
+	//"PlaceGeneral": "/companies/{companyId}/places",
 	//"PlaceExtended": "/companies/{companyId}/places",
 	/* behaviours */
 	"BehaviourScript": "/companies/{companyId}/behaviours/scripts",
@@ -252,7 +283,7 @@ export const SUBSCRIPTION_LIST_BY_COMPANY: { [key in SyncName|string]: url } = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
  **/
-export const SUBSCRIPTION_LIST_BY_ASSET: { [key: string]: url } = {
+export const OBJECT_LIST_BY_ASSET: { [key: SyncName | string]: url } = {
 	/* messaging */
 	"AssetMessage": "/assets/{assetId}/messages",
 	/* dispatch */
@@ -267,7 +298,7 @@ export const SUBSCRIPTION_LIST_BY_ASSET: { [key: string]: url } = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by behaviour script.
  **/
-export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT: { [key: string]: url } = {
+export const OBJECT_LIST_BY_BEHAVIOUR_SCRIPT: { [key: SyncName | string]: url } = {
 	"BehaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
 	"Behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
 };
@@ -275,7 +306,7 @@ export const SUBSCRIPTION_LIST_BY_BEHAVIOUR_SCRIPT: { [key: string]: url } = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
  **/
-export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: { [key: string]: url } = {
+export const OBJECT_LIST_BY_BILLING_PROFILE: { [key: SyncName | string]: url } = {
 	"BillingHosting": "/billing/profiles/{profileId}/rules",
 	"BillingLicense": "/billing/profiles/{profileId}/licenses",
 	"BillingReport": "/billing/profiles/{profileId}/reports",
@@ -288,7 +319,7 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: { [key: string]: url } = {
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
  **/
-export const SUBSCRIPTION_LIST_BY_USER: { [key: string]: url } = {
+export const OBJECT_LIST_BY_USER: { [key: SyncName | string]: url } = {
 	"Session": "/users/{userLogin}/sessions",
 };
 

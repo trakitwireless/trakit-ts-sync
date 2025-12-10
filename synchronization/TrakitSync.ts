@@ -1,4 +1,5 @@
-﻿import {
+﻿import * as commands from "@trakit/commands";
+import {
 	Payload,
 	PaySubscriptionDelete,
 	PaySubscriptionMerge,
@@ -10,12 +11,15 @@
 import {
 	BaseComponent,
 	guid,
+	IRequestable,
+	JsonObject,
 	Machine,
 	nothing,
 	SyncName,
 	ulong
 } from '@trakit/objects';
 import { SubscribedRegions } from "./SubscribedRegions";
+import { makeObjectName, OBJECT_COMPOUNDS, OBJECT_SUBSCRIPTIONS } from "./Subscriptions";
 import { TrakitCommander } from "./TrakitCommander";
 import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
 import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
@@ -1283,13 +1287,15 @@ export class TrakitSync extends TrakitCommander<any> {
 
 
 
+	onOpen?: (account: RepSelfGet) => void;
 	onAccount?: (account: RepSelfGet) => void;
-	onMessage?: (kind: string, content: BaseComponent) => void;
+	onMessage?: (kind: string, content: JsonObject) => void;
 	onResponse?: (response: Reply) => void;
+	onClose?: (account: Reply) => void;
 
-	onReplace?: (kind: string, companyId: ulong, response: Reply) => void;
-	onUpdate?: (kind: string, companyId: ulong, object: BaseComponent) => void;
-	onDelete?: (kind: string, companyId: ulong, object: BaseComponent) => void;
+	onReplace?: (kind: SyncName, companyId: ulong, list: IRequestable[]) => void;
+	onUpdate?: (kind: SyncName, companyId: ulong, object: BaseComponent) => void;
+	onDelete?: (kind: SyncName, companyId: ulong, key: ulong | string) => void;
 
 
 
@@ -1493,70 +1499,103 @@ export class TrakitSync extends TrakitCommander<any> {
 	 * If all regions are in-sync, will resolve immediately with the arrays of content.  (How do I do that?)
 	 **/
 	async sync(companyId: ulong, subscriptions: SyncName[]) {
-		const subscribed = this.#getCurrentSubscriptions(companyId),
-			alreadySubscribed = subscribed.regions,
-			newSubscriptions = subscriptions.filter(sub => !alreadySubscribed.includes(sub));
-		if (newSubscriptions.length > 0) {
-			
-
-
-
-
-			
-		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-			subscriptionUrls = requestedSubscriptions.map((s: string) => SUBSCRIPTION_LIST_BY_COMPANY[s as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "");
-        
-		for (let subType of SUBSCRIPTION_LIST_BY_COMPANY) {
-			// here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
-			// example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
-			// but the assetAdvanced must be temporary since we didn't ask for it
-			// it can expire using the regular expiration timeout
-			if (subscriptionUrls.includes(SUBSCRIPTION_LIST_BY_COMPANY[subType as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "")) {
-				temporarySubscriptions.push(subType);
+		const promises = [] as Promise<Reply>[];
+		const current = this.#getCurrentSubscriptions(companyId),
+			requested = subscriptions.reduce((acc, s) => acc.concat(OBJECT_SUBSCRIPTIONS[s] || []), [] as SubscriptionType[])
+				.filter(sub => !current.regions.includes(sub))
+				.filter((sub, index, array) => array.indexOf(sub) === index); // make unique
+		if (requested.length > 0) {
+			//subscriptions = (subscriptions.map(type => [type, OBJECT_SUBSCRIPTIONS[type] || []]) as [SyncName, SubscriptionType[]][])
+			//	.filter(([type, subs]) => subs.filter(sub => requested.includes(sub)).length / subs.length >= 0.5)
+			//	.map(([type, subs]) => type);
+			const subscribed = (await this.#socket.subscribe(companyId, requested)).merged as SubscriptionType[],
+				requests = [] as SyncName[];
+			for (const [type, children] of Object.entries(OBJECT_COMPOUNDS)) {
+				const childSubs = children.map((child) => OBJECT_SUBSCRIPTIONS[child]).flat();
+				if (childSubs.filter(sub => subscribed.includes(sub)).length / childSubs.length >= 0.5) {
+					requests.push(type as SyncName);
+				}
 			}
-		}
-		for (let subType of requestedSubscriptions.concat(temporarySubscriptions)) {
-			// for REST requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
-			// build a list of all URL templates for every subscription type being requested
-			if (!alreadySubscribed.includes(subType) && !newSubscriptions.includes(subType)) {
-				newSubscriptions.push(subType);
+			for (const [type, subs] of Object.entries(OBJECT_SUBSCRIPTIONS)) {
+				if (
+					!OBJECT_COMPOUNDS[type as SyncName]
+					&& subs.some(sub => subscribed.includes(sub))
+				) {
+					requests.push(type as SyncName);
+				}
 			}
-		}
-        
-		// if there are new subscriptions to make, do so and when the Promise is resolved pass the response (normal KraknSocket behaviour)
-		const response: RepSubscription = newSubscriptions.length
-			? await this.#subscribe(msg.company, newSubscriptions)
-			: new RepSubscription({
-				"errorCode": ErrorCode.success,
-				"company": { "id": msg.company },
-				"message": "No new subscriptions",
-				"merged": [],
+			requests.forEach(type => {
+				const name = "Pay"
+					+ makeObjectName(type)
+					+ (
+						type.startsWith("Company")
+							? "Get"
+							: "ListByCompany"
+					),
+					FakePayload = commands[name as keyof typeof commands] as new (json: JsonObject) => Payload;
+				if (FakePayload) {
+					promises.push(this.command<Reply>(new FakePayload({
+						company: { id: companyId },
+					})));
+				} else {
+					console.warn(`No payload could be made for sync type ${type}`);
+				}
 			});
+		}
+		return Promise.all(promises);
 		
-		// subscriptions succeeded (at least partially)
-		// remove expiration from any new subscriptions
-		subscribed.removeExpiries(requestedSubscriptions.filter(r => !temporarySubscriptions.includes(r)));
-		// once subscriptions are made, set the expiry of the temporary ones
-		subscribed.addExpiries(temporarySubscriptions);
+		
+		
+		
+		
+		
+		
+		
+		
+		//subscriptionUrls = requestedSubscriptions.map((s: string) => SUBSCRIPTION_LIST_BY_COMPANY[s as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "");
+        
+		//for (let subType of SUBSCRIPTION_LIST_BY_COMPANY) {
+		//	// here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
+		//	// example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
+		//	// but the assetAdvanced must be temporary since we didn't ask for it
+		//	// it can expire using the regular expiration timeout
+		//	if (subscriptionUrls.includes(SUBSCRIPTION_LIST_BY_COMPANY[subType as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "")) {
+		//		temporarySubscriptions.push(subType);
+		//	}
+		//}
+		//for (let subType of requestedSubscriptions.concat(temporarySubscriptions)) {
+		//	// for REST requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
+		//	// build a list of all URL templates for every subscription type being requested
+		//	if (!alreadySubscribed.includes(subType) && !requested.includes(subType)) {
+		//		requested.push(subType);
+		//	}
+		//}
+        
+		//// if there are new subscriptions to make, do so and when the Promise is resolved pass the response (normal KraknSocket behaviour)
+		//const response: RepSubscription = requested.length
+		//	? await this.#subscribe(msg.company, requested)
+		//	: new RepSubscription({
+		//		"errorCode": ErrorCode.success,
+		//		"company": { "id": msg.company },
+		//		"message": "No new subscriptions",
+		//		"merged": [],
+		//	});
+		
+		//// subscriptions succeeded (at least partially)
+		//// remove expiration from any new subscriptions
+		//current.removeExpiries(requestedSubscriptions.filter(r => !temporarySubscriptions.includes(r)));
+		//// once subscriptions are made, set the expiry of the temporary ones
+		//current.addExpiries(temporarySubscriptions);
         
         
 
 
 
-		const requestUrls = (response.merged as SubscriptionType[])
-			.map(sub => SUBSCRIPTION_LIST_BY_COMPANY[sub]?.replace("{companyId}", msg.company.toString()))
-			.filter(url => url)
-			.reduce((acc, val) => acc.concat([val]), [] as url[])
-			.map((url: string) => this.#rest._relayRequest(url));
+		//const requestUrls = (response.merged as SubscriptionType[])
+		//	.map(sub => SUBSCRIPTION_LIST_BY_COMPANY[sub]?.replace("{companyId}", msg.company.toString()))
+		//	.filter(url => url)
+		//	.reduce((acc, val) => acc.concat([val]), [] as url[])
+		//	.map((url: string) => this.#rest._relayRequest(url));
 
 
 
@@ -1573,65 +1612,65 @@ export class TrakitSync extends TrakitCommander<any> {
 
 
 
-		// now load all the data
-		return Promise.allSettled(
-			response.merged.map(function (sub) {
-				return SUBSCRIPTION_LIST_BY_COMPANY[sub] || "";
-			})
-				.unique()
-				.remove("")
-				.map(function (url) {
-					// method and body are null (defaults to GET and null)
-					// callback is used because it is invoked before the Promise is resolved (fulfilled or rejected)
-					// which adds the reply message to the Window-bound queue before the full sync-response Promise
-					return XHR_MINDFLAYER(url.replace("{companyId}", msg.company), null, null, function (response) {
-						OBJECT_EACH(SUBSCRIPTION_LIST_BY_COMPANY, function (value, region) {
-							// for each URL, we find the associated regions, or return blank string
-							return value === url
-								? region
-								: "";
-						})
-							// blanks are removed
-							.remove("")
-							// since Trak-iT's RESTful service is not providing region lists in all cases (for complex types)
-							// we find out if this region is a member of a complex type, and return that type name instead
-							.map(function (region) {
-								var sub = "";
-								OBJECT_EACH(SUBSCRIPTION_SPLITS, function (splits, key) {
-									if (splits.includes(region)) sub = key;
-								});
-								// if not a complex type, return region name
-								return sub || region;
-							})
-							// this does result in duplicates ie; assetGeneral => asset, assetAdvanced => asset, assetDispatch => asset
-							// so it's important to make this list unique in the end
-							.unique()
-							.forEach(function (sub) {
-								self.postMessage(new SyncMessage(
-									/*
-									(
-										sub.endsWith("y")
-											? sub.slice(0, -1) + "ie"
-											: sub
-									) + "sMerged",
-									*/
-									sub + "List",
-									response
-								));
-							});
-					});
-				})
-		).then(function (results) {
-			var responses = [response].concat(results.map(function (result) {
-				return result["value"] || result["reason"];
-			}));
-			msg.response = {
-				"errorCode": responses.gather("errorCode").distinct()[0] || 0,
-				"message": responses.gather("message").join(", ") || "No operations",
-				"responses": responses,
-			};
-			self.postMessage(msg);
-		});
+		//// now load all the data
+		//return Promise.allSettled(
+		//	response.merged.map(function (sub) {
+		//		return SUBSCRIPTION_LIST_BY_COMPANY[sub] || "";
+		//	})
+		//		.unique()
+		//		.remove("")
+		//		.map(function (url) {
+		//			// method and body are null (defaults to GET and null)
+		//			// callback is used because it is invoked before the Promise is resolved (fulfilled or rejected)
+		//			// which adds the reply message to the Window-bound queue before the full sync-response Promise
+		//			return XHR_MINDFLAYER(url.replace("{companyId}", msg.company), null, null, function (response) {
+		//				OBJECT_EACH(SUBSCRIPTION_LIST_BY_COMPANY, function (value, region) {
+		//					// for each URL, we find the associated regions, or return blank string
+		//					return value === url
+		//						? region
+		//						: "";
+		//				})
+		//					// blanks are removed
+		//					.remove("")
+		//					// since Trak-iT's RESTful service is not providing region lists in all cases (for complex types)
+		//					// we find out if this region is a member of a complex type, and return that type name instead
+		//					.map(function (region) {
+		//						var sub = "";
+		//						OBJECT_EACH(SUBSCRIPTION_SPLITS, function (splits, key) {
+		//							if (splits.includes(region)) sub = key;
+		//						});
+		//						// if not a complex type, return region name
+		//						return sub || region;
+		//					})
+		//					// this does result in duplicates ie; assetGeneral => asset, assetAdvanced => asset, assetDispatch => asset
+		//					// so it's important to make this list unique in the end
+		//					.unique()
+		//					.forEach(function (sub) {
+		//						self.postMessage(new SyncMessage(
+		//							/*
+		//							(
+		//								sub.endsWith("y")
+		//									? sub.slice(0, -1) + "ie"
+		//									: sub
+		//							) + "sMerged",
+		//							*/
+		//							sub + "List",
+		//							response
+		//						));
+		//					});
+		//			});
+		//		})
+		//).then(function (results) {
+		//	var responses = [response].concat(results.map(function (result) {
+		//		return result["value"] || result["reason"];
+		//	}));
+		//	msg.response = {
+		//		"errorCode": responses.gather("errorCode").distinct()[0] || 0,
+		//		"message": responses.gather("message").join(", ") || "No operations",
+		//		"responses": responses,
+		//	};
+		//	self.postMessage(msg);
+		//});
 	}
 	/**
 	 * Begins removing regions from synchronization.
@@ -1639,7 +1678,7 @@ export class TrakitSync extends TrakitCommander<any> {
 	 * This allows the service to re-request sync on a region within a few seconds (or minutes, haven't decided), like when switching sections.
 	 * @param msg
 	 **/
-	desync(companyId: ulong, subscriptions: SubscriptionType[]) {
+	async desync(companyId: ulong, subscriptions: SubscriptionType[]) {
 		const subscribed = this.#getCurrentSubscriptions(msg.company),
 			regions = msg.subs.map((region) => SUBSCRIPTION_SPLITS[region] || [region])
 				.reduce((acc, val) => acc.concat(val), [])

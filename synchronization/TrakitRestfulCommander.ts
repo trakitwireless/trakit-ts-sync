@@ -2,13 +2,13 @@ import {
 	IPayListByAsset,
 	IPayListByBillingProfile,
 	IPayListByCompany,
-	PayListByDate,
-	PayListById,
-	PayListByKey,
 	IPayListByLabels,
 	IPayListByReferences,
 	IPayListByUser,
 	IPaySingle,
+	PayListByDate,
+	PayListById,
+	PayListByKey,
 	Payload,
 	RepSelfGet
 } from "@trakit/commands";
@@ -20,9 +20,9 @@ import {
 	utility
 } from "@trakit/objects";
 import {
-	SUBSCRIPTION_LIST_BY_ASSET,
-	SUBSCRIPTION_LIST_BY_BILLING_PROFILE,
-	SUBSCRIPTION_LIST_BY_COMPANY,
+	OBJECT_LIST_BY_ASSET,
+	OBJECT_LIST_BY_BILLING_PROFILE,
+	OBJECT_LIST_BY_COMPANY,
 } from "./Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
@@ -148,23 +148,23 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 							//verb = "GET";
 							switch (action.filter) {
 								case "BillingProfile":	// IPayListByBillingProfile
-									route = action.object in SUBSCRIPTION_LIST_BY_BILLING_PROFILE
-										? SUBSCRIPTION_LIST_BY_BILLING_PROFILE[action.object as keyof typeof SUBSCRIPTION_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
+									route = action.object in OBJECT_LIST_BY_BILLING_PROFILE
+										? OBJECT_LIST_BY_BILLING_PROFILE[action.object as keyof typeof OBJECT_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
 										: `billing/profiles/${(payload as any as IPayListByBillingProfile).billingProfile.id}/${route}`;
 									break;
 								case "BillingProfile":	// IPayListByBillingProfile
-									route = action.object in SUBSCRIPTION_LIST_BY_BILLING_PROFILE
-										? SUBSCRIPTION_LIST_BY_BILLING_PROFILE[action.object as keyof typeof SUBSCRIPTION_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
+									route = action.object in OBJECT_LIST_BY_BILLING_PROFILE
+										? OBJECT_LIST_BY_BILLING_PROFILE[action.object as keyof typeof OBJECT_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
 										: `billing/profiles/${(payload as any as IPayListByBillingProfile).billingProfile.id}/${route}`;
 									break;
 								case "Company":	// IPayListByCompany
-									route = action.object in SUBSCRIPTION_LIST_BY_COMPANY
-										? SUBSCRIPTION_LIST_BY_COMPANY[action.object as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY].replace("{companyId}", (payload as any).company.id)
+									route = action.object in OBJECT_LIST_BY_COMPANY
+										? OBJECT_LIST_BY_COMPANY[action.object as keyof typeof OBJECT_LIST_BY_COMPANY].replace("{companyId}", (payload as any).company.id)
 										: `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
 									break;
 								case "Asset":	// IPayListByAsset
-									route = action.object in SUBSCRIPTION_LIST_BY_ASSET
-										? SUBSCRIPTION_LIST_BY_ASSET[action.object as keyof typeof SUBSCRIPTION_LIST_BY_ASSET].replace("{assetId}", (payload as any).asset.id)
+									route = action.object in OBJECT_LIST_BY_ASSET
+										? OBJECT_LIST_BY_ASSET[action.object as keyof typeof OBJECT_LIST_BY_ASSET].replace("{assetId}", (payload as any).asset.id)
 										: `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
 									break;
 								case "User":	// IPayListByUser

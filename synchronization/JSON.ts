@@ -1,7 +1,7 @@
 import {
 	Asset,
 	BaseComponent,
-	SyncName,
+	classes,
 	Company,
 	Dashcam,
 	email,
@@ -12,8 +12,8 @@ import {
 	JsonObject,
 	JsonValue,
 	nothing,
-	classes,
 	storage,
+	SyncName,
 	ulong,
 	utility,
 } from "@trakit/objects";
@@ -37,7 +37,7 @@ export function JSON_PARSE_SAFE(json: string): [JsonValue, SyntaxError | null] {
  * @param type 
  * @returns 
  */
-export function syncKeyName(type: SyncName) {
+export function getSyncKeyName(type: SyncName) {
 	switch (type) {
 		case "User":
 		case "UserGeneral":
@@ -62,8 +62,8 @@ export function syncKeyName(type: SyncName) {
  * @param type 
  * @returns 
  */
-export function syncKey(json: JsonObject, type: SyncName): ulong | string | guid | email {
-	return json[syncKeyName(type)] as ulong | string | guid | email;
+export function getSyncKey(json: JsonObject, type: SyncName): ulong | string | guid | email {
+	return json[getSyncKeyName(type)] as ulong | string | guid | email;
 }
 
 /**
@@ -310,7 +310,7 @@ export function SyncClient_merged(type: SyncName, json: JsonObject, updated: boo
  * @param {!Array.<number>} oldVersion
  **/
 function SyncClient_merged_addOrUpdate(type: SyncName, json: JsonObject, company: Company, oldVersion: int[]) {
-	const key = syncKey(json, type);
+	const key = getSyncKey(json, type);
 	let object = storage[type].get(key);
 	if (object) {
 		if ((object as any as BaseComponent).v) oldVersion.push(...(object as any as BaseComponent).v);
@@ -336,7 +336,7 @@ function SyncClient_deleted(type: SyncName, json: JsonObject) {
 	// **/
 	//let company;
 
-	const key = syncKey(json, type);
+	const key = getSyncKey(json, type);
 	let object: any;
 
 	// find the object type name

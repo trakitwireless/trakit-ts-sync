@@ -2,15 +2,22 @@ import * as commands from "@trakit/commands";
 import {
 	ErrorCode,
 	Payload,
+	PaySubscriptionDelete,
+	PaySubscriptionList,
+	PaySubscriptionMerge,
 	Reply,
 	ReplySync,
-	RepSelfGet
+	RepSelfGet,
+	RepSubscription,
+	RepSubscriptionList,
+	SubscriptionType
 } from "@trakit/commands";
 import {
 	guid,
 	JsonObject,
 	Machine,
 	nothing,
+	ulong,
 	url,
 	utility
 } from '@trakit/objects';
@@ -427,7 +434,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				break;
 			case "logoutResponse":
 				this.close();
-				// no break
+			// no break
 			case "sessionEnded":
 				this.#socketAccount(msgContent);
 				this.#socketOperable = false;
@@ -728,4 +735,48 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			: 0;
 		return Promise.resolve(this.#timerKeepAlive !== 0);
 	}
+
+	//#region Subscriptions
+	/**
+	 * 
+	 * @param companyId 
+	 * @param subscriptions 
+	 * @returns 
+	 */
+	subscribe(companyId: ulong, subscriptions: SubscriptionType[]): Promise<RepSubscription> {
+		return subscriptions?.length
+			? this.command(new PaySubscriptionMerge({
+				company: companyId,
+				subscriptionTypes: subscriptions,
+			}))
+			: Promise.resolve(new RepSubscription({
+				"errorCode": ErrorCode.success,
+				"message": "No subscriptions specified",
+			}));
+	}
+	/**
+	 * 
+	 * @param companyId 
+	 * @param subscriptions 
+	 * @returns 
+	 */
+	unsubscribe(companyId: ulong, subscriptions: SubscriptionType[]): Promise<RepSubscription> {
+		return subscriptions?.length
+			? this.command(new PaySubscriptionDelete({
+				company: companyId,
+				subscriptionTypes: subscriptions,
+			}))
+			: Promise.resolve(new RepSubscription({
+				"errorCode": ErrorCode.success,
+				"message": "No subscriptions specified",
+			}));
+	}
+	/**
+	 * 
+	 * @returns 
+	 */
+	listSubscriptions(): Promise<RepSubscriptionList> {
+		return this.command(new PaySubscriptionList());
+	}
+	//#endregion Subscriptions
 }
