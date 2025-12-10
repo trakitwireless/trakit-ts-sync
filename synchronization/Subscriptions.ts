@@ -1,5 +1,5 @@
-import { SubscriptionType } from "@trakit/commands";
-import { SyncName, url } from "@trakit/objects";
+import { Payload, SubscriptionType } from "@trakit/commands";
+import { SyncName, url, utility } from "@trakit/objects";
 
 /**
  * Names of objects that span multiple regions (in serialized order).
@@ -291,3 +291,28 @@ export const SUBSCRIPTION_LIST_BY_BILLING_PROFILE: { [key: string]: url } = {
 export const SUBSCRIPTION_LIST_BY_USER: { [key: string]: url } = {
 	"Session": "/users/{userLogin}/sessions",
 };
+
+/**
+ * Regex parser for socket message names (not command responses, those are handled by the {@link TrakitCommander.command} function).
+ */
+export const RESPONSE_MESSAGE_PARSER = /^(.+?)(Merged|Deleted|Suspended)$/;
+/**
+ * Translated type name to object name to account for some legacy message names.
+ * @param typeName 
+ * @returns 
+ */
+export function makeObjectName(typeName: string): SyncName {
+	typeName = utility.capitalize(typeName);
+	switch (typeName) {
+		case "CompanyLabels":
+			typeName = "CompanyStyle";
+			break;
+		case "CompanyPolicies":
+			typeName = "CompanyPolicy";
+			break;
+		default:
+			typeName = utility.singularize(typeName);
+			break;
+	}
+	return typeName as SyncName;
+}

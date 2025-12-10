@@ -7,7 +7,6 @@ import {
 	RepSelfGet
 } from "@trakit/commands";
 import {
-	SyncName,
 	guid,
 	JsonObject,
 	Machine,
@@ -15,7 +14,8 @@ import {
 	url,
 	utility
 } from '@trakit/objects';
-import { createClientErrorResponse, TrakitCommander } from "./TrakitCommander";
+import { makeObjectName, RESPONSE_MESSAGE_PARSER } from "./Subscriptions";
+import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
 /**
@@ -61,31 +61,6 @@ export const CMD_CONNECTION = "connection";
  * 
  */
 export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
-
-/**
- * Regex parser for response message names (not command responses, those are handled by the {@link TrakitCommander.command} function).
- */
-const RESPONSE_MESSAGE_PARSER = /^(.+?)(Merged|Deleted|Suspended)$/;
-/**
- * Translated type name to object name to account for some legacy message names.
- * @param typeName 
- * @returns 
- */
-function makeObjectName(typeName: string): SyncName {
-	typeName = utility.capitalize(typeName);
-	switch (typeName) {
-		case "CompanyLabels":
-			typeName = "CompanyStyle";
-			break;
-		case "CompanyPolicies":
-			typeName = "CompanyPolicy";
-			break;
-		default:
-			typeName = utility.singularize(typeName);
-			break;
-	}
-	return typeName as SyncName;
-}
 
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.

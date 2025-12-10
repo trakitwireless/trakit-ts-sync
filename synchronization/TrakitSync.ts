@@ -9,16 +9,16 @@
 } from "@trakit/commands";
 import {
 	BaseComponent,
-	SyncName,
 	guid,
 	Machine,
 	nothing,
+	SyncName,
 	ulong
 } from '@trakit/objects';
-import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
-import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
 import { SubscribedRegions } from "./SubscribedRegions";
 import { TrakitCommander } from "./TrakitCommander";
+import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
+import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
 
 
 /**
