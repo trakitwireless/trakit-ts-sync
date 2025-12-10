@@ -1,10 +1,10 @@
 import { SubscriptionType } from "@trakit/commands";
-import { classes, url } from "@trakit/objects";
+import { SyncName, url } from "@trakit/objects";
 
 /**
  * Names of objects that span multiple regions (in serialized order).
  */
-export const SUBSCRIPTION_SPLITS: { [key in classes | string]: SubscriptionType[] } = {
+export const SUBSCRIPTION_SPLITS: { [key in SyncName | string]: SubscriptionType[] } = {
 	/* company */
 	"Company": [
 		SubscriptionType.companyGeneral,
@@ -185,7 +185,7 @@ export const SUBSCRIPTION_SPLITS: { [key in classes | string]: SubscriptionType[
 /**
  * A mapping of RESTful service routes to get things listed by company.
  **/
-export const SUBSCRIPTION_LIST_BY_COMPANY: { [key in classes|string]: url } = {
+export const SUBSCRIPTION_LIST_BY_COMPANY: { [key in SyncName|string]: url } = {
 	/* company */
 	"Company": "/companies/generals?parent={companyId}",
 	"CompanyGeneral": "/companies/generals?parent={companyId}",

@@ -7,7 +7,7 @@ import {
 	RepSelfGet
 } from "@trakit/commands";
 import {
-	classes,
+	SyncName,
 	guid,
 	JsonObject,
 	Machine,
@@ -71,7 +71,7 @@ const RESPONSE_MESSAGE_PARSER = /^(.+?)(Merged|Deleted|Suspended)$/;
  * @param typeName 
  * @returns 
  */
-function makeObjectName(typeName: string): classes {
+function makeObjectName(typeName: string): SyncName {
 	typeName = utility.capitalize(typeName);
 	switch (typeName) {
 		case "CompanyLabels":
@@ -84,7 +84,7 @@ function makeObjectName(typeName: string): classes {
 			typeName = utility.singularize(typeName);
 			break;
 	}
-	return typeName as classes;
+	return typeName as SyncName;
 }
 
 /**

@@ -9,7 +9,7 @@
 } from "@trakit/commands";
 import {
 	BaseComponent,
-	classes,
+	SyncName,
 	guid,
 	Machine,
 	nothing,
@@ -1327,11 +1327,8 @@ export class TrakitSync extends TrakitCommander<any> {
 				: TrakitSocketCommander.URI_PROD,
 			this.account
 		);
-		this.#socket.onOpen =
-			this.#socket.onAccount = (account) => {
-				this.setAuth(account);
-				this.onAccount?.(account);
-			};
+		this.#socket.onOpen = (account) => this.#onOpen(account);
+		this.#socket.onAccount = (account) => this.#onAccount(account);
 		this.#socket.onMessage = (kind, content) => {
 			if (kind.endsWith("ListResponse")) {
 				this.onReplace?.(kind, companyId, content);
@@ -1387,6 +1384,7 @@ export class TrakitSync extends TrakitCommander<any> {
 	 * @param account 
 	 */
 	#onOpen(account: RepSelfGet) {
+		this.setAuth(account);
 		this.#subscriptions.forEach((subscribed, companyId) => {
 			// remove all regions from in-sync list; ALL OF THEM.
 			// but, re-sync to the ones that were not going to expire
@@ -1494,7 +1492,7 @@ export class TrakitSync extends TrakitCommander<any> {
 	 * Begins synchronizing the given regions.
 	 * If all regions are in-sync, will resolve immediately with the arrays of content.  (How do I do that?)
 	 **/
-	async sync(companyId: ulong, subscriptions: classes[]) {
+	async sync(companyId: ulong, subscriptions: SyncName[]) {
 		const subscribed = this.#getCurrentSubscriptions(companyId),
 			alreadySubscribed = subscribed.regions,
 			newSubscriptions = subscriptions.filter(sub => !alreadySubscribed.includes(sub));

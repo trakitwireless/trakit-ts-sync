@@ -1,5 +1,5 @@
 import { SubscriptionType } from "@trakit/commands";
-import { classes, nothing } from "@trakit/objects";
+import { SyncName, nothing } from "@trakit/objects";
 import { SUBSCRIPTION_SPLITS } from "./Subscriptions";
 
 /**
@@ -17,20 +17,20 @@ export class SynchronizedClasses {
      * The expiry date is when the subscription type is due to be removed.
      * Dictionary{trakit.socket.SubscriptionType, ExpiryDate?}
      **/
-    #types: Map<classes, Date | null> = new Map;
+    #types: Map<SyncName, Date | null> = new Map;
     /**
      * Returns all the currently valid subscription types, even if they are marked to expire.
      **/
-    get types(): classes[] { return [...this.#types.keys()]; }
+    get types(): SyncName[] { return [...this.#types.keys()]; }
 
     /**
      * Returns a list of subscription types that should be removed.
      * When the `purge` argument is true, it will also remove the region from the subscription type dictionary,
      * that way it will no longer be listed as an active subscription, or as expired.
      **/
-	getExpiredTypes(): classes[] {
+	getExpiredTypes(): SyncName[] {
 		const now = new Date,
-			types: classes[] = [];
+			types: SyncName[] = [];
 		for (let [type, expiry] of this.#types) {
 			if (expiry && expiry < now) {
 				types.push(type);
@@ -43,7 +43,7 @@ export class SynchronizedClasses {
      * When the `purge` argument is true, it will also remove the region from the subscription type dictionary,
      * that way it will no longer be listed as an active subscription, or as expired.
      **/
-	purgeExpiredTypes(): classes[] {
+	purgeExpiredTypes(): SyncName[] {
 		const types = this.getExpiredTypes();
 		types.forEach(r => this.#types.delete(r));
 		return types;
@@ -51,8 +51,8 @@ export class SynchronizedClasses {
     /**
      * Returns a list of subscription types that will be removed eventually.
      **/
-    getExpiringTypes(): classes[] {
-        const types: classes[] = [];
+    getExpiringTypes(): SyncName[] {
+        const types: SyncName[] = [];
         for (let [type, expiry] of this.#types) {
             if (expiry) {
                 types.push(type);
@@ -76,7 +76,7 @@ export class SynchronizedClasses {
      * @param type
      * @param date
      **/
-    #setExpiry(type: classes, date?: Date | nothing): Date | nothing {
+    #setExpiry(type: SyncName, date?: Date | nothing): Date | nothing {
         date = date || null;
         this.#types.set(type, date);
         return date;
@@ -85,21 +85,21 @@ export class SynchronizedClasses {
      * Marks the given subscription type for expiration.
      * @param type
      **/
-    addExpiry(type: classes): Date {
+    addExpiry(type: SyncName): Date {
         return this.#setExpiry(type, new Date((new Date).valueOf() + SynchronizedClasses_EXPIRE_TIMEOUT)) as Date;
     }
     /**
      * Marks the given subscription types for expiration.
      * @param types
      **/
-    addExpiries(types: classes[]): Date[] {
+    addExpiries(types: SyncName[]): Date[] {
         return types.map(type => this.addExpiry(type));
     }
     /**
      * Clears the expiration of the given subscription type.
      * @param type
      **/
-    removeExpiry(type: classes): Date | null {
+    removeExpiry(type: SyncName): Date | null {
         const expiry = this.#types.get(type);
         this.#setExpiry(type);
         return expiry || null;
@@ -108,15 +108,15 @@ export class SynchronizedClasses {
      * Clears the expiration of the given subscription types.
      * @param types
      **/
-    removeExpiries(types: classes[]): (Date | null)[] {
+    removeExpiries(types: SyncName[]): (Date | null)[] {
         return types.map(type => this.removeExpiry(type));
     }
 
     /**
      * Removes all subscription types, and returns a list of those that were not going to expire.
      **/
-    reset(): classes[] {
-        const types: classes[] = [];
+    reset(): SyncName[] {
+        const types: SyncName[] = [];
         for (let [type, expiry] of this.#types) {
             if (!expiry) {
                 types.push(type);

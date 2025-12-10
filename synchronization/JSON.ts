@@ -1,7 +1,7 @@
 import {
 	Asset,
 	BaseComponent,
-	classes,
+	SyncName,
 	Company,
 	Dashcam,
 	email,
@@ -12,7 +12,7 @@ import {
 	JsonObject,
 	JsonValue,
 	nothing,
-	objects,
+	classes,
 	storage,
 	ulong,
 	utility,
@@ -37,7 +37,7 @@ export function JSON_PARSE_SAFE(json: string): [JsonValue, SyntaxError | null] {
  * @param type 
  * @returns 
  */
-export function syncKeyName(type: classes) {
+export function syncKeyName(type: SyncName) {
 	switch (type) {
 		case "User":
 		case "UserGeneral":
@@ -62,7 +62,7 @@ export function syncKeyName(type: classes) {
  * @param type 
  * @returns 
  */
-export function syncKey(json: JsonObject, type: classes): ulong | string | guid | email {
+export function syncKey(json: JsonObject, type: SyncName): ulong | string | guid | email {
 	return json[syncKeyName(type)] as ulong | string | guid | email;
 }
 
@@ -148,7 +148,7 @@ const VERSION_KEYS_PROVIDER = {
  * @param {Array.<boolean>=} updated		An empty array given to the function which is then populated with true for each part of the object that was updated.
  * @returns {trakit.fleetfreedom.MVCObject}
  **/
-export function SyncClient_merged(type: classes, json: JsonObject, updated: boolean[]) {
+export function SyncClient_merged(type: SyncName, json: JsonObject, updated: boolean[]) {
 	/**
 	 * The company that owns the object being merged.
 	 * @type {trakit.fleetfreedom.Company}
@@ -309,13 +309,13 @@ export function SyncClient_merged(type: classes, json: JsonObject, updated: bool
  * @param {!trakit.fleetfreedom.Company} company
  * @param {!Array.<number>} oldVersion
  **/
-function SyncClient_merged_addOrUpdate(type: classes, json: JsonObject, company: Company, oldVersion: int[]) {
+function SyncClient_merged_addOrUpdate(type: SyncName, json: JsonObject, company: Company, oldVersion: int[]) {
 	const key = syncKey(json, type);
 	let object = storage[type].get(key);
 	if (object) {
 		if ((object as any as BaseComponent).v) oldVersion.push(...(object as any as BaseComponent).v);
 	} else {
-		object = new objects[type];
+		object = new classes[type];
 		storage[type].set(key, object);
 		if ((object as any as BaseComponent).v) oldVersion.push(...(object as any as BaseComponent).v.map(() => NaN));
 	}
@@ -329,7 +329,7 @@ function SyncClient_merged_addOrUpdate(type: classes, json: JsonObject, company:
  * @param {!Object} json
  * @returns {trakit.fleetfreedom.MVCObject}
  **/
-function SyncClient_deleted(type: classes, json: JsonObject) {
+function SyncClient_deleted(type: SyncName, json: JsonObject) {
 	///**
 	// * The company that owns the object being deleted.
 	// * @type {trakit.fleetfreedom.Company}
