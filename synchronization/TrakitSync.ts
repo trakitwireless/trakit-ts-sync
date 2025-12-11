@@ -1417,13 +1417,10 @@ export class TrakitSync extends TrakitCommander<any> {
 	 **/
 	#onMessage(kind: string, content: JsonObject) {
 		this.onMessage?.(kind, content);
-
 		const operation = RESPONSE_MESSAGE_PARSER.exec(kind) as string[];
 		if (operation?.length) {
 			const type = makeObjectName(operation[1]),
-				companyId = (type.startsWith("Company")
-					? content["parent"]
-					: content["company"]) as ulong,
+				companyId = (type.startsWith("Company") ? content["parent"] : content["company"]) as ulong,
 				key = getJsonKeyValue(content, type);
 			switch (operation[2]) {
 				case "Merged":
