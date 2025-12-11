@@ -21,7 +21,7 @@ import {
 	url,
 	utility
 } from '@trakit/objects';
-import { makeObjectName, RESPONSE_MESSAGE_PARSER } from "./Subscriptions";
+import { makeObjectName, makeReplyClass, RESPONSE_MESSAGE_PARSER } from "./Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
@@ -152,16 +152,20 @@ function getCommand(payload: Payload): string {
  * @param msgContent
  * @returns
  */
-function storeSyncMessage(match: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
-	const name = "Rep" + makeObjectName(match[1]) + (match[2] === "Merged" ? "Get" : match[2].slice(0, -1).slice(0, 7)),
+export function storeSyncMessage(match: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
+	const SyncReply = makeReplyClass(
+		makeObjectName(match[1]),
+		match[2] === "Merged"
+			? "Get"
+			: match[2].slice(0, -1).slice(0, 7)
+	),
 		json = {
 			"errorCode": ErrorCode.success,
 			"message": match[2] + " event",
 			[match[1]]: msgContent,
-		},
-		FakeReply = commands[name as keyof typeof commands] as new (json: JsonObject) => ReplySync;
-	if (FakeReply) {
-		const reply = new FakeReply(json);
+		};
+	if (SyncReply) {
+		const reply = new SyncReply(json) as ReplySync;
 		reply.store?.();	// may not have this method... should we throw in that case?
 		return reply;
 	}
@@ -218,10 +222,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Also takes into account a null connection, and an open connection that has not yet received the first message.
 	 **/
 	get state(): TrakitSocketStatus {
-		switch (this.#socket?.readyState ?? WebSocket.CLOSED) {
-			case 0: return TrakitSocketStatus.opening;
-			case 1: return !this.#socketReady ? TrakitSocketStatus.opening : TrakitSocketStatus.open;
-			case 2: return TrakitSocketStatus.closing;
+		switch (this.#socket?.readyState) {
+			case WebSocket.CONNECTING: return TrakitSocketStatus.opening;
+			case WebSocket.OPEN: return !this.#socketReady ? TrakitSocketStatus.opening : TrakitSocketStatus.open;
+			case WebSocket.CLOSING: return TrakitSocketStatus.closing;
 			default: return TrakitSocketStatus.closed;
 		}
 	}
@@ -237,23 +241,23 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
 	 */
-	onOpen: ((this: TrakitSocketCommander, message: RepSelfGet) => any) | null = null;
+	onOpen: ((this: TrakitSocketCommander, account: RepSelfGet) => any) | null = null;
 	/**
 	 * Gets invoked any time the connection's account information is updated while the connection is open.
 	 */
-	onAccount: ((this: TrakitSocketCommander, message: RepSelfGet) => any) | null = null;
+	onAccount: ((this: TrakitSocketCommander, account: RepSelfGet) => any) | null = null;
 	/**
 	 * Gets invoked any time the WebSocket connection is closed.
 	 */
-	onClose: ((this: TrakitSocketCommander, message: Reply) => any) | null = null;
+	onClose: ((this: TrakitSocketCommander, reply: Reply) => any) | null = null;
 	/**
 	 * Gets invoked any time a message is received from the WebSocket.
 	 */
-	onMessage: ((this: TrakitSocketCommander, name: string, message: JsonObject) => any) | null = null;
+	onMessage: ((this: TrakitSocketCommander, name: string, body: JsonObject) => any) | null = null;
 	/**
 	 * Gets invoked any time an error occurs on the WebSocket.
 	 */
-	onError: ((this: TrakitSocketCommander, message: Reply) => any) | null = null;
+	onError: ((this: TrakitSocketCommander, reply: Reply) => any) | null = null;
 
 	//#region Internal WebSocket control
 	/**
@@ -409,6 +413,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.#requestSettle(CMD_CONNECTION, msgContent);
 				// then we fire event here, not below
 				this.onOpen?.(this.account);
+				this.onAccount?.(this.account);
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":

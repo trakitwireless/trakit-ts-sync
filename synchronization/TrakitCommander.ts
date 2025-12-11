@@ -135,11 +135,11 @@ export abstract class TrakitCommander<TRequest> {
 			try {
 				response = response
 					?? await this._relayRequest(request as TRequest);
-			} catch (ex: Reply | Error | any) {
+			} catch (ex: Error | JsonObject | any) {
 				reply = payload.createReply(
 					ex instanceof Error
 						? createClientErrorResponse(ex)
-						: ex
+						: ex as JsonObject
 				) as TReply;
 			}
 			try {

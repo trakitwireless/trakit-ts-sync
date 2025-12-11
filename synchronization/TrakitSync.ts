@@ -15,14 +15,16 @@ import {
 	JsonObject,
 	Machine,
 	nothing,
+	storage,
 	SyncName,
 	ulong
 } from '@trakit/objects';
 import { SubscribedRegions } from "./SubscribedRegions";
-import { makeObjectName, OBJECT_COMPOUNDS, OBJECT_SUBSCRIPTIONS } from "./Subscriptions";
+import { makeObjectName, makePayloadClass, OBJECT_COMPOUNDS, OBJECT_SUBSCRIPTIONS, SYNCS_TO_SUBS, SUBS_TO_SYNCS, RESPONSE_MESSAGE_PARSER } from "./Subscriptions";
 import { TrakitCommander } from "./TrakitCommander";
 import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
-import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
+import { storeSyncMessage, TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
+import { getJsonKeyName, getJsonKeyValue } from "./JSON";
 
 
 /**
@@ -1231,9 +1233,9 @@ export class TrakitSync extends TrakitCommander<any> {
 	#subscriptionExpirer() {
 		const expirations: Promise<Reply>[] = [];
 		if (this.#socket.state === TrakitSocketStatus.open) {
-			this.#subscriptions.forEach((subscribed, company) => {
-				const expired = subscribed.expiredRegions(true);
-				if (expired.length) expirations.push(this.#unsubscribe(company, expired));
+			this.#subscriptions.forEach((subscribed, companyId) => {
+				const expired = subscribed.purgeExpired();
+				if (expired.length) expirations.push(this.#unsubscribe(companyId, expired));
 			});
 		}
 		Promise.allSettled(expirations).finally(() => {
@@ -1278,15 +1280,6 @@ export class TrakitSync extends TrakitCommander<any> {
 	//#endregion Subscriptions
 
 
-	
-	
-	// i need to make this more like HIERARCHY than SyncWorker
-	
-
-
-
-
-
 	onOpen?: (account: RepSelfGet) => void;
 	onAccount?: (account: RepSelfGet) => void;
 	onMessage?: (kind: string, content: JsonObject) => void;
@@ -1294,22 +1287,8 @@ export class TrakitSync extends TrakitCommander<any> {
 	onClose?: (account: Reply) => void;
 
 	onReplace?: (kind: SyncName, companyId: ulong, list: IRequestable[]) => void;
-	onUpdate?: (kind: SyncName, companyId: ulong, object: BaseComponent) => void;
+	onUpdate?: (kind: SyncName, companyId: ulong, object: IRequestable) => void;
 	onDelete?: (kind: SyncName, companyId: ulong, key: ulong | string) => void;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	constructor(
@@ -1335,15 +1314,9 @@ export class TrakitSync extends TrakitCommander<any> {
 		);
 		this.#socket.onOpen = (account) => this.#onOpen(account);
 		this.#socket.onAccount = (account) => this.#onAccount(account);
-		this.#socket.onMessage = (kind, content) => {
-			if (kind.endsWith("ListResponse")) {
-				this.onReplace?.(kind, companyId, content);
-			} else if (kind.endsWith("Merged") || kind.endsWith("Suspended")) {
-				this.onUpdate?.(kind, companyId, content);
-			} else if (kind.endsWith("Deleted")) {
-				this.onDelete?.(kind, companyId, content);
-			}
-		};
+		this.#socket.onClose = (reply) => this.#onClose(reply);
+		this.#socket.onMessage = (kind, body) => this.#onMessage(kind, body);
+		this.#socket.onError =  (reply) => this.#onError(reply);
 	}
 	/**
 	 * Disconnects the Trak-iT WebSocket then sends a message to the {@link SyncClient} about it, then dies.
@@ -1356,8 +1329,27 @@ export class TrakitSync extends TrakitCommander<any> {
 			(this.#socket as any) = null;
 	}
 
+	/**
+	 * Overridden to set the authentication for both the RESTful service and WebSocket.
+	 * @param value 
+	 */
+	override setAuth(
+		value?: RepSelfGet | { machine: { key: string } }
+				| Machine | { key: string; }
+				| { ghostId: guid; }
+				| guid
+				| nothing
+	): void {
+		super.setAuth(value);
+		this.#rest?.setAuth(this.account);
+		this.#socket?.setAuth(this.account);
+	}
 
-
+	/**
+	 * Overridden to route commands to either the Trak-iT WebSocket or RESTful service based on the type of action.
+	 * @param payload 
+	 * @returns 
+	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		const action = payload.getAction();
 		switch (action.object) {
@@ -1368,19 +1360,8 @@ export class TrakitSync extends TrakitCommander<any> {
 				return this.#rest.command<TReply>(payload);
 		}
 	}
-	override _createRequest(payload: Payload): any {
-		throw new Error("Method not implemented.");
-	}
-	override _relayRequest(request: Payload): Promise<any> {
-		throw new Error("Method not implemented.");
-	}
-
-
-
-
-
-
-
+	override _createRequest(payload: Payload): any { throw new Error("Method not implemented."); }
+	override _relayRequest(request: Payload): Promise<any> { throw new Error("Method not implemented."); }
 
 	/**
 	 * Handles the "connection" event from the Trak-iT WebSocket.
@@ -1391,150 +1372,119 @@ export class TrakitSync extends TrakitCommander<any> {
 	 */
 	#onOpen(account: RepSelfGet) {
 		this.setAuth(account);
-		this.#subscriptions.forEach((subscribed, companyId) => {
+		this.#subscriptions.forEach((current, companyId) => {
 			// remove all regions from in-sync list; ALL OF THEM.
 			// but, re-sync to the ones that were not going to expire
 			// this will also auto-get lists of objects
 			this.sync(
 				companyId,
-				subscribed.reset()
+				SUBS_TO_SYNCS(current.reset())
 			);
 		});
 		// start expired subscription timer
 		this.#subscriptionExpirer();
+		this.onOpen?.(account);
 		this.onAccount?.(account);
 	}
-	///**
-	// * Handles the "disconnection" event from the Trak-iT WebSocket.
-	// * Stops the subscription expirer (it is restarted on re-connection).
-	// * Also sends a {@link SyncMessage} to the {@link SyncClient}.
-	// * @param msg 
-	// **/
-	//#onClose(msg: Reply) {
-	//	self.postMessage(new SyncMessage(CMD_DISCONNECTION, msg));
-	//	// stop trying to remove expired subscriptions
-	//	clearTimeout(this.#subscriptionTimer);
-	//	this.#subscriptionTimer = 0;
-	//}
-	///**
-	// * Handles message events from the Trak-iT WebSocket.
-	// * Also sends a {@link SyncMessage} to the {@link SyncClient}.
-	// * @param kind 
-	// * @param content 
-	// **/
-	//#onMessage(kind: string, content: any) {
-	//	switch (kind) {
-	//		//case "connectionResponse": => won't fire because connectionResponse triggers the "connection" event instead
-	//		case "loginResponse":
-	//		case "getSessionDetailsResponse":
-	//			break;
-	//		case "subscribeResponse":
-	//		case "unsubscribeResponse":
-	//			// check kind and update subscriptions based on if it is a (un)subscribeResponse message
-	//			// instead of doing it in the Promise resolver within {@link SyncWorker#sync}.
-	//			// this may not work because we don't know the temporary sync regions
-	//			break;
-	//	}
-	//	self.postMessage(new SyncMessage(kind, content));
-	//}
-	///**
-	// * Handles the "error" event from the Trak-iT WebSocket.
-	// * All this does is relay the event as a {@link SyncMessage} to the {@link SyncClient}.
-	// * @param error 
-	// **/
-	//#onError(error: Reply) {
-	//	self.postMessage(new SyncMessage("error", error));
-	//}
+	/**
+	 * 
+	 * @param account 
+	 */
+	#onAccount(account: RepSelfGet) {
+		this.setAuth(account);
+		this.onAccount?.(account);
+	}
+	/**
+	 * Handles the "disconnection" event from the Trak-iT WebSocket.
+	 * Stops the subscription expirer (it is restarted on re-connection).
+	 * Also sends a {@link SyncMessage} to the {@link SyncClient}.
+	 * @param reply 
+	 **/
+	#onClose(reply: Reply) {
+		// stop trying to remove expired subscriptions
+		clearTimeout(this.#subscriptionTimer);
+		this.#subscriptionTimer = 0;
+		// we don't remove any subscriptions, they remain until explicitly unsubscribed or expired
+		// they are re-subscribed when we reconnect in {@link #onOpen}
+		this.onClose?.(reply);
+	}
 
-	///**
-	// * When invoked, it means the main {@link Window} is ready to control this worker.
-	// * @param msg
-	// **/
-	//init(msg: SyncInit): Promise<RepSelfGet> {
-	//	this.#rest = new TrakitRestfulCommander(msg.rest);
-	//	this.#rest.setAuth(msg.account as RepSelfGet | Machine | guid | nothing);
-	//	this.#socket = new TrakitSocketCommander(msg.socket);
-	//	this.#socket.setAuth(msg.account as RepSelfGet | Machine | guid | nothing);
-	//	this.#socket.onOpen = (msg) => this.#onOpen();
-	//	this.#socket.onClose = (msg) => this.#onClose(msg);
-	//	this.#socket.onMessage = (msg, data) => this.#onMessage(msg, data);
-	//	this.#socket.onError = (msg) => this.#onError(msg);
-	//	return this.#socket.open();
-	//}
-	///**
-	// * Immediately posts the current {@link Worker} state and variables, ignoring the queue and going "right now".
-	// * @param msg
-	// **/
-	//status(msg: SyncStatus) {
-	//	const response = {
-	//		"id": msg?.id || null,
-	//		"v": [version],
-	//		"kind": SyncType.status,
-	//		"socket": {
-	//			"account": this.#socket.account.toJSON(),
-	//			"state": this.#socket.state,
-	//			"ready": this.#socket.ready,
-	//			"reconnectEnabled": this.#socket.reconnectEnabled,
-	//			"keepAliveEnabled": this.#socket.keepAliveEnabled,
-	//			"lastReceived": this.#socket.lastReceived,
-	//			"lastMessageName": this.#socket.lastMessage,
-	//		},
-	//		"subscriptions": {
-	//			// key is a company id
-	//			// value is an array of `SubscriptionType`s
-	//		},
-	//	};
-	//	for (let [company, subscribed] of this.#subscriptions) {
-	//		const regions = subscribed.regions,
-	//			expiring = subscribed.expiringRegions();
-	//		response.subscriptions[company] = {
-	//			current: regions.filter(r => !expiring.includes(r)),
-	//			expiring: expiring,
-	//		};
-	//	}
-	//	return response;
-	//}
+	/**
+	 * Handles message events from the Trak-iT WebSocket.
+	 * Also sends a {@link SyncMessage} to the {@link SyncClient}.
+	 * @param kind 
+	 * @param content 
+	 **/
+	#onMessage(kind: string, content: JsonObject) {
+		this.onMessage?.(kind, content);
+
+		const operation = RESPONSE_MESSAGE_PARSER.exec(kind) as string[];
+		if (operation?.length) {
+			const type = makeObjectName(operation[1]),
+				companyId = (type.startsWith("Company")
+					? content["parent"]
+					: content["company"]) as ulong,
+				key = getJsonKeyValue(content, type);
+			switch (operation[2]) {
+				case "Merged":
+				case "Suspended":
+					const object = storage[type].get(key);
+					if (object) this.onUpdate?.(type, companyId, object);
+					break;
+				case "Deleted":
+					this.onDelete?.(type, companyId, key);
+					break;
+			}
+		}
+	}
+	/**
+	 * 
+	 * @param error 
+	 **/
+	#onError(error: Reply) {
+		// what do?
+	}
+
+	/**
+	 * Checks if the given {@link types} are currently synchronized for the given {@param companyId}.
+	 * @param companyId 
+	 * @param types 
+	 * @returns 
+	 */
+	isSynced(companyId: ulong, types: SyncName[]): boolean {
+		const current = this.#getCurrentSubscriptions(companyId),
+			requested = SYNCS_TO_SUBS(types);
+		return requested.every(sub => current.regions.includes(sub))
+			&& this.#socket.state === TrakitSocketStatus.open;
+	}
 	/**
 	 * Begins synchronizing the given regions.
-	 * If all regions are in-sync, will resolve immediately with the arrays of content.  (How do I do that?)
+	 * If all regions are in-sync, the returned Promise is resolve immediately.
+	 * Otherwise it sends a subscribe command to the Trak-iT WebSocket for any out-of-sync regions,
+	 * and when the subscribe is resolved, it sends commands to list the objects for the requested {@param types} (except Company, which is not listed, but "getted").
+	 * @param companyId
+	 * @param types
 	 **/
-	async sync(companyId: ulong, subscriptions: SyncName[]) {
-		const promises = [] as Promise<Reply>[];
-		const current = this.#getCurrentSubscriptions(companyId),
-			requested = subscriptions.reduce((acc, s) => acc.concat(OBJECT_SUBSCRIPTIONS[s] || []), [] as SubscriptionType[])
-				.filter(sub => !current.regions.includes(sub))
-				.filter((sub, index, array) => array.indexOf(sub) === index); // make unique
+	async sync(companyId: ulong, types: SyncName[]) {
+		const promises: Promise<Reply>[] = [],
+			current = this.#getCurrentSubscriptions(companyId),
+			requested = SYNCS_TO_SUBS(types).filter(sub => !current.regions.includes(sub));
 		if (requested.length > 0) {
-			//subscriptions = (subscriptions.map(type => [type, OBJECT_SUBSCRIPTIONS[type] || []]) as [SyncName, SubscriptionType[]][])
-			//	.filter(([type, subs]) => subs.filter(sub => requested.includes(sub)).length / subs.length >= 0.5)
-			//	.map(([type, subs]) => type);
-			const subscribed = (await this.#socket.subscribe(companyId, requested)).merged as SubscriptionType[],
-				requests = [] as SyncName[];
-			for (const [type, children] of Object.entries(OBJECT_COMPOUNDS)) {
-				const childSubs = children.map((child) => OBJECT_SUBSCRIPTIONS[child]).flat();
-				if (childSubs.filter(sub => subscribed.includes(sub)).length / childSubs.length >= 0.5) {
-					requests.push(type as SyncName);
-				}
-			}
-			for (const [type, subs] of Object.entries(OBJECT_SUBSCRIPTIONS)) {
-				if (
-					!OBJECT_COMPOUNDS[type as SyncName]
-					&& subs.some(sub => subscribed.includes(sub))
-				) {
-					requests.push(type as SyncName);
-				}
-			}
-			requests.forEach(type => {
-				const name = "Pay"
-					+ makeObjectName(type)
-					+ (
-						type.startsWith("Company")
-							? "Get"
-							: "ListByCompany"
-					),
-					FakePayload = commands[name as keyof typeof commands] as new (json: JsonObject) => Payload;
-				if (FakePayload) {
-					promises.push(this.command<Reply>(new FakePayload({
+			const subscribed = (await this.#socket.subscribe(companyId, requested)).merged as SubscriptionType[];
+			// remove expiration from any requested subscriptions, not new subscriptions
+			// some subscriptions may have been requested to be removed before re-synching
+			current.removeExpiries(requested);
+			
+			// once subscriptions are made, find the SyncNames that need to be requested
+			SUBS_TO_SYNCS(subscribed).forEach(type => {
+				const SyncPayload = makePayloadClass(
+					type,
+					type.startsWith("Company")
+						? "Get" :
+						"ListByCompany"
+				);
+				if (SyncPayload) {
+					promises.push(this.command<Reply>(new SyncPayload({
 						company: { id: companyId },
 					})));
 				} else {
@@ -1543,154 +1493,21 @@ export class TrakitSync extends TrakitCommander<any> {
 			});
 		}
 		return Promise.all(promises);
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		//subscriptionUrls = requestedSubscriptions.map((s: string) => SUBSCRIPTION_LIST_BY_COMPANY[s as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "");
-        
-		//for (let subType of SUBSCRIPTION_LIST_BY_COMPANY) {
-		//	// here we find any subscription types that were not requested, but will be filled based on the fact that they are coming in too, regardless of if they were asked.
-		//	// example is subscribe to assetGeneral, but listing assets also gives assetAdvanced, so we create a subscription for assetAdvanced too
-		//	// but the assetAdvanced must be temporary since we didn't ask for it
-		//	// it can expire using the regular expiration timeout
-		//	if (subscriptionUrls.includes(SUBSCRIPTION_LIST_BY_COMPANY[subType as keyof typeof SUBSCRIPTION_LIST_BY_COMPANY] || "")) {
-		//		temporarySubscriptions.push(subType);
-		//	}
-		//}
-		//for (let subType of requestedSubscriptions.concat(temporarySubscriptions)) {
-		//	// for REST requests that will also pull up other regions (assets => assetGeneral/assetAdvanced)
-		//	// build a list of all URL templates for every subscription type being requested
-		//	if (!alreadySubscribed.includes(subType) && !requested.includes(subType)) {
-		//		requested.push(subType);
-		//	}
-		//}
-        
-		//// if there are new subscriptions to make, do so and when the Promise is resolved pass the response (normal KraknSocket behaviour)
-		//const response: RepSubscription = requested.length
-		//	? await this.#subscribe(msg.company, requested)
-		//	: new RepSubscription({
-		//		"errorCode": ErrorCode.success,
-		//		"company": { "id": msg.company },
-		//		"message": "No new subscriptions",
-		//		"merged": [],
-		//	});
-		
-		//// subscriptions succeeded (at least partially)
-		//// remove expiration from any new subscriptions
-		//current.removeExpiries(requestedSubscriptions.filter(r => !temporarySubscriptions.includes(r)));
-		//// once subscriptions are made, set the expiry of the temporary ones
-		//current.addExpiries(temporarySubscriptions);
-        
-        
-
-
-
-		//const requestUrls = (response.merged as SubscriptionType[])
-		//	.map(sub => SUBSCRIPTION_LIST_BY_COMPANY[sub]?.replace("{companyId}", msg.company.toString()))
-		//	.filter(url => url)
-		//	.reduce((acc, val) => acc.concat([val]), [] as url[])
-		//	.map((url: string) => this.#rest._relayRequest(url));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		//// now load all the data
-		//return Promise.allSettled(
-		//	response.merged.map(function (sub) {
-		//		return SUBSCRIPTION_LIST_BY_COMPANY[sub] || "";
-		//	})
-		//		.unique()
-		//		.remove("")
-		//		.map(function (url) {
-		//			// method and body are null (defaults to GET and null)
-		//			// callback is used because it is invoked before the Promise is resolved (fulfilled or rejected)
-		//			// which adds the reply message to the Window-bound queue before the full sync-response Promise
-		//			return XHR_MINDFLAYER(url.replace("{companyId}", msg.company), null, null, function (response) {
-		//				OBJECT_EACH(SUBSCRIPTION_LIST_BY_COMPANY, function (value, region) {
-		//					// for each URL, we find the associated regions, or return blank string
-		//					return value === url
-		//						? region
-		//						: "";
-		//				})
-		//					// blanks are removed
-		//					.remove("")
-		//					// since Trak-iT's RESTful service is not providing region lists in all cases (for complex types)
-		//					// we find out if this region is a member of a complex type, and return that type name instead
-		//					.map(function (region) {
-		//						var sub = "";
-		//						OBJECT_EACH(SUBSCRIPTION_SPLITS, function (splits, key) {
-		//							if (splits.includes(region)) sub = key;
-		//						});
-		//						// if not a complex type, return region name
-		//						return sub || region;
-		//					})
-		//					// this does result in duplicates ie; assetGeneral => asset, assetAdvanced => asset, assetDispatch => asset
-		//					// so it's important to make this list unique in the end
-		//					.unique()
-		//					.forEach(function (sub) {
-		//						self.postMessage(new SyncMessage(
-		//							/*
-		//							(
-		//								sub.endsWith("y")
-		//									? sub.slice(0, -1) + "ie"
-		//									: sub
-		//							) + "sMerged",
-		//							*/
-		//							sub + "List",
-		//							response
-		//						));
-		//					});
-		//			});
-		//		})
-		//).then(function (results) {
-		//	var responses = [response].concat(results.map(function (result) {
-		//		return result["value"] || result["reason"];
-		//	}));
-		//	msg.response = {
-		//		"errorCode": responses.gather("errorCode").distinct()[0] || 0,
-		//		"message": responses.gather("message").join(", ") || "No operations",
-		//		"responses": responses,
-		//	};
-		//	self.postMessage(msg);
-		//});
 	}
 	/**
-	 * Begins removing regions from synchronization.
-	 * The process is not immediate, but will start a timeout.
-	 * This allows the service to re-request sync on a region within a few seconds (or minutes, haven't decided), like when switching sections.
-	 * @param msg
+	 * Adds the {@param types} to the list of expiring subscriptions.
+	 * The process is not immediate, but happens after a timeout.
+	 * This allows the service to re-request sync on a region, like when switching sections.
+	 * @param companyId
+	 * @param types
 	 **/
-	async desync(companyId: ulong, subscriptions: SubscriptionType[]) {
-		const subscribed = this.#getCurrentSubscriptions(msg.company),
-			regions = msg.subs.map((region) => SUBSCRIPTION_SPLITS[region] || [region])
-				.reduce((acc, val) => acc.concat(val), [])
-				.without(subscribed.expiringRegions())
-		subscribed.addExpiries(regions);
-		// does not send "unsubscribe" to the Trak-iT WebSocket, this is done in the {@link SyncWorker#subscriptionTimer} process.
-		msg.response = {
-			"errorCode": 0,
-			"message": "Regions added to unsubscribe timeout",
-			"regions": regions,
-		};
-		self.postMessage(msg);
+	async desync(companyId: ulong, types: SyncName[]) {
+		const current = this.#getCurrentSubscriptions(companyId),
+			requested = types.reduce((acc, s) => acc.concat(OBJECT_SUBSCRIPTIONS[s] || []), [] as SubscriptionType[])
+				.filter(sub => current.regions.includes(sub))
+				.filter((sub, index, array) => array.indexOf(sub) === index); // make unique
+		// does not send "unsubscribe" to the Trak-iT WebSocket, this is done in the {@link #subscriptionTimer} process.
+		current.addExpiries(requested);
 	}
 	///**
 	// * Sends an XHR to Trak-iT's RESTful service, and when a response is returned (or timeout occurs, or JSON parsing error occurs),

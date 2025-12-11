@@ -1,10 +1,11 @@
-import { SubscriptionType } from "@trakit/commands";
-import { SyncName, url, utility } from "@trakit/objects";
+import * as commands from "@trakit/commands";
+import { Payload, Reply, SubscriptionType } from "@trakit/commands";
+import { JsonObject, nothing, SyncName, url, utility } from "@trakit/objects";
 
 /**
  * A mapping of object names to their required subscription types.
  */
-export const OBJECT_SUBSCRIPTIONS: { [key in SyncName | string]: SubscriptionType[] } = {
+export const OBJECT_SUBSCRIPTIONS: { [key in SyncName]: SubscriptionType[] } = {
 	/* company */
 	"Company": [
 		SubscriptionType.companyGeneral,
@@ -19,9 +20,9 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName | string]: SubscriptionTyp
 	//"CompanySettings": [
 	//	SubscriptionType.companySettings,
 	//],
-	//"CompanyDirectory": [
-	//	SubscriptionType.companyDirectory,
-	//],
+	"CompanyDirectory": [
+		//SubscriptionType.companyDirectory,
+	],
 	"CompanyStyle": [
 		SubscriptionType.companyLabels,
 	],
@@ -51,10 +52,13 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName | string]: SubscriptionTyp
 	"UserGroup": [
 		SubscriptionType.userGroup,
 	],
+	"Session": [
+		// not directly subscribable
+	],
 	/* file hosting */
-	//"DashcamData": [
-	//	SubscriptionType.dashcamData,
-	//],
+	"Dashcam": [
+		// not directly subscribable
+	],
 	//"DashcamLive": [
 	//	SubscriptionType.dashcamLive,
 	//],
@@ -90,6 +94,9 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName | string]: SubscriptionTyp
 	],
 	"AssetMessage": [
 		SubscriptionType.assetMessage,
+	],
+	"AssetAlert": [
+		// alert messages are sent by the server regardless of subscription
 	],
 	//	"AssetAlert",
 	/* dispatch */
@@ -147,6 +154,9 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName | string]: SubscriptionTyp
 	],
 	"ProviderConfiguration": [
 		SubscriptionType.providerConfiguration,
+	],
+	"ProviderConfigurationType": [
+		// obsolete and no longer updated
 	],
 	"ProviderScript": [
 		SubscriptionType.providerScript,
@@ -216,7 +226,7 @@ export const OBJECT_COMPOUNDS: { [key in SyncName | string]: SyncName[] } = {
 /**
  * A mapping of RESTful service routes to get things listed by company.
  **/
-export const OBJECT_LIST_BY_COMPANY: { [key in SyncName | string]: url } = {
+export const OBJECT_LIST_BY_COMPANY: { [key in SyncName]: url } = {
 	/* company */
 	"Company": "/companies/generals?parent={companyId}",
 	"CompanyGeneral": "/companies/generals?parent={companyId}",
@@ -232,9 +242,10 @@ export const OBJECT_LIST_BY_COMPANY: { [key in SyncName | string]: url } = {
 	"UserGeneral": "/companies/{companyId}/users/generals",
 	"UserAdvanced": "/companies/{companyId}/users/advanceds",
 	"UserGroup": "/companies/{companyId}/users/groups",
+	"Session": "/companies/{companyId}/users/sessions",
 	/* file hosting */
 	"Dashcam": "/companies/{companyId}/dashcams",
-	"DashcamLive": "/companies/{companyId}/dashcams/live",
+	["DashcamLive" as SyncName]: "/companies/{companyId}/dashcams/live",
 	"Icon": "/companies/{companyId}/icons",
 	"Picture": "/companies/{companyId}/pictures",
 	"Document": "/companies/{companyId}/documents",
@@ -246,6 +257,7 @@ export const OBJECT_LIST_BY_COMPANY: { [key in SyncName | string]: url } = {
 	"AssetAdvanced": "/companies/{companyId}/assets/advanceds",
 	"AssetDispatch": "/companies/{companyId}/assets/dispatches",
 	"AssetMessage": "/companies/{companyId}/assets/messages",
+	"AssetAlert": "/companies/{companyId}/assets/alerts",
 	//	"AssetAlert",
 	/* dispatch */
 	"DispatchTask": "/companies/{companyId}/assets/dispatch/tasks",
@@ -259,15 +271,16 @@ export const OBJECT_LIST_BY_COMPANY: { [key in SyncName | string]: url } = {
 	//"PlaceGeneral": "/companies/{companyId}/places",
 	//"PlaceExtended": "/companies/{companyId}/places",
 	/* behaviours */
-	"BehaviourScript": "/companies/{companyId}/behaviours/scripts",
 	"Behaviour": "/companies/{companyId}/behaviours",
-	//"BehaviourLog": "",
+	"BehaviourScript": "/companies/{companyId}/behaviours/scripts",
+	"BehaviourLog": "",	// not listable by company, but by Behaviour, BehaviourScript, and Asset
 	/* providers and configs */
 	"Provider": "/companies/{companyId}/providers",
 	"ProviderGeneral": "/companies/{companyId}/providers/generals",
 	"ProviderAdvanced": "/companies/{companyId}/providers/advanceds",
 	"ProviderControl": "/companies/{companyId}/providers/controls",
 	"ProviderConfiguration": "/companies/{companyId}/providers/configurations",
+	"ProviderConfigurationType": "",	// not a company resource
 	"ProviderScript": "/companies/{companyId}/providers/scripts",
 	"ProviderConfig": "/companies/{companyId}/providers/configs",
 	"ProviderRegistration": "/companies/{companyId}/providers/registrations",
@@ -278,6 +291,8 @@ export const OBJECT_LIST_BY_COMPANY: { [key in SyncName | string]: url } = {
 	/* billing */
 	"BillingProfile": "/companies/{companyId}/billing/profiles",
 	"BillingReport": "/companies/{companyId}/billing/profiles/reports",
+	"BillableHostingRule": "",	// not listable by company, only by BillingProfile
+	"BillableHostingLicense": "",	// not listable by company, only by BillingProfile
 };
 
 /**
@@ -346,4 +361,60 @@ export function makeObjectName(typeName: string): SyncName {
 			break;
 	}
 	return typeName as SyncName;
+}
+
+/**
+ * Factory to create Payload classes based on type name.
+ * @param type		SyncName representing the type of the payload.
+ * @param suffix	Optional suffix to append to the class name.  Defaults to "Get".
+ * @returns 
+ */
+export function makePayloadClass(type: SyncName, suffix?: string | nothing): (new (json: JsonObject) => Payload) | nothing {
+	const name = "Pay" + type + (suffix ?? "Get");
+	return commands[name as keyof typeof commands] as new (json: JsonObject) => Payload;
+}
+/**
+ * Factory to create Reply classes based on type name.
+ * @param type		SyncName representing the type of the reply.
+ * @param suffix	Optional suffix to append to the class name.  Defaults to "Get".
+ * @returns 
+ */
+export function makeReplyClass(type: SyncName, suffix?: string | nothing): (new (json: JsonObject) => Reply) | nothing {
+	const name = "Rep" + type + (suffix ?? "Get");
+	return commands[name as keyof typeof commands] as new (json: JsonObject) => Reply;
+}
+
+/**
+ * 
+ * @param types 
+ * @returns 
+ */
+export function SYNCS_TO_SUBS(types: SyncName[]): SubscriptionType[] {
+	return types.reduce((acc, s) => acc.concat(OBJECT_SUBSCRIPTIONS[s] || []), [] as SubscriptionType[])
+				.filter((sub, index, array) => array.indexOf(sub) === index); // make unique
+}
+/**
+ * 
+ * @param subscriptions 
+ * @returns 
+ */
+export function SUBS_TO_SYNCS(subscriptions: SubscriptionType[]): SyncName[] {
+	const requests: SyncName[] = [];
+	// we start with the compound types
+	for (const [type, children] of Object.entries(OBJECT_COMPOUNDS)) {
+		const subs = children.map((child) => OBJECT_SUBSCRIPTIONS[child]).flat();
+		if (subs.filter(sub => subscriptions.includes(sub)).length / subs.length >= 0.5) {
+			requests.push(type as SyncName);
+		}
+	}
+	// and then the simple types that are not part of compound classes
+	for (const [type, subs] of Object.entries(OBJECT_SUBSCRIPTIONS)) {
+		if (
+			!OBJECT_COMPOUNDS[type]
+			&& subs.some(sub => subscriptions.includes(sub))
+		) {
+			requests.push(type as SyncName);
+		}
+	}
+	return requests;
 }

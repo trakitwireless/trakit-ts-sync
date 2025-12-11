@@ -26,6 +26,7 @@ import {
 } from "./Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
+import { JsonObject } from "@trakit/objects";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.
@@ -272,11 +273,11 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param request.body	Optional JSON body to send with the request.
 	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
-	override _relayRequest(request: Request): Promise<any> {
+	override _relayRequest(request: Request): Promise<JsonObject> {
 		return new Promise(async (resolve, reject) => {
 			try {
 				const response = await fetch(request);
-				resolve(await response.json());
+				resolve((await response.json()) as JsonObject);
 			} catch (ex: Error | any) {
 				reject(createClientErrorResponse(ex));
 			}
