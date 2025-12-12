@@ -2,6 +2,7 @@ import {
 	Asset,
 	BaseComponent,
 	classes,
+	codified,
 	Company,
 	Dashcam,
 	email,
@@ -62,8 +63,8 @@ export function getJsonKeyName(type: SyncName) {
  * @param type 
  * @returns 
  */
-export function getJsonKeyValue(json: JsonObject, type: SyncName): ulong | string | guid | email {
-	return json[getJsonKeyName(type)] as ulong | string | guid | email;
+export function getJsonKeyValue(json: JsonObject, type: SyncName): ulong | guid | email | codified | string {
+	return json[getJsonKeyName(type)] as ulong | guid | email | codified | string;
 }
 
 /**

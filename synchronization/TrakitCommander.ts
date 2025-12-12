@@ -148,12 +148,7 @@ export abstract class TrakitCommander<TRequest> {
 			} catch (ex: Error | any) {
 				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
 			}
-			if (reply.errorCode === ErrorCode.success) {
-				(reply as unknown as ReplySync).store?.();
-				resolve(reply);
-			} else {
-				reject(reply);
-			}
+			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
 		});
 	}
 

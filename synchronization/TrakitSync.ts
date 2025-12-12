@@ -20,7 +20,7 @@ import {
 	ulong
 } from '@trakit/objects';
 import { SubscribedRegions } from "./SubscribedRegions";
-import { makeObjectName, makePayloadClass, OBJECT_COMPOUNDS, OBJECT_SUBSCRIPTIONS, SYNCS_TO_SUBS, SUBS_TO_SYNCS, RESPONSE_MESSAGE_PARSER } from "./Subscriptions";
+import { makeObjectName, makePayloadClass, OBJECT_COMPOUNDS, OBJECT_SUBSCRIPTIONS, SYNCS_TO_SUBS, SUBS_TO_SYNCS, MSG_SYNC } from "./Subscriptions";
 import { TrakitCommander } from "./TrakitCommander";
 import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
 import { storeSyncMessage, TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
@@ -1352,7 +1352,7 @@ export class TrakitSync extends TrakitCommander<any> {
 	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		const action = payload.getAction();
-		switch (action.object) {
+		switch (action.object as string) {
 			case "Subscription":
 			case "Self":
 				return this.#socket.command<TReply>(payload);
@@ -1417,7 +1417,7 @@ export class TrakitSync extends TrakitCommander<any> {
 	 **/
 	#onMessage(kind: string, content: JsonObject) {
 		this.onMessage?.(kind, content);
-		const operation = RESPONSE_MESSAGE_PARSER.exec(kind) as string[];
+		const operation = MSG_SYNC.exec(kind) as string[];
 		if (operation?.length) {
 			const type = makeObjectName(operation[1]),
 				companyId = (type.startsWith("Company") ? content["parent"] : content["company"]) as ulong,

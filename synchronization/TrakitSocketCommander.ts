@@ -1,4 +1,3 @@
-import * as commands from "@trakit/commands";
 import {
 	ErrorCode,
 	Payload,
@@ -7,6 +6,7 @@ import {
 	PaySubscriptionMerge,
 	Reply,
 	ReplySync,
+	ReplySyncGet,
 	RepSelfGet,
 	RepSubscription,
 	RepSubscriptionList,
@@ -14,14 +14,17 @@ import {
 } from "@trakit/commands";
 import {
 	guid,
+	IRequestable,
 	JsonObject,
 	Machine,
 	nothing,
+	storage,
 	ulong,
 	url,
 	utility
 } from '@trakit/objects';
-import { makeObjectName, makeReplyClass, RESPONSE_MESSAGE_PARSER } from "./Subscriptions";
+import { getJsonKeyValue } from "./JSON";
+import { makeObjectName, makeReplyClass, MSG_SYNC } from "./Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
@@ -77,7 +80,7 @@ export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 function getCommand(payload: Payload): string {
 	const action = payload.getAction(),
 		error = new Error("no command supported for " + payload.constructor.name, { cause: action });
-	switch (action.object) {
+	switch (action.object as string) {
 		case "Subscription":
 			switch (action.kind) {
 				case "Merge":
@@ -144,30 +147,6 @@ function getCommand(payload: Payload): string {
 				);
 		default:
 			throw error;
-	}
-}
-/**
- * Constructs a {@link ReplySync} object based on the message name and stores the contents.
- * @param match
- * @param msgContent
- * @returns
- */
-export function storeSyncMessage(match: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
-	const SyncReply = makeReplyClass(
-		makeObjectName(match[1]),
-		match[2] === "Merged"
-			? "Get"
-			: match[2].slice(0, -1).slice(0, 7)
-	),
-		json = {
-			"errorCode": ErrorCode.success,
-			"message": match[2] + " event",
-			[match[1]]: msgContent,
-		};
-	if (SyncReply) {
-		const reply = new SyncReply(json) as ReplySync;
-		reply.store?.();	// may not have this method... should we throw in that case?
-		return reply;
 	}
 }
 
@@ -241,23 +220,23 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
 	 */
-	onOpen: ((this: TrakitSocketCommander, account: RepSelfGet) => any) | null = null;
+	onOpen?: ((this: TrakitSocketCommander, account: RepSelfGet) => any);
 	/**
 	 * Gets invoked any time the connection's account information is updated while the connection is open.
 	 */
-	onAccount: ((this: TrakitSocketCommander, account: RepSelfGet) => any) | null = null;
+	onAccount?: ((this: TrakitSocketCommander, account: RepSelfGet) => any);
 	/**
 	 * Gets invoked any time the WebSocket connection is closed.
 	 */
-	onClose: ((this: TrakitSocketCommander, reply: Reply) => any) | null = null;
+	onClose?: ((this: TrakitSocketCommander, reply: Reply) => any);
 	/**
 	 * Gets invoked any time a message is received from the WebSocket.
 	 */
-	onMessage: ((this: TrakitSocketCommander, name: string, body: JsonObject) => any) | null = null;
+	onMessage?: ((this: TrakitSocketCommander, name: string, body: JsonObject) => any);
 	/**
 	 * Gets invoked any time an error occurs on the WebSocket.
 	 */
-	onError: ((this: TrakitSocketCommander, reply: Reply) => any) | null = null;
+	onError?: ((this: TrakitSocketCommander, reply: Reply) => any);
 
 	//#region Internal WebSocket control
 	/**
@@ -461,10 +440,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			 */
 			if (!isCommandResponse && !msgName.startsWith("session")) { // ignore self stuff
 				// store the received object if applicable
-				const messageParts = RESPONSE_MESSAGE_PARSER.exec(msgName) as string[];
-				if (messageParts?.length) {
-					storeSyncMessage(messageParts as [unknown, string, string], msgContent);
-				}
+				const msgMatch = MSG_SYNC.exec(msgName) as string[];
+				if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
 			}
 
 			/**
@@ -487,57 +464,56 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			msgMachine = msgContent.machine as JsonObject;
 		if (msgContent.user) {
 			if (msgContact) {
-				storeSyncMessage([, "contact", "Merged"], msgContact);
+				this.#socketSync([, "contact", "Merged"], msgContact);
 				msgUser.contact = msgContact["id"];
 			}
-			storeSyncMessage([, "user", "Merged"], msgUser);
+			this.#socketSync([, "user", "Merged"], msgUser);
 		}
 		if (msgMachine) {
-			storeSyncMessage([, "machine", "Merged"], msgMachine);
+			this.#socketSync([, "machine", "Merged"], msgMachine);
 		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
 	}
-
-	///**
-	// * This needs to be moved somewhere generic to be used by REST service as well.
-	// * Might be a way to import the HIERARCHY#SyncClient_merged from Medusa.
-	// * @param msgName 
-	// * @param msgContent 
-	// */
-	//#socketMerged(msgName: string, msgContent: JsonObject): void {
-	//	let typeName = msgName[0].toUpperCase() + msgName.slice(1).replace(RESPONSE_MESSAGE_PARSER, "") as classes,
-	//		merge: () => void = () => {
-	//			const key = syncKey(msgContent, typeName),
-	//				map = storage[typeName],
-	//				obj = map.get(key) as IRequestable & IDeserializable;
-	//			if (obj) {
-	//				obj.fromJSON(msgContent);
-	//			} else {
-	//				const init = new objects[typeName]() as IRequestable & IDeserializable;
-	//				init.fromJSON(msgContent);
-	//				map.set(key, init);
-	//			}
-	//		};
-	//	switch (typeName as string) {
-	//		case "CompanyLabels":
-	//			typeName = "CompanyStyle";
-	//			break;
-	//		case "CompanyPolicies":
-	//			typeName = "CompanyPolicy";
-	//			break;
-	//		case "Session":
-	//			merge = () => {
-	//				storage.Session.set(
-	//					syncKey(msgContent, typeName),
-	//					Session.fromJSON(msgContent)
-	//				);
-	//			};
-	//			break;
-	//	}
-	//	merge();
-	//}
+	/**
+	 * Constructs a {@link ReplySync} object based on the message name,
+	 * stores the content in the {@link storage},
+	 * and fires the appropriate update/delete events.
+	 * @param msgMatch 
+	 * @param msgContent 
+	 * @returns 
+	 */
+	#socketSync(msgMatch: [unknown, string, string], msgContent: JsonObject): ReplySync | nothing {
+		const type = makeObjectName(msgMatch[1]),
+			companyId = msgContent[type.startsWith("Company") ? "parent" : "company"] as ulong,
+			SyncReply = makeReplyClass(
+				type,
+				msgMatch[2] === "Merged"
+					? "Get"
+					: msgMatch[2].slice(0, -1).slice(0, 7)
+			);
+		if (SyncReply) {
+			const reply = new SyncReply({
+				"errorCode": ErrorCode.success,
+				"message": msgMatch[2] + " event",
+				[msgMatch[1]]: msgContent,
+			}) as ReplySync;
+			if (reply.store()) {
+				switch (msgMatch[2]) {
+					case "Merged":
+					case "Suspended":
+						const object = (reply as ReplySyncGet<IRequestable>).getObject?.();
+						if (object) this.onUpdate?.(type, companyId, object);
+						break;
+					case "Deleted":
+						this.onDelete?.(type, companyId, getJsonKeyValue(msgContent, type));
+						break;
+				}
+			}
+			return reply;
+		}
+	}
 	//#endregion Internal WebSocket control
 
 	//#region Reconnection

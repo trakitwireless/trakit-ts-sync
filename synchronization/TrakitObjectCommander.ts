@@ -89,6 +89,7 @@
 	PayIconListByCompany,
 	PayIconMerge,
 	PayIconRestore,
+	Payload,
 	PayMachineDelete,
 	PayMachineGet,
 	PayMachineListByCompany,
@@ -250,6 +251,11 @@
 	RepIconListByCompany,
 	RepIconMerge,
 	Reply,
+	ReplySync,
+	ReplySyncBatchDelete,
+	ReplySyncDelete,
+	ReplySyncGet,
+	ReplySyncList,
 	RepMachineDelete,
 	RepMachineGet,
 	RepMachineListByCompany,
@@ -321,14 +327,17 @@
 	RepUserMerge
 } from '@trakit/commands';
 import {
+	codified,
 	email,
 	expression,
 	guid,
 	int,
+	IRequestable,
 	JsonObject,
 	Machine,
 	nothing,
 	serialization,
+	SyncName,
 	SystemsOfUnits,
 	Timezone,
 	ulong,
@@ -390,6 +399,44 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 		super(baseAddress, account);
 	}
 	
+	/**
+	 * Gets invoked any time all the objects for a given kind in the given company are updated.
+	 */
+	onReplace?: (kind: SyncName, companyId: ulong, list: IRequestable[]) => void;
+	/**
+	 * Gets invoked any time an object for a given kind in the given company is created or updated.
+	 */
+	onUpdate?: (kind: SyncName, companyId: ulong, object: IRequestable) => void;
+	/**
+	 * Gets invoked any time an object for a given kind in the given company is deleted.
+	 */
+	onDelete?: (kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) => void;
+	
+	override async command<TReply extends Reply>(payload: Payload): Promise<TReply> {
+		const reply = await super.command<TReply>(payload);
+		if (reply instanceof ReplySync) {
+			const modified = reply.store();
+			if (modified) {
+				const action = payload.getAction();
+				if (reply instanceof ReplySyncList) {
+					if (!action.filter) {
+						this.onReplace?.(action.object, reply.getCompanyId(), reply.getCollection());
+					}
+				} else if (reply instanceof ReplySyncGet) {
+					this.onUpdate?.(action.object, reply.getCompanyId(), reply.getObject());
+				} else if (reply instanceof ReplySyncDelete) {
+					this.onDelete?.(action.object, reply.getCompanyId(), reply.getKey());
+				} else if (reply instanceof ReplySyncBatchDelete) {
+					reply.getResults().forEach(del => {
+						const object = del.getResult();
+						this.onDelete?.(action.object, object.getCompanyId(), object.getKey());
+					});
+				}
+			}
+		}
+		return reply;
+	}
+
 	//#region Self
 	/**
 	 * Requests the details of the {@link User} or {@link Machine} currently identified.

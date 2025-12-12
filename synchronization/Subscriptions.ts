@@ -339,9 +339,13 @@ export const OBJECT_LIST_BY_USER: { [key: SyncName | string]: url } = {
 };
 
 /**
+ * Regex parser for socket command response message names.
+ */
+export const MSG_RESPONSE = /get([A-Za-z]+?)(List)?(By[A-Za-z]+)?Response$/;
+/**
  * Regex parser for socket message names (not command responses, those are handled by the {@link TrakitCommander.command} function).
  */
-export const RESPONSE_MESSAGE_PARSER = /^(.+?)(Merged|Deleted|Suspended)$/;
+export const MSG_SYNC = /^(.+?)(Merged|Deleted|Suspended)$/;
 /**
  * Translated type name to object name to account for some legacy message names.
  * @param typeName 
