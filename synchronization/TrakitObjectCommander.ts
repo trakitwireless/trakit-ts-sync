@@ -427,10 +427,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 				} else if (reply instanceof ReplySyncDelete) {
 					this.onDelete?.(action.object, reply.getCompanyId(), reply.getKey());
 				} else if (reply instanceof ReplySyncBatchDelete) {
-					reply.getResults().forEach(del => {
-						const object = del.getResult();
-						this.onDelete?.(action.object, object.getCompanyId(), object.getKey());
-					});
+					reply.getResults().forEach(result => this.onDelete?.(action.object, result.getCompanyId(), result.getKey()));
 				}
 			}
 		}
