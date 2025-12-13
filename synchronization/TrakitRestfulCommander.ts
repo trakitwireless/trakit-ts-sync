@@ -13,8 +13,7 @@ import {
 	RepSelfGet
 } from "@trakit/commands";
 import {
-	guid,
-	Machine,
+	guid, JsonObject, Machine,
 	nothing,
 	url,
 	utility
@@ -26,7 +25,6 @@ import {
 } from "./Subscriptions";
 import { createClientErrorResponse } from "./TrakitCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
-import { JsonObject } from "@trakit/objects";
 
 /**
  * The HTTP verbs supported by the Trak-iT RESTful API.
@@ -79,7 +77,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 			route = "",
 			query = "";
 		const action = payload.getAction();
-		switch (action.object) {
+		switch (action.object as string) {
 			case "Self":
 				if (action.kind == "Get") {
 					verb = "GET";

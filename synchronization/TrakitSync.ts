@@ -1,5 +1,4 @@
-﻿import * as commands from "@trakit/commands";
-import {
+﻿import {
 	Payload,
 	PaySubscriptionDelete,
 	PaySubscriptionMerge,
@@ -9,7 +8,6 @@ import {
 	SubscriptionType
 } from "@trakit/commands";
 import {
-	BaseComponent,
 	guid,
 	IRequestable,
 	JsonObject,
@@ -19,12 +17,12 @@ import {
 	SyncName,
 	ulong
 } from '@trakit/objects';
+import { getJsonKeyValue } from "./JSON";
 import { SubscribedRegions } from "./SubscribedRegions";
-import { makeObjectName, makePayloadClass, OBJECT_COMPOUNDS, OBJECT_SUBSCRIPTIONS, SYNCS_TO_SUBS, SUBS_TO_SYNCS, MSG_SYNC } from "./Subscriptions";
+import { makeObjectName, makePayloadClass, MSG_SYNC, OBJECT_SUBSCRIPTIONS, SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Subscriptions";
 import { TrakitCommander } from "./TrakitCommander";
 import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
-import { storeSyncMessage, TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
-import { getJsonKeyName, getJsonKeyValue } from "./JSON";
+import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
 
 
 /**
