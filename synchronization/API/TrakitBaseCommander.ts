@@ -2,35 +2,16 @@
 	ErrorCode,
 	Payload,
 	Reply,
-	ReplySync,
-	RepSelfGet,
+	RepSelfGet
 } from '@trakit/commands';
 import {
 	guid,
 	JsonObject,
-	JsonValue,
 	Machine,
 	nothing,
-	url,
+	url
 } from '@trakit/objects';
-
-/**
- * Creates a standardized error response.
- * @param ex The error to include in the response.
- * @returns A standardized error response object.
- */
-export function createClientErrorResponse(ex: Error, response?: JsonValue): JsonObject {
-	return {
-		"errorCode": ErrorCode.unknown,
-		"message": "Client exception",
-		"errorDetails": {
-			"kind": "stack",
-			"message": ex.message,
-			"stack": ex.stack ?? null,
-			"value": response ?? null,
-		}
-	};
-}
+import { createClientErrorResponse } from './Functions';
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.

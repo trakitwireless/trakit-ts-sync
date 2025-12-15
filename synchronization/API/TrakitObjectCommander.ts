@@ -290,6 +290,7 @@
 	RepProviderConfigurationMerge,
 	RepProviderDelete,
 	RepProviderGet,
+	RepProviderListByCompany,
 	RepProviderMerge,
 	RepProviderRegistrationDelete,
 	RepProviderRegistrationGet,
@@ -335,7 +336,6 @@ import {
 	IRequestable,
 	JsonObject,
 	Machine,
-	nothing,
 	serialization,
 	SyncName,
 	SystemsOfUnits,
@@ -344,7 +344,6 @@ import {
 	url,
 	UserNotifications
 } from '@trakit/objects';
-import { RepProviderListByCompany } from '../../trakit-ts-commands/_publish/commands/Providers/Providers/Responses/RepProviderList';
 import { TrakitBaseCommander } from './TrakitBaseCommander';
 
 /**
