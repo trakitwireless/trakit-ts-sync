@@ -347,62 +347,14 @@ import {
 import { RepProviderListByCompany } from '../../trakit-ts-commands/_publish/commands/Providers/Providers/Responses/RepProviderList';
 import { TrakitCommander } from './TrakitCommander';
 
-
-////#region Behaviours/Logs
-///**
-// * Finds the given company and removes all the logs returned using the filter argument.
-// * @param {!number} companyId
-// * @param {!function(trakit.fleetfreedom.BehaviourLog):boolean} filter
-// **/
-//function BEHAVIOUR_LOG_PURGE(companyId: ulong, filter) {
-//	var company = COMPANIES.get(companyId: ulong);
-//	if (company) {
-//		company.behaviourLogs.filter(filter).forEach(function(log) {
-//			company.removeBehaviourLog(log.id);
-//		});
-//	}
-//}
-///**
-// * The name of the {@link trakit.fleetfreedom.BehaviourLog} type.
-// * @const {string}
-// **/
-//var BEHAVIOUR_LOG_TYPE = "behaviourLog";
-///**
-// * The name of the {@link trakit.fleetfreedom.BehaviourLog} type.
-// * @const {string}
-// **/
-//var BEHAVIOUR_LOG_TYPES = BEHAVIOUR_LOG_TYPE + "s";
-///**
-// * Name of the event fired when loading a list of logs by {@link trakit.fleetfreedom.Behaviour}.
-// * @const {string}
-// **/
-//var BEHAVIOUR_LOG_BEHAVE_EVENT = BEHAVIOUR_LOG_TYPE + "BehaviourList";
-///**
-// * Name of the event fired when loading a list of logs by {@link trakit.fleetfreedom.BehaviourScript}.
-// * @const {string}
-// **/
-//var BEHAVIOUR_LOG_SCRIPT_EVENT = BEHAVIOUR_LOG_TYPE + "BehaviourScriptList";
-////#endregion Behaviours/Logs
-
 /**
  * The base class used to help define interaction with all Trak-iT API services.
  */
 export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TRequest> {
-	constructor(
-		baseAddress?: URL | url | nothing,
-		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing
-	) {
-		super(baseAddress, account);
-	}
-	
 	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
 	 */
-	onReplace?: (kind: SyncName, companyId: ulong, list: IRequestable[]) => void;
+	onList?: (kind: SyncName, companyId: ulong, objects: IRequestable[]) => void;
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is created or updated.
 	 */
@@ -412,6 +364,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 	 */
 	onDelete?: (kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) => void;
 	
+	/**
+	 * Overridden to handle storage and events.
+	 * @inheritdoc
+	 */
 	override async command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		const reply = await super.command<TReply>(payload);
 		if (reply instanceof ReplySync) {
@@ -419,15 +375,17 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TR
 			if (modified) {
 				const action = payload.getAction();
 				if (reply instanceof ReplySyncList) {
-					if (!action.filter) {
-						this.onReplace?.(action.object, reply.getCompanyId(), reply.getCollection());
-					}
+					const companyId = reply.getCompanyId();
+					if (!action.filter) this.onList?.(action.object, companyId, reply.getList());
+					else reply.getList().forEach(obj => this.onUpdate?.(action.object, companyId, obj));
 				} else if (reply instanceof ReplySyncGet) {
 					this.onUpdate?.(action.object, reply.getCompanyId(), reply.getObject());
 				} else if (reply instanceof ReplySyncDelete) {
 					this.onDelete?.(action.object, reply.getCompanyId(), reply.getKey());
 				} else if (reply instanceof ReplySyncBatchDelete) {
 					reply.getResults().forEach(result => this.onDelete?.(action.object, result.getCompanyId(), result.getKey()));
+				//} else if (reply instanceof ReplySyncBatchSuspend) {
+				//	reply.getResults().forEach(result => this.onUpdate?.(action.object, result.getCompanyId(), result.getObject()));
 				}
 			}
 		}
