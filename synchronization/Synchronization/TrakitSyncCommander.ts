@@ -13,16 +13,16 @@ import {
 	JsonObject,
 	Machine,
 	nothing,
-	storage,
 	SyncName,
 	ulong
 } from '@trakit/objects';
-import { getJsonKeyValue } from "./JSON";
-import { SubscribedRegions } from "./SubscribedRegions";
-import { makeObjectName, makePayloadClass, MSG_SYNC, OBJECT_SUBSCRIPTIONS, SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Subscriptions";
-import { TrakitBaseCommander } from "./TrakitBaseCommander";
-import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
-import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
+import { makePayloadClass } from "../API/Functions";
+import { TrakitBaseCommander } from "../API/TrakitBaseCommander";
+import { TrakitRestfulCommander } from "../RESTful/TrakitRestfulCommander";
+import { SubscribedRegions } from "../WebSocket/SubscribedRegions";
+import { OBJECT_SUBSCRIPTIONS } from "../WebSocket/Constants";
+import { TrakitSocketCommander, TrakitSocketStatus } from "../WebSocket/TrakitSocketCommander";
+import { SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Functions";
 
 
 /**
@@ -1284,7 +1284,7 @@ export class TrakitSyncCommander extends TrakitBaseCommander<any> {
 	onResponse?: (response: Reply) => void;
 	onClose?: (account: Reply) => void;
 
-	onReplace?: (kind: SyncName, companyId: ulong, list: IRequestable[]) => void;
+	onList?: (kind: SyncName, companyId: ulong, objects: IRequestable[]) => void;
 	onUpdate?: (kind: SyncName, companyId: ulong, object: IRequestable) => void;
 	onDelete?: (kind: SyncName, companyId: ulong, key: ulong | string) => void;
 
@@ -1415,22 +1415,6 @@ export class TrakitSyncCommander extends TrakitBaseCommander<any> {
 	 **/
 	#onMessage(kind: string, content: JsonObject) {
 		this.onMessage?.(kind, content);
-		const operation = MSG_SYNC.exec(kind) as string[];
-		if (operation?.length) {
-			const type = makeObjectName(operation[1]),
-				companyId = (type.startsWith("Company") ? content["parent"] : content["company"]) as ulong,
-				key = getJsonKeyValue(content, type);
-			switch (operation[2]) {
-				case "Merged":
-				case "Suspended":
-					const object = storage[type].get(key);
-					if (object) this.onUpdate?.(type, companyId, object);
-					break;
-				case "Deleted":
-					this.onDelete?.(type, companyId, key);
-					break;
-			}
-		}
 	}
 	/**
 	 * 
