@@ -5,26 +5,32 @@
  * @copyright Trak-iT Wireless Inc. 2025
  */
 
-import { SubscribedRegions } from "./synchronization/WebSocket/SubscribedRegions";
-import { TrakitBaseCommander } from "./synchronization/API/TrakitBaseCommander";
-import { TrakitObjectCommander } from "./synchronization/API/TrakitObjectCommander";
-import { TrakitRestfulCommander } from "./synchronization/RESTful/TrakitRestfulCommander";
-import { TrakitSocketCommander } from "./synchronization/WebSocket/TrakitSocketCommander";
-import { TrakitSyncCommander } from "./synchronization/Synchronization/TrakitSyncCommander";
+import { TrakitBaseCommander } from "./sync/API/TrakitBaseCommander";
+import { TrakitObjectCommander } from "./sync/API/TrakitObjectCommander";
+import { TrakitRestfulCommander } from "./sync/RESTful/TrakitRestfulCommander";
+import { TrakitSyncCommander } from "./sync/Synchronization/TrakitSyncCommander";
+import { SubscribedRegions } from "./sync/WebSocket/SubscribedRegions";
+import { TrakitSocketCommander } from "./sync/WebSocket/TrakitSocketCommander";
 
 /**
  * Version number for this release.
  */
 export const version = 5.0;
 
-/**
- * Exports the main classes for synchronization commands.
- */
 export {
-	TrakitRestfulCommander, TrakitSocketCommander,
-	TrakitSyncCommander
+	TrakitBaseCommander,
+	TrakitObjectCommander
+};
+	
+export {
+	TrakitRestfulCommander
 };
 
-	export {
-		SubscribedRegions, TrakitBaseCommander, TrakitObjectCommander
-	};
+export {
+	SubscribedRegions,
+	TrakitSocketCommander
+};
+
+export {
+	TrakitSyncCommander
+};
