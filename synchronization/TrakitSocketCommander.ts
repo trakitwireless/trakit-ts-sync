@@ -14,6 +14,7 @@ import {
 } from "@trakit/commands";
 import {
 	guid,
+	int,
 	IRequestable,
 	JsonObject,
 	Machine,
@@ -374,15 +375,25 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		/**
 		 * The name of the message received by the underlying WebSocket.
 		 * This value is only changed for the "connectionResponse" to "connection" to properly fire that event.
-		 **/
+		 */
 		const msgName = event.data.substring(0, event.data.indexOf(" "));
 		/**
 		 * The JSON parsed from the message received by the underlying WebSocket.
-		 **/
+		 */
 		const msgContent = JSON.parse(event.data.substring(msgName.length + 1)) as JsonObject;
-	
+		
 		// first, set this value
 		this.#lastMessage = msgName;
+		/**
+		 * Some command responses are considered "transparent" and do not fire the "onMessage" event.
+		 * The "connectionResponse" because it fires "onOpen" instead of the "onMessage".
+		 * The "noopResponse", because the "no operation" messages do not need an event.
+		 */
+		if (!(msgName === "connectionResponse" || msgName === "noopResponse")) {
+			this.onMessage?.(msgName, msgContent);
+		}
+
+		// then, handle special messages
 		switch (msgName) {
 			case "connectionResponse":
 				this.#socketAccount(msgContent);
@@ -425,29 +436,15 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.onAccount?.(this.account);
 				break;
 		}
-		/**
-		 * For the "connectionResponse", because already fired the "onOpen" event instead of the "message" event.
-		 * For the "noopResponse", because the "no operation" messages do not need an event.
-		 **/
-		if (!(msgName === "connectionResponse" || msgName === "noopResponse")) {
-			/**
-			 * The function that will settle (resolve or reject) the Promise for the pending command.
-			 **/
-			const isCommandResponse = msgName.endsWith("Response")
-				&& this.#requestSettle(msgContent["reqId"] as number, msgContent);
-			/**
-			 * Stores the received object if applicable.
-			 */
-			if (!isCommandResponse && !msgName.startsWith("session")) { // ignore self stuff
-				// store the received object if applicable
-				const msgMatch = MSG_SYNC.exec(msgName) as string[];
-				if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
-			}
 
-			/**
-			 * Fires the "message" event.
-			 */
-			this.onMessage?.(msgName, msgContent);
+		// handle command promise settlement
+		if (msgName.endsWith("Response")) {
+			this.#requestSettle(msgContent["reqId"] as int, msgContent);
+		} else if (!msgName.startsWith("session")) {
+			// fire the sync events for other messages (ie; __Merged, __Deleted, and __Suspended)
+			// ignore self stuff (ie; session__Merged)
+			const msgMatch = MSG_SYNC.exec(msgName) as string[];
+			if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
 		}
 
 		// lastly, reset keep-alive process

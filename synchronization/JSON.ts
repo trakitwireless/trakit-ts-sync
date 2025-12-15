@@ -274,7 +274,7 @@ export function SyncClient_merged(type: SyncName, json: JsonObject, updated: boo
 			break;
 
 		case "Dashcam":
-			object = Dashcam.fromJSON(json);
+			object = new Dashcam(json);
 			// version is not populated
 			break;
 
