@@ -20,7 +20,7 @@ import {
 import { getJsonKeyValue } from "./JSON";
 import { SubscribedRegions } from "./SubscribedRegions";
 import { makeObjectName, makePayloadClass, MSG_SYNC, OBJECT_SUBSCRIPTIONS, SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Subscriptions";
-import { TrakitCommander } from "./TrakitCommander";
+import { TrakitBaseCommander } from "./TrakitBaseCommander";
 import { TrakitRestfulCommander } from "./TrakitRestfulCommander";
 import { TrakitSocketCommander, TrakitSocketStatus } from "./TrakitSocketCommander";
 
@@ -1208,7 +1208,7 @@ const TIMEOUT_SUBSCRIPTION = 10 * 1000;	// 10 seconds
  * It handles synchronizing regions, maintaining a connection to Trak-iT's WebSocket, and send HTTP requests to Trak-iT's RESTful service.
  * This class also maintains a queue of up-going messages.
  **/
-export class TrakitSyncCommander extends TrakitCommander<any> {
+export class TrakitSyncCommander extends TrakitBaseCommander<any> {
 	/**
 	 * The Trak-iT WebSocket's main connection.
 	 **/

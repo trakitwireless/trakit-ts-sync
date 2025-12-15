@@ -35,7 +35,7 @@ export function createClientErrorResponse(ex: Error, response?: JsonValue): Json
 /**
  * The base class used to help define interaction with all Trak-iT API services.
  */
-export abstract class TrakitCommander<TRequest> {
+export abstract class TrakitBaseCommander<TRequest> {
 	/**
 	 * Details of the {@link User} or {@link Machine} who is connected to the underlying Trak-iT API service.
 	 */

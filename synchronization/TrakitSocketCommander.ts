@@ -26,7 +26,7 @@ import {
 } from '@trakit/objects';
 import { getJsonKeyValue } from "./JSON";
 import { makeObjectName, makeReplyClass, MSG_SYNC } from "./Subscriptions";
-import { createClientErrorResponse } from "./TrakitCommander";
+import { createClientErrorResponse } from "./TrakitBaseCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
 /**

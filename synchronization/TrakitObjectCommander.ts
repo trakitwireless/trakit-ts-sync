@@ -345,12 +345,12 @@ import {
 	UserNotifications
 } from '@trakit/objects';
 import { RepProviderListByCompany } from '../../trakit-ts-commands/_publish/commands/Providers/Providers/Responses/RepProviderList';
-import { TrakitCommander } from './TrakitCommander';
+import { TrakitBaseCommander } from './TrakitBaseCommander';
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.
  */
-export abstract class TrakitObjectCommander<TRequest> extends TrakitCommander<TRequest> {
+export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommander<TRequest> {
 	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
 	 */

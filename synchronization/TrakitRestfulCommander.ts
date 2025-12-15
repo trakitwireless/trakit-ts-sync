@@ -23,7 +23,7 @@ import {
 	OBJECT_LIST_BY_BILLING_PROFILE,
 	OBJECT_LIST_BY_COMPANY,
 } from "./Subscriptions";
-import { createClientErrorResponse } from "./TrakitCommander";
+import { createClientErrorResponse } from "./TrakitBaseCommander";
 import { TrakitObjectCommander } from "./TrakitObjectCommander";
 
 /**
