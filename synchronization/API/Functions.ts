@@ -1,5 +1,6 @@
-import { ErrorCode } from "@trakit/commands";
-import { JsonObject, JsonValue } from "@trakit/objects";
+import * as commands from "@trakit/commands";
+import { ErrorCode, Payload, Reply } from "@trakit/commands";
+import { JsonObject, JsonValue, nothing, SyncName, utility } from "@trakit/objects";
 
 /**
  * Creates a standardized error response.
@@ -18,3 +19,45 @@ export function createClientErrorResponse(ex: Error, response?: JsonValue): Json
 		}
 	};
 }
+/**
+ * Translated type name to object name to account for some legacy message names.
+ * @param typeName 
+ * @returns 
+ */
+export function makeObjectName(typeName: string): SyncName {
+	typeName = utility.capitalize(typeName);
+	switch (typeName) {
+		case "CompanyLabels":
+			typeName = "CompanyStyle";
+			break;
+		case "CompanyPolicies":
+			typeName = "CompanyPolicy";
+			break;
+		default:
+			typeName = utility.singularize(typeName);
+			break;
+	}
+	return typeName as SyncName;
+}
+
+/**
+ * Factory to create Payload classes based on type name.
+ * @param type		SyncName representing the type of the payload.
+ * @param suffix	Optional suffix to append to the class name.  Defaults to "Get".
+ * @returns 
+ */
+export function makePayloadClass(type: SyncName, suffix?: string | nothing): (new (json: JsonObject) => Payload) | nothing {
+	const name = "Pay" + type + (suffix ?? "Get");
+	return commands[name as keyof typeof commands] as new (json: JsonObject) => Payload;
+}
+/**
+ * Factory to create Reply classes based on type name.
+ * @param type		SyncName representing the type of the reply.
+ * @param suffix	Optional suffix to append to the class name.  Defaults to "Get".
+ * @returns 
+ */
+export function makeReplyClass(type: SyncName, suffix?: string | nothing): (new (json: JsonObject) => Reply) | nothing {
+	const name = "Rep" + type + (suffix ?? "Get");
+	return commands[name as keyof typeof commands] as new (json: JsonObject) => Reply;
+}
+
