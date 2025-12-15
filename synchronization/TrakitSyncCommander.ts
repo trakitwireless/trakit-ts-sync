@@ -1208,7 +1208,7 @@ const TIMEOUT_SUBSCRIPTION = 10 * 1000;	// 10 seconds
  * It handles synchronizing regions, maintaining a connection to Trak-iT's WebSocket, and send HTTP requests to Trak-iT's RESTful service.
  * This class also maintains a queue of up-going messages.
  **/
-export class TrakitSync extends TrakitCommander<any> {
+export class TrakitSyncCommander extends TrakitCommander<any> {
 	/**
 	 * The Trak-iT WebSocket's main connection.
 	 **/
