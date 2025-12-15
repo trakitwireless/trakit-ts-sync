@@ -21,13 +21,12 @@ import {
 	nothing,
 	storage,
 	ulong,
-	url,
-	utility
+	url
 } from '@trakit/objects';
-import { getJsonKeyValue } from "./JSON";
-import { makeObjectName, makeReplyClass, MSG_SYNC } from "./Subscriptions";
-import { createClientErrorResponse } from "./TrakitBaseCommander";
-import { TrakitObjectCommander } from "./TrakitObjectCommander";
+import { createClientErrorResponse, makeObjectName, makeReplyClass } from "../API/Functions";
+import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
+import { getJsonKeyValue, makeCommandName } from "./Functions";
+import { MSG_SYNC } from "./Constants";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -41,6 +40,16 @@ const TIMEOUT_NOOP = 300 * 1000;
  * Maximum time (in milliseconds) to wait before trying to re-connect to Trak-iT's WebSocket.
  **/
 const TIMEOUT_MAX_RECONNECT = 300 * 1000;
+/**
+ * Name of the connection "command", where we expect a connectionResponse message upon establishing a connection.
+ * Used to resolve the Promise returned by {@link TrakitSocketCommander.open}.
+ */
+const CMD_CONNECTION = "connection";
+/**
+ * Name of the disconnection "command", where we resolve all pending commands upon disconnection as failed.
+ * Also used to resolve the Promise returned by {@link TrakitSocketCommander.close}.
+ */
+const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
 
 /**
  * Describes the state of the {@link TrakitSocketCommander}'s connection to the Trak-iT WebSocket service.
@@ -62,93 +71,6 @@ export enum TrakitSocketStatus {
 	 * The underlying {@link WebSocket} connection has been terminated.
 	 */
 	closed = WebSocket.CLOSED,
-}
-
-/**
- * 
- */
-export const CMD_CONNECTION = "connection";
-/**
- * 
- */
-export const CMD_DISCONNECTION = "dis" + CMD_CONNECTION;
-
-/**
- * Returns a WebSocket command name based on the {@link Payload} type.
- * @param payload 
- * @returns 
- */
-function getCommand(payload: Payload): string {
-	const action = payload.getAction(),
-		error = new Error("no command supported for " + payload.constructor.name, { cause: action });
-	switch (action.object as string) {
-		case "Subscription":
-			switch (action.kind) {
-				case "Merge":
-					return "subscribe";
-				case "Delete":
-					return "unsubscribe";
-				case "List":
-					return "getSubscriptionsList";
-				default:
-					throw error;
-			}
-		case "Self":
-			switch (action.filter) {
-				case "Get":
-					return "getSessionDetails";
-				case "Login":
-				case "Logout":
-					return action.filter.toLowerCase();
-				case "Contact":
-				case "Password":
-				case "Preferences":
-					return "updateOwn" + action.filter;
-				default:
-					throw error;
-			}
-		case "Session":
-			switch (action.kind) {
-				case "Get":
-				case "List":
-					break;  // fall through to default
-				case "Delete":
-					return "killSession";
-				default:
-				case "Merge":
-				case "Restore":
-				case "Suspend":
-				case "Reactivate":
-					throw error;
-			}
-			break;
-		case "DispatchJob":
-			switch (action.filter) {
-				case "Cancel":
-				case "Change":
-					return action.kind.toLocaleLowerCase() + action.object;
-			}
-	}
-	switch (action.kind) {
-		case "Get":
-		case "Merge":
-		case "Restore":
-		case "Suspend":
-			return action.kind.toLocaleLowerCase() + action.object;
-		case "Delete":
-			return "remove" + action.object;
-		case "Reactivate":
-			return "revive" + action.object;
-		case "List":
-			return "get" + utility.pluralize(action.object) + "List"
-				+ (
-					(action.filter || "Company") != "Company"
-						? "By" + action.filter
-						: ""
-				);
-		default:
-			throw error;
-	}
 }
 
 /**
@@ -642,7 +564,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	override _createRequest(payload: Payload): [string, JsonObject] {
 		return [
-			getCommand(payload),
+			makeCommandName(payload),
 			payload.toJSON(),
 		];
 	}
