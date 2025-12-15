@@ -18,19 +18,14 @@ import {
 	url,
 	utility
 } from "@trakit/objects";
+import { createClientErrorResponse } from "../API/Functions";
+import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import {
+	HttpVerb,
 	OBJECT_LIST_BY_ASSET,
 	OBJECT_LIST_BY_BILLING_PROFILE,
 	OBJECT_LIST_BY_COMPANY,
-} from "./Subscriptions";
-import { createClientErrorResponse } from "./TrakitBaseCommander";
-import { TrakitObjectCommander } from "./TrakitObjectCommander";
-
-/**
- * The HTTP verbs supported by the Trak-iT RESTful API.
- */
-export type HttpVerb = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-
+} from "./Constants";
 
 /**
  * Splits Pascal-case words into their components.
