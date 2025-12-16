@@ -312,9 +312,11 @@
 	RepReportTemplateGet,
 	RepReportTemplateListByCompany,
 	RepReportTemplateMerge,
+	RepSelfContact,
 	RepSelfGet,
 	RepSelfLogout,
 	RepSelfPassword,
+	RepSelfPreferences,
 	RepSessionDelete,
 	RepSessionListByCompany,
 	RepSessionListByUser,
@@ -328,26 +330,59 @@
 	RepUserMerge
 } from '@trakit/commands';
 import {
+	Asset,
+	AssetMessage,
+	Behaviour,
+	BehaviourLog,
+	BehaviourScript,
 	codified,
+	Company,
+	CompanyGeneral,
+	CompanyReseller,
+	Contact,
+	Dashcam,
+	DashcamLive,
+	DispatchJob,
+	DispatchTask,
+	Document,
 	email,
 	expression,
+	FormResult,
+	FormTemplate,
 	guid,
+	Icon,
 	int,
 	IRequestable,
 	JsonObject,
 	Machine,
+	MaintenanceJob,
+	MaintenanceSchedule,
+	nothing,
+	Picture,
+	Place,
+	Provider,
+	ProviderConfig,
+	ProviderConfiguration,
+	ProviderRegistration,
+	ProviderScript,
+	ReportResult,
+	ReportSchedule,
+	ReportTemplate,
 	serialization,
+	Session,
 	SyncName,
 	SystemsOfUnits,
 	Timezone,
 	ulong,
 	url,
+	User,
+	UserGroup,
 	UserNotifications
 } from '@trakit/objects';
 import { TrakitBaseCommander } from './TrakitBaseCommander';
 
 /**
- * The base class used to help define interaction with all Trak-iT API services.
+ * Base class to retrieve, modify, and delete Trak-iT objects via the APIs.
  */
 export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommander<TRequest> {
 	/**
@@ -369,23 +404,21 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 */
 	override async command<TReply extends Reply>(payload: Payload): Promise<TReply> {
 		const reply = await super.command<TReply>(payload);
-		if (reply instanceof ReplySync) {
-			const modified = reply.store();
-			if (modified) {
-				const action = payload.getAction();
-				if (reply instanceof ReplySyncList) {
-					const companyId = reply.getCompanyId();
-					if (!action.filter) this.onList?.(action.object, companyId, reply.getList());
-					else reply.getList().forEach(obj => this.onUpdate?.(action.object, companyId, obj));
-				} else if (reply instanceof ReplySyncGet) {
-					this.onUpdate?.(action.object, reply.getCompanyId(), reply.getObject());
-				} else if (reply instanceof ReplySyncDelete) {
-					this.onDelete?.(action.object, reply.getCompanyId(), reply.getKey());
-				} else if (reply instanceof ReplySyncBatchDelete) {
-					reply.getResults().forEach(result => this.onDelete?.(action.object, result.getCompanyId(), result.getKey()));
-				//} else if (reply instanceof ReplySyncBatchSuspend) {
-				//	reply.getResults().forEach(result => this.onUpdate?.(action.object, result.getCompanyId(), result.getObject()));
+		if (reply instanceof ReplySync && reply.store()) {
+			const action = payload.getAction(),
+				companyId = reply.getCompanyId();
+			if (reply instanceof ReplySyncList) {
+				if (!action.filter) {
+					this.onList?.(action.object, companyId, reply.getList());
+				} else {
+					reply.getList().forEach(obj => this.onUpdate?.(action.object, companyId, obj));
 				}
+			} else if (reply instanceof ReplySyncGet) {
+				this.onUpdate?.(action.object, companyId, reply.getObject());
+			} else if (reply instanceof ReplySyncDelete) {
+				this.onDelete?.(action.object, companyId, reply.getKey());
+			} else if (reply instanceof ReplySyncBatchDelete) {
+				reply.getResults().forEach(result => this.onDelete?.(action.object, result.getCompanyId(), result.getKey()));
 			}
 		}
 		return reply;
@@ -397,32 +430,32 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @returns The account details or null.
 	 */
 	public async selfDetails(): Promise<RepSelfGet> {
-		this.account = await this.command<RepSelfGet>(new PaySelfGet());
-		this.setAuth(this.account);
-		return this.account;
+		const reply = await this.command<RepSelfGet>(new PaySelfGet());
+		this.setAuth(reply);
+		return reply;
 	}
 
 	/**
-	 * Sends a login command, and if successful, saves the ghostId as the authentication mechanism for all further requests.
-	 * @param username Your email address.
-	 * @param password Your password.
-	 * @param userAgent Optional string to identify this software.
+	 * Sends a login command, and if successful, saves the {@link RepSelfGet.ghostId|session id} for all further requests.
+	 * @param username	Your email address.
+	 * @param password	Your password.
+	 * @param userAgent	Optional string to identify the client software.
 	 * @returns The response, which contains a SelfUser when successful.
 	 */
-	public async login(username: string, password: string, userAgent: string | null = null): Promise<RepSelfGet | null> {
-		this.account = await this.command<RepSelfGet>(new PaySelfLogin({
+	public async login(username: string, password: string, userAgent?: string | nothing): Promise<RepSelfGet | null> {
+		const reply = await this.command<RepSelfGet>(new PaySelfLogin({
 			username: username,
 			password: password,
-			userAgent: userAgent,
+			userAgent: userAgent ?? null,
 		}));
-		this.setAuth(this.account);
-		return this.account;
+		this.setAuth(reply);
+		return reply;
 	}
 	/**
-	 * Sends a logout command, and if successful, removes the current session using setAuth().
+	 * Sends a logout command and removes the current {@link RepSelfGet|session information} whether successful or not.
 	 * @returns The logout response.
 	 */
-	public async logout(): Promise<RepSelfLogout> {
+	public logout(): Promise<RepSelfLogout> {
 		const reply = this.command<RepSelfLogout>(new PaySelfLogout());
 		this.setAuth();
 		return reply;
@@ -431,17 +464,17 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	/**
 	 * Allows a {@link User} to update their own {@link Contact}. 
 	 * If your {@link User} has no associated {@link Contact}, you will receive a {@link ErrorCode.contactNotFound} error.
-	 * @param name
-	 * @param notes
-	 * @param otherNames
-	 * @param emails
-	 * @param phones
-	 * @param addresses
-	 * @param urls
-	 * @param dates
-	 * @param options
-	 * @param roles
-	 * @param pictures
+	 * @param name			Name for yourself.
+	 * @param notes			Notes for yourself.
+	 * @param otherNames	A collection of other names this person might go by.
+	 * @param emails		A collection of email addresses for yourself.
+	 * @param phones		A collection of phone numbers for yourself.
+	 * @param addresses		A collection of addresses for yourself.
+	 * @param urls			A collection of URLs for yourself.
+	 * @param dates			A collection of dates for yourself.
+	 * @param options		Saved JSON data used by client applications.
+	 * @param roles			A list of roles you play in your {@link Company}.
+	 * @param pictures		A list of {@link Picture.id}s to associate with your {@link Contact}.
 	 * @returns The reply from the update contact command.
 	 */
 	public updateContact(
@@ -456,8 +489,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		options?: Map<string, string | null>,
 		roles?: string[],
 		pictures?: ulong[],
-	): Promise<Reply> {
-		return this.command<Reply>(new PaySelfContact({
+	): Promise<RepSelfContact> {
+		return this.command<RepSelfContact>(new PaySelfContact({
 			contact: {
 				name: name ?? null,
 				notes: notes ?? null,
@@ -475,8 +508,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	}
 	/**
 	 * Allows a session {@link User} to change their own password.
-	 * @param oldPassword Your current password, as verification that you are the account owner.
-	 * @param newPassword Your new password must conform to your company's PasswordPolicy.
+	 * @param oldPassword	Your current password, as verification that you are the account owner.
+	 * @param newPassword	Your new password must conform to your company's PasswordPolicy.
 	 * @returns The password change response.
 	 */
 	public updatePassword(
@@ -490,23 +523,23 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	}
 	/**
 	 * Allows a {@link User} to change their own preferences.
-	 * @param language
-	 * @param timezone
-	 * @param notify
-	 * @param formats
-	 * @param measurements
-	 * @param options
+	 * @param language		Your language code, e.g., "en-US".
+	 * @param timezone		Your {@link Timezone.code}.
+	 * @param notify		Notification preferences.
+	 * @param formats		Format templates for dates, times, etc...
+	 * @param measurements	Measurement system preferences.
+	 * @param options		Saved JSON data used by client applications.
 	 * @returns The reply from the update preferences command.
 	 */
 	public updatePreferences(
-		language?: string,
+		language?: codified,
 		timezone?: Timezone | string,
 		notify?: UserNotifications[] | JsonObject[],
 		formats?: Map<string, string> | JsonObject,
 		measurements?: Map<string, SystemsOfUnits> | JsonObject,
 		options?: Map<string, string> | JsonObject
-	): Promise<Reply> {
-		return this.command<Reply>(new PaySelfPreferences({
+	): Promise<RepSelfPreferences> {
+		return this.command<RepSelfPreferences>(new PaySelfPreferences({
 			language: language ?? null,
 			timezone: (timezone as Timezone)?.code ?? timezone ?? null,
 			notify: notify?.map(n => (n as UserNotifications).toJSON?.() ?? n) ?? null,
@@ -525,12 +558,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Companies
 	/**
-	 * Retrieves a list of all companies in the tree for the given company.
-	 * @expose
-	 * @param {number=} id
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link CompanyGeneral}s in the tree for the given company.
+	 * @param id
+	 * @param constraints
+	 * @returns
+	 */
 	listCompanies(id: ulong, constraints?: JsonObject) {
 		return this.command<RepCompanyGeneralListByCompany>(new PayCompanyGeneralListByCompany({
 			...constraints,
@@ -538,44 +570,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given company from the server by its {@link trakit.fleetfreedom.Company#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Company} from the server by its {@link Company.id}.
+	 * @param id
+	 * @returns
+	 */
 	getCompany(id: ulong) {
 		return this.command<RepCompanyGet>(new PayCompanyGet({
 			company: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Company}.
-	 * @expose
-	 * @param {!trakit.json.Company} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Company}.
+	 * @param json
+	 * @returns
+	 */
 	mergeCompany(json: JsonObject) {
 		return this.command<RepCompanyMerge>(new PayCompanyMerge({
 			company: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Company}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Company}.
+	 * @param id
+	 * @returns
+	 */
 	removeCompany(id: ulong) {
 		return this.command<RepCompanyDelete>(new PayCompanyDelete({
 			company: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Company}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Company}.
+	 * @param id
+	 * @returns
+	 */
 	restoreCompany(id: ulong) {
 		return this.command<RepCompanyDelete>(new PayCompanyRestore({
 			company: { id },
@@ -584,44 +612,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Companies
 	//#region Companies/Reseller
 	/**
-	 * Retrieves a given Reseller from the server by its {@link trakit.fleetfreedom.CompanyReseller#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link CompanyReseller} from the server by its {@link CompanyReseller.id}.
+	 * @param id
+	 * @returns
+	 */
 	getReseller(id: ulong) {
 		return this.command<RepCompanyResellerGet>(new PayCompanyResellerGet({
 			company: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.CompanyReseller}.
-	 * @expose
-	 * @param {!trakit.json.CompanyReseller} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link CompanyReseller}.
+	 * @param json
+	 * @returns
+	 */
 	mergeReseller(json: JsonObject) {
 		return this.command<RepCompanyResellerMerge>(new PayCompanyResellerMerge({
 			company: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.CompanyReseller}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link CompanyReseller}.
+	 * @param id
+	 * @returns
+	 */
 	removeReseller(id: ulong) {
 		return this.command<RepCompanyResellerDelete>(new PayCompanyResellerDelete({
 			company: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.CompanyReseller}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link CompanyReseller}.
+	 * @param id
+	 * @returns
+	 */
 	restoreReseller(id: ulong) {
 		return this.command<RepCompanyResellerDelete>(new PayCompanyResellerRestore({
 			company: { id },
@@ -631,13 +655,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	
 	//#region Contacts
 	/**
-	 * Retrieves a list of all Contacts in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Contact}s in the given company.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listContacts(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepContactListByCompany>(new PayContactListByCompany({
 			...constraints,
@@ -645,81 +667,73 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given contact from the server by its {@link trakit.fleetfreedom.Contact#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given contact from the server by its {@link Contact.id}.
+	 * @param id
+	 * @returns
+	 */
 	getContact(id: ulong) {
 		return this.command<RepContactGet>(new PayContactGet({
 			contact: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Contact}.
-	 * @expose
-	 * @param {!trakit.json.Contact} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Contact}.
+	 * @param json
+	 * @returns
+	 */
 	mergeContact(json: JsonObject) {
 		return this.command<RepContactMerge>(new PayContactMerge({
 			contact: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Contact}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Contact}.
+	 * @param id
+	 * @returns
+	 */
 	removeContact(id: ulong) {
 		return this.command<RepContactDelete>(new PayContactDelete({
 			contact: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Contact}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Contact}.
+	 * @param id
+	 * @returns
+	 */
 	restoreContact(id: ulong) {
 		return this.command<RepContactDelete>(new PayContactRestore({
 			contact: { id },
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Contact}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Contact>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link Contact}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeContact(array: JsonObject[]) {
 		return this.command<RepContactBatchMerge>(new PayContactBatchMerge({
 			contacts: array,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Contact}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Contact>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	multiRemoveContact(array: JsonObject[]) {
+	 * Merges a batch of {@link Contact}s.
+	 * @param array
+	 * @returns
+	 */
+	multiRemoveContact(ids: ulong[]) {
 		return this.command<RepContactBatchDelete>(new PayContactBatchDelete({
-			contacts: array,
+			contacts: ids.map(id => ({ id })),
 		}));
 	}
 	//#endregion Contacts
 	//#region Users
 	/**
-	 * Retrieves a list of all Users in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByString=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link User}s in the given company.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listUsers(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepUserListByCompany>(new PayUserListByCompany({
 			...constraints,
@@ -727,44 +741,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given user from the server by its {@link trakit.fleetfreedom.User#id}.
-	 * @expose
-	 * @param {!string} login
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given user from the server by its {@link User.id}.
+	 * @param login
+	 * @returns
+	 */
 	getUser(login: email) {
 		return this.command<RepUserGet>(new PayUserGet({
 			user: { login },
 		}));
 	}
 	/**
-	 * Merges an {@link trakit.fleetfreedom.User}.
-	 * @expose
-	 * @param {!trakit.json.User} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link User}.
+	 * @param json
+	 * @returns
+	 */
 	mergeUser(json: JsonObject) {
 		return this.command<RepUserMerge>(new PayUserMerge({
 			user: json,
 		}));
 	}
 	/**
-	 * Deletes an {@link trakit.fleetfreedom.User}.
-	 * @expose
-	 * @param {!string} login
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes an {@link User}.
+	 * @param login
+	 * @returns
+	 */
 	removeUser(login: email) {
 		return this.command<RepUserDelete>(new PayUserDelete({
 			user: { login },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.User}.
-	 * @expose
-	 * @param {!string} login
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link User}.
+	 * @param login
+	 * @returns
+	 */
 	restoreUser(login: email) {
 		return this.command<RepUserDelete>(new PayUserRestore({
 			user: { login },
@@ -773,13 +783,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion User
 	//#region User Groups
 	/**
-	 * Retrieves a list of all User Groups in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link UserGroup}s in the given company.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listUserGroups(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepUserGroupListByCompany>(new PayUserGroupListByCompany({
 			...constraints,
@@ -787,44 +795,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given group from the server by its {@link trakit.fleetfreedom.UserGroup#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link UserGroup} from the server by its {@link UserGroup.id}.
+	 * @param id
+	 * @returns
+	 */
 	getUserGroup(id: ulong) {
 		return this.command<RepUserGroupGet>(new PayUserGroupGet({
 			userGroup: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.UserGroup}.
-	 * @expose
-	 * @param {!trakit.json.UserGroup} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link UserGroup}.
+	 * @param json
+	 * @returns
+	 */
 	mergeUserGroup(json: JsonObject) {
 		return this.command<RepUserGroupMerge>(new PayUserGroupMerge({
 			userGroup: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.UserGroup}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link UserGroup}.
+	 * @param id
+	 * @returns
+	 */
 	removeUserGroup(id: ulong) {
 		return this.command<RepUserGroupDelete>(new PayUserGroupDelete({
 			userGroup: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.UserGroup}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link UserGroup}.
+	 * @param id
+	 * @returns
+	 */
 	restoreUserGroup(id: ulong) {
 		return this.command<RepUserGroupDelete>(new PayUserGroupRestore({
 			userGroup: { id },
@@ -833,13 +837,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion User Groups
 	//#region Machines
 	/**
-	 * Retrieves a list of all Machines in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByString=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Machine}s in the given company.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listMachines(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepMachineListByCompany>(new PayMachineListByCompany({
 			...constraints,
@@ -847,44 +849,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given machine from the server by its {@link trakit.fleetfreedom.Machine#id}.
-	 * @expose
-	 * @param {!string} key
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Machine} from the server by its {@link Machine.key}.
+	 * @param key
+	 * @returns
+	 */
 	getMachine(key: string) { 
 		return this.command<RepMachineGet>(new PayMachineGet({
 			machine: { id: key },
 		}));
 	}
 	/**
-	 * Merges an {@link trakit.fleetfreedom.Machine}.
-	 * @expose
-	 * @param {!trakit.json.Machine} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Machine}.
+	 * @param json
+	 * @returns
+	 */
 	mergeMachine(json: JsonObject) {
 		return this.command<RepMachineMerge>(new PayMachineMerge({
 			machine: json,
 		}));
 	}
 	/**
-	 * Deletes an {@link trakit.fleetfreedom.Machine}.
-	 * @expose
-	 * @param {!string} key
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes an {@link Machine}.
+	 * @param key
+	 * @returns
+	 */
 	removeMachine(key: string) { 
 		return this.command<RepMachineDelete>(new PayMachineDelete({
 			machine: { id: key },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Machine}.
-	 * @expose
-	 * @param {!string} key
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Machine}.
+	 * @param key
+	 * @returns
+	 */
 	restoreMachine(key: string) { 
 		return this.command<RepMachineDelete>(new PayMachineRestore({
 			machine: { id: key },
@@ -893,12 +891,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Machine
 	//#region Sessions
 	/**
-	 * Retrieves a list of all Sessions in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Session}s in the given {@link Company}.
+	 * @param companyId
+	 * @returns
+	 */
 	listSessions(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepSessionListByCompany>(new PaySessionListByCompany({
 			...constraints,
@@ -906,11 +902,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a list of all Sessions in the given user.
-	 * @expose
-	 * @param {!string} login
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Session}s for the given {@link User}.
+	 * @param login
+	 * @returns
+	 */
 	listSessionsByUser(login: email, constraints?: JsonObject) {
 		return this.command<RepSessionListByUser>(new PaySessionListByUser({
 			...constraints,
@@ -918,11 +913,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.SessionFull}.
-	 * @expose
-	 * @param {!string} handle
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Kills a {@link Session}.
+	 * @param handle
+	 * @returns
+	 */
 	killSession(handle: string) { 
 		return this.command<RepSessionDelete>(new PaySessionDelete({
 			session: { handle },
@@ -932,13 +926,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Icons
 	/**
-	 * Retrieves a list of all icons in the trunk for the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Icon}s in the trunk for the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listIcons(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepIconListByCompany>(new PayIconListByCompany({
 			...constraints,
@@ -946,44 +938,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given icon from the server by its {@link trakit.fleetfreedom.Icon#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Icon} from the server by its {@link Icon.id}.
+	 * @param id
+	 * @returns
+	 */
 	getIcon(id: ulong) {
 		return this.command<RepIconGet>(new PayIconGet({
 			icon: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Icon}.
-	 * @expose
-	 * @param {!trakit.json.Icon} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Icon}.
+	 * @param json
+	 * @returns
+	 */
 	mergeIcon(json: JsonObject) {
 		return this.command<RepIconMerge>(new PayIconMerge({
 			icon: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Icon}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Icon}.
+	 * @param id
+	 * @returns
+	 */
 	removeIcon(id: ulong) {
 		return this.command<RepIconDelete>(new PayIconDelete({
 			icon: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Icon}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Icon}.
+	 * @param id
+	 * @returns
+	 */
 	restoreIcon(id: ulong) {
 		return this.command<RepIconDelete>(new PayIconRestore({
 			icon: { id },
@@ -992,13 +980,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Icons
 	//#region Pictures
 	/**
-	 * Retrieves a list of all pictures in the trunk for the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Picture}s in the trunk for the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listPictures(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepPictureListByCompany>(new PayPictureListByCompany({
 			...constraints,
@@ -1006,44 +992,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given picture from the server by its {@link trakit.fleetfreedom.Picture#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Picture} from the server by its {@link Picture.id}.
+	 * @param id
+	 * @returns
+	 */
 	getPicture(id: ulong) {
 		return this.command<RepPictureGet>(new PayPictureGet({
 			picture: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Picture}.
-	 * @expose
-	 * @param {!trakit.json.Picture} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Picture}.
+	 * @param json
+	 * @returns
+	 */
 	mergePicture(json: JsonObject) {
 		return this.command<RepPictureMerge>(new PayPictureMerge({
 			picture: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Picture}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Picture}.
+	 * @param id
+	 * @returns
+	 */
 	removePicture(id: ulong) {
 		return this.command<RepPictureDelete>(new PayPictureDelete({
 			picture: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Picture}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Picture}.
+	 * @param id
+	 * @returns
+	 */
 	restorePicture(id: ulong) {
 		return this.command<RepPictureDelete>(new PayPictureRestore({
 			picture: { id },
@@ -1052,13 +1034,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Pictures
 	//#region Documents
 	/**
-	 * Retrieves a list of all documents in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Document}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listDocuments(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDocumentListByCompany>(new PayDocumentListByCompany({
 			...constraints,
@@ -1066,44 +1046,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given document from the server by its {@link trakit.fleetfreedom.Document#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Document} from the server by its {@link Document.id}.
+	 * @param id
+	 * @returns
+	 */
 	getDocument(id: ulong) {
 		return this.command<RepDocumentGet>(new PayDocumentGet({
 			document: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Document}.
-	 * @expose
-	 * @param {!trakit.json.Document} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Document}.
+	 * @param json
+	 * @returns
+	 */
 	mergeDocument(json: JsonObject) {
 		return this.command<RepDocumentMerge>(new PayDocumentMerge({
 			document: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Document}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Document}.
+	 * @param id
+	 * @returns
+	 */
 	removeDocument(id: ulong) {
 		return this.command<RepDocumentDelete>(new PayDocumentDelete({
 			document: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Document}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Document}.
+	 * @param id
+	 * @returns
+	 */
 	restoreDocument(id: ulong) {
 		return this.command<RepDocumentDelete>(new PayDocumentRestore({
 			document: { id },
@@ -1112,13 +1088,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Documents
 	//#region Forms/Templates
 	/**
-	 * Retrieves a list of all templates in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link FormTemplate}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listFormTemplates(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepFormTemplateListByCompany>(new PayFormTemplateListByCompany({
 			...constraints,
@@ -1126,44 +1100,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given template from the server by its {@link trakit.fleetfreedom.FormTemplate#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link FormTemplate} from the server by its {@link FormTemplate.id}.
+	 * @param id
+	 * @returns
+	 */
 	getFormTemplate(id: ulong) {
 		return this.command<RepFormTemplateGet>(new PayFormTemplateGet({
 			formTemplate: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.FormTemplate}.
-	 * @expose
-	 * @param {!trakit.json.FormTemplate} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link FormTemplate}.
+	 * @param json
+	 * @returns
+	 */
 	mergeFormTemplate(json: JsonObject) {
 		return this.command<RepFormTemplateMerge>(new PayFormTemplateMerge({
 			formTemplate: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.FormTemplate}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link FormTemplate}.
+	 * @param id
+	 * @returns
+	 */
 	removeFormTemplate(id: ulong) {
 		return this.command<RepFormTemplateDelete>(new PayFormTemplateDelete({
 			formTemplate: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.FormTemplate}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link FormTemplate}.
+	 * @param id
+	 * @returns
+	 */
 	restoreFormTemplate(id: ulong) {
 		return this.command<RepFormTemplateDelete>(new PayFormTemplateRestore({
 			formTemplate: { id },
@@ -1172,13 +1142,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Forms/Templates
 	//#region Forms/Results
 	/**
-	 * Retrieves a list of all form results in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByDts=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link FormResult}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listFormResults(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepFormResultListByCompany>(new PayFormResultListByCompany({
 			...constraints,
@@ -1186,55 +1154,50 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given form result from the server by its {@link trakit.fleetfreedom.FormResult#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link FormResult} from the server by its {@link FormResult.id}.
+	 * @param id
+	 * @returns
+	 */
 	getFormResult(id: ulong) {
 		return this.command<RepFormResultGet>(new PayFormResultGet({
 			formResult: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.FormResult}.
-	 * @expose
-	 * @param {!trakit.json.FormResult} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link FormResult}.
+	 * @param json
+	 * @returns
+	 */
 	mergeFormResult(json: JsonObject) {
 		return this.command<RepFormResultMerge>(new PayFormResultMerge({
 			formResult: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.FormResult}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.FormResult>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link FormResult}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeFormResult(id: ulong) {
 		return this.command<RepFormResultBatchMerge>(new PayFormResultBatchMerge({
 			formResult: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.FormResult}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link FormResult}.
+	 * @param id
+	 * @returns
+	 */
 	removeFormResult(id: ulong) {
 		return this.command<RepFormResultDelete>(new PayFormResultDelete({
 			formResult: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.FormResult}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link FormResult}.
+	 * @param id
+	 * @returns
+	 */
 	restoreFormResult(id: ulong) {
 		return this.command<RepFormResultDelete>(new PayFormResultRestore({
 			formResult: { id },
@@ -1243,13 +1206,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Forms/Results
 	//#region Dashcams
 	/**
-	 * Retrieves a list of all dashcam-data in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByDts=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Dashcam} in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listDashcamDatas(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDashcamListByCompany>(new PayDashcamListByCompany({
 			...constraints,
@@ -1257,23 +1218,20 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given dashcam-data from the server by its {@link trakit.json.DashcamData#guid}.
-	 * @expose
-	 * @param {!trakit.json.guid} guid
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Dashcam} from the server by its {@link Dashcam.guid}.
+	 * @param guid
+	 * @returns
+	 */
 	getDashcamData(guid: guid) { 
 		return this.command<RepDashcamGet>(new PayDashcamGet({
 			dashcam: { guid },
 		}));
 	}
 	/**
-	 * Retrieves a list of all dashcam-data in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link DashcamLive|live dashcam images} in the given {@link Company}.
+	 * @param companyId
+	 * @returns
+	 */
 	listDashcamLives(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDashcamLiveListByCompany>(new PayDashcamLiveListByCompany({
 			...constraints,
@@ -1284,13 +1242,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Assets
 	/**
-	 * Retrieves a list of all Assets in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstrainAsset=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Asset}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listAssets(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepAssetListByCompany>(new PayAssetListByCompany({
 			...constraints,
@@ -1298,124 +1254,104 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given asset from the server by its {@link trakit.fleetfreedom.Asset#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Asset} from the server by its {@link Asset.id}.
+	 * @param id
+	 * @returns
+	 */
 	getAsset(id: ulong) {
 		return this.command<RepAssetGet>(new PayAssetGet({
 			asset: { id },
 		}));
 	}
 	/**
-	 * Merges an {@link trakit.fleetfreedom.Asset}.
-	 * @expose
-	 * @param {!trakit.json.Asset} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Asset}.
+	 * @param json
+	 * @returns
+	 */
 	mergeAsset(json: JsonObject) {
 		return this.command<RepAssetMerge>(new PayAssetMerge({
 			asset: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Asset}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Asset>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	multiMergeAsset(id: ulong) {
+	 * Merges a batch of {@link Asset}s.
+	 * @param array
+	 * @returns
+	 */
+	multiMergeAsset(array: JsonObject[]) {
 		return this.command<RepAssetBatchMerge>(new PayAssetBatchMerge({
-			asset: { id },
+			assets: array,
 		}));
 	}
 	/**
-	 * Deletes an {@link trakit.fleetfreedom.Asset}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes an {@link Asset}.
+	 * @param id
+	 * @returns
+	 */
 	removeAsset(id: ulong) {
 		return this.command<RepAssetDelete>(new PayAssetDelete({
 			asset: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Asset}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Asset}.
+	 * @param id
+	 * @returns
+	 */
 	restoreAsset(id: ulong) {
 		return this.command<RepAssetDelete>(new PayAssetRestore({
 			asset: { id },
 		}));
 	}
 	/**
-	 * Suspends an {@link trakit.fleetfreedom.Asset}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Suspends an {@link Asset}.
+	 * @param id
+	 * @returns
+	 */
 	suspendAsset(id: ulong) { 
 		return this.command<RepAssetSuspend>(new PayAssetSuspend({
 			asset: { id },
 		}));
 	}
 	/**
-	 * Reactivates an {@link trakit.fleetfreedom.Asset}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Reactivates an {@link Asset}.
+	 * @param id
+	 * @returns
+	 */
 	reviveAsset(id: ulong) { 
 		return this.command<RepAssetSuspend>(new PayAssetReactivate({
 			asset: { id },
 		}));
 	}
 	/**
-	 * Searches all available companies for {@link trakit.fleetfreedom.Asset}s that match the given expression.
-	 * @expose
-	 * @param {!string} expression
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Searches all available companies for {@link Asset}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
 	searchAssets(expression: expression, constraints?: JsonObject) {
-		//return INDFLAYER_SEARCH("asset", expression, null, constraints);
-	};
+		// not yet implemented
+	}
 	//#endregion Assets
 	//#region Assets/Dispatch
 	/**
-	 * Updates the given asset's dispatch jobs and optimizes the steps based on back-end logic.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Updates the given {@link Asset}'s {@link DispatchJob}s and optimizes the steps based on back-end logic.
+	 * @param id
+	 * @returns
+	 */
 	mergeAssetDispatch(json: JsonObject) {
 		return this.command<RepAssetDispatchMerge>(new PayAssetDispatchMerge({
 			assetDispatch: json,
 		}));
 	}
-	/**
-	 * Optimizes the given asset's dispatch jobs and returns the new order and ETAs based on back-end logic.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
-	previewAssetDispatch(json: JsonObject) {
-		//return CLIENT.medusa("assets/" + json["asset"]["id"] + "/dispatch/waypoints", "POST", json);
-	};
 	//#endregion Assets/Dispatch
 	//#region Assets/DispatchTasks
 	/**
-	 * Retrieves a list of all dispatch tasks in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByDts=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link DispatchTask}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listDispatchTasks(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDispatchTaskListByCompany>(new PayDispatchTaskListByCompany({
 			...constraints,
@@ -1423,11 +1359,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a list of all dispatch tasks for the given asset.
-	 * @expose
-	 * @param {!number} assetId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link DispatchTask}s for the given {@link Asset}.
+	 * @param assetId
+	 * @returns
+	 */
 	getDispatchTasksByAsset(assetId: ulong, constraints?: JsonObject) { 
 		return this.command<RepDispatchTaskListByAsset>(new PayDispatchTaskListByAsset({
 			...constraints,
@@ -1435,55 +1370,50 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given dispatch task from the server by its {@link trakit.fleetfreedom.DispatchTask#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link DispatchTask} from the server by its {@link DispatchTask.id}.
+	 * @param id
+	 * @returns
+	 */
 	getDispatchTask(id: ulong) {
 		return this.command<RepDispatchTaskGet>(new PayDispatchTaskGet({
 			dispatchTask: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.DispatchTask}.
-	 * @expose
-	 * @param {!trakit.json.DispatchTask} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link DispatchTask}.
+	 * @param json
+	 * @returns
+	 */
 	mergeDispatchTask(json: JsonObject) {
 		return this.command<RepDispatchTaskMerge>(new PayDispatchTaskMerge({
 			dispatchTask: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.DispatchTask}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.DispatchTask>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link DispatchTask}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeDispatchTask(id: ulong) {
 		return this.command<RepDispatchTaskBatchMerge>(new PayDispatchTaskBatchMerge({
 			dispatchTask: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.DispatchTask}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link DispatchTask}.
+	 * @param id
+	 * @returns
+	 */
 	removeDispatchTask(id: ulong) {
 		return this.command<RepDispatchTaskDelete>(new PayDispatchTaskDelete({
 			dispatchTask: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.DispatchTask}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link DispatchTask}.
+	 * @param id
+	 * @returns
+	 */
 	restoreDispatchTask(id: ulong) {
 		return this.command<RepDispatchTaskDelete>(new PayDispatchTaskRestore({
 			dispatchTask: { id },
@@ -1492,13 +1422,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Assets/DispatchTasks
 	//#region Assets/DispatchJobs
 	/**
-	 * Retrieves a list of all dispatch jobs in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByDts=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link DispatchJob}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listDispatchJobs(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepDispatchJobListByCompany>(new PayDispatchJobListByCompany({
 			...constraints,
@@ -1506,11 +1434,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a list of all dispatch Jobs for the given asset.
-	 * @expose
-	 * @param {!number} assetId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link DispatchJob}s for the given {@link Asset}.
+	 * @param assetId
+	 * @returns
+	 */
 	getDispatchJobsByAsset(assetId: ulong, constraints?: JsonObject) { 
 		return this.command<RepDispatchJobListByAsset>(new PayDispatchJobListByAsset({
 			...constraints,
@@ -1518,76 +1445,70 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given dispatch job from the server by its {@link trakit.fleetfreedom.DispatchJob#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link DispatchJob} from the server by its {@link DispatchJob.id}.
+	 * @param id
+	 * @returns
+	 */
 	getDispatchJob(id: ulong) {
 		return this.command<RepDispatchJobGet>(new PayDispatchJobGet({
 			dispatchJob: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.DispatchJob}.
-	 * @expose
-	 * @param {!trakit.json.DispatchJob} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link DispatchJob}.
+	 * @param json
+	 * @returns
+	 */
 	mergeDispatchJob(json: JsonObject) {
 		return this.command<RepDispatchJobMerge>(new PayDispatchJobMerge({
 			dispatchJob: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.DispatchJob}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.DispatchJob>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link DispatchJob}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeDispatchJob(id: ulong) {
 		return this.command<RepDispatchJobBatchMerge>(new PayDispatchJobBatchMerge({
 			dispatchJob: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.DispatchJob}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link DispatchJob}.
+	 * @param id
+	 * @returns
+	 */
 	removeDispatchJob(id: ulong) {
 		return this.command<RepDispatchJobDelete>(new PayDispatchJobDelete({
 			dispatchJob: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.DispatchJob}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link DispatchJob}.
+	 * @param id
+	 * @returns
+	 */
 	restoreDispatchJob(id: ulong) {
 		return this.command<RepDispatchJobDelete>(new PayDispatchJobRestore({
 			dispatchJob: { id },
 		}));
 	}
 	/**
-	 * Completes or progresses a {@link trakit.fleetfreedom.DispatchJob} (from the perspective of a driver, but by a dispatcher).
-	 * @expose
-	 * @param {!trakit.json.DispatchJob} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Completes or progresses a {@link DispatchJob} (from the perspective of a driver, but by a dispatcher).
+	 * @param json
+	 * @returns
+	 */
 	changeDispatchJob(json: JsonObject) { 
 		return this.command<RepDispatchJobMerge>(new PayDispatchJobChange({
 			dispatchJob: json,
 		}));
 	}
 	/**
-	 * Cancels a {@link trakit.fleetfreedom.DispatchJob} and removes it from the dispatcher's and driver's view.
-	 * @param {!trakit.json.DispatchJob} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Cancels a {@link DispatchJob} and removes it from the dispatcher's and driver's view.
+	 * @param json
+	 * @returns
+	 */
 	cancelDispatchJob(json: JsonObject) {
 		return this.command<RepDispatchJobMerge>(new PayDispatchJobCancel({
 			dispatchJob: json,
@@ -1596,13 +1517,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Assets/DispatchJobs
 	//#region Assets/Messages
 	/**
-	 * Retrieves a list of all messages in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByDts=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link AssetMessage}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listAssetMessages(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepAssetMessageListByCompany>(new PayAssetMessageListByCompany({
 			...constraints,
@@ -1610,11 +1529,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a list of all dispatch Jobs for the given asset.
-	 * @expose
-	 * @param {!number} assetId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link AssetMessage}s for the given {@link Asset}.
+	 * @param assetId
+	 * @returns
+	 */
 	getAssetMessagesByAsset(assetId: ulong, constraints?: JsonObject) {
 		return this.command<RepAssetMessageListByAsset>(new PayAssetMessageListByAsset({
 			...constraints,
@@ -1622,55 +1540,50 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given message from the server by its {@link trakit.fleetfreedom.Message#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link AssetMessage} from the server by its {@link Message.id}.
+	 * @param id
+	 * @returns
+	 */
 	getAssetMessage(id: ulong) {
 		return this.command<RepAssetMessageGet>(new PayAssetMessageGet({
 			message: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Message}.
-	 * @expose
-	 * @param {!trakit.json.Message} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link AssetMessage}.
+	 * @param json
+	 * @returns
+	 */
 	mergeAssetMessage(json: JsonObject) {
 		return this.command<RepAssetMessageMerge>(new PayAssetMessageMerge({
 			assetMessage: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Message}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Message>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link AssetMessage}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeAssetMessage(id: ulong) {
 		return this.command<RepAssetMessageBatchMerge>(new PayAssetMessageBatchMerge({
 			assetMessage: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Message}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link AssetMessage}.
+	 * @param id
+	 * @returns
+	 */
 	removeAssetMessage(id: ulong) {
 		return this.command<RepAssetMessageDelete>(new PayAssetMessageDelete({
 			assetMessage: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Message}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link AssetMessage}.
+	 * @param id
+	 * @returns
+	 */
 	restoreAssetMessage(id: ulong) {
 		return this.command<RepAssetMessageDelete>(new PayAssetMessageRestore({
 			assetMessage: { id },
@@ -1680,13 +1593,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Places
 	/**
-	 * Retrieves a list of all places in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Place}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listPlaces(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepPlaceListByCompany>(new PayPlaceListByCompany({
 			...constraints,
@@ -1694,44 +1605,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given place from the server by its {@link trakit.fleetfreedom.Place#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Place} from the server by its {@link Place.id}.
+	 * @param id
+	 * @returns
+	 */
 	getPlace(id: ulong) {
 		return this.command<RepPlaceGet>(new PayPlaceGet({
 			place: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Place}.
-	 * @expose
-	 * @param {!trakit.json.Place} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Place}.
+	 * @param json
+	 * @returns
+	 */
 	mergePlace(json: JsonObject) {
 		return this.command<RepPlaceMerge>(new PayPlaceMerge({
 			place: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Place}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Place}.
+	 * @param id
+	 * @returns
+	 */
 	removePlace(id: ulong) {
 		return this.command<RepPlaceDelete>(new PayPlaceDelete({
 			place: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Place}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Place}.
+	 * @param id
+	 * @returns
+	 */
 	restorePlace(id: ulong) {
 		return this.command<RepPlaceDelete>(new PayPlaceRestore({
 			place: { id },
@@ -1741,13 +1648,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Providers
 	/**
-	 * Retrieves a list of all providers in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstrainProvider=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Provider}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listProviders(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderListByCompany>(new PayProviderListByCompany({
 			...constraints,
@@ -1755,113 +1660,102 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given provider from the server by its {@link trakit.fleetfreedom.Provider#id}.
-	 * @expose
-	 * @param {!string} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Provider} from the server by its {@link Provider.id}.
+	 * @param id
+	 * @returns
+	 */
 	getProvider(id: string) {
 		return this.command<RepProviderGet>(new PayProviderGet({
 			provider: { id },
 		}));
 	}
 	/**
-	 * Merges an {@link trakit.fleetfreedom.Provider}.
-	 * @expose
-	 * @param {!trakit.json.Provider} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Provider}.
+	 * @param json
+	 * @returns
+	 */
 	mergeProvider(json: JsonObject) {
 		return this.command<RepProviderMerge>(new PayProviderMerge({
 			provider: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Provider}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Provider>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link Provider}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeProvider(array: JsonObject[]) {
 		return this.command<RepProviderBatchMerge>(new PayProviderBatchMerge({
 			providers: array,
 		}));
 	}
 	/**
-	 * Deletes a batch of {@link trakit.fleetfreedom.Provider}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Provider>} array
-	 * @return {!Promise<SyncMindflayer>}
+	 * Deletes a batch of {@link Provider}s.
+	 * @param ids
+	 * @returns
 	 */
-	multiRemoveProvider(array: JsonObject[]) { 
+	multiRemoveProvider(ids: string[]) { 
 		return this.command<RepProviderBatchDelete>(new PayProviderBatchDelete({
-			providers: array,
+			providers: ids.map(id => ({ id })),
 		}));
 	}
 	/**
-	 * Deletes an {@link trakit.fleetfreedom.Provider}.
-	 * @expose
-	 * @param {!string} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes an {@link Provider}.
+	 * @param id
+	 * @returns
+	 */
 	removeProvider(id: string) {
 		return this.command<RepProviderDelete>(new PayProviderDelete({
 			provider: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Provider}.
-	 * @expose
-	 * @param {!string} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Provider}.
+	 * @param id
+	 * @returns
+	 */
 	restoreProvider(id: string) {
 		return this.command<RepProviderDelete>(new PayProviderRestore({
 			provider: { id },
 		}));
 	}
 	///**
-	// * Suspends an {@link trakit.fleetfreedom.Provider}.
-	// * @expose
-	// * @param {!string} id
-	// * @return {!Promise<SyncMindflayer>}
-	// **/
+	// * Suspends an {@link Provider}.
+	// * @param id
+	// * @returns
+	// */
 	//suspendProvider(id: string) {
 	//	return this.command<RepProviderSuspend>(new PayProviderSuspend({
 	//		provider: { id },
 	//	}));
 	//}
 	///**
-	// * Reactivates an {@link trakit.fleetfreedom.Provider}.
-	// * @expose
-	// * @param {!string} id
-	// * @return {!Promise<SyncMindflayer>}
-	// **/
+	// * Reactivates an {@link Provider}.
+	// * @param id
+	// * @returns
+	// */
 	//reviveProvider(id: string) {
 	//	return this.command<RepProviderSuspend>(new PayProviderReactivate({
 	//		provider: { id },
 	//	}));
 	//}
 	/**
-	 * Searches all available companies for {@link trakit.fleetfreedom.Provider}s that match the given expression.
-	 * @expose
-	 * @param {!string} expression
-	 * @param {ParamListConstraintsByString=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Searches all available companies for {@link Provider}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
 	searchProviders(expression: expression, constraints?: JsonObject) {
-		return //INDFLAYER_SEARCH("provider", expression, null, constraints);
-	};
+		// not yet implemented
+	}
 	//#endregion Provider
 	//#region Providers/Scripts
 	/**
-	 * Retrieves a list of all Provider Scripts in the trunk for the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ProviderScript}s in the trunk for the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listProviderScripts(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderScriptListByCompany>(new PayProviderScriptListByCompany({
 			...constraints,
@@ -1869,44 +1763,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given Provider Script from the server by its {@link trakit.fleetfreedom.ProviderScript#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ProviderScript} from the server by its {@link ProviderScript.id}.
+	 * @param id
+	 * @returns
+	 */
 	getProviderScript(id: ulong) {
 		return this.command<RepProviderScriptGet>(new PayProviderScriptGet({
 			providerScript: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ProviderScript}.
-	 * @expose
-	 * @param {!trakit.json.ProviderScript} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link ProviderScript}.
+	 * @param json
+	 * @returns
+	 */
 	mergeProviderScript(json: JsonObject) {
 		return this.command<RepProviderScriptMerge>(new PayProviderScriptMerge({
 			providerScript: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ProviderScript}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ProviderScript}.
+	 * @param id
+	 * @returns
+	 */
 	removeProviderScript(id: ulong) {
 		return this.command<RepProviderScriptDelete>(new PayProviderScriptDelete({
 			providerScript: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ProviderScript}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link ProviderScript}.
+	 * @param id
+	 * @returns
+	 */
 	restoreProviderScript(id: ulong) {
 		return this.command<RepProviderScriptDelete>(new PayProviderScriptRestore({
 			providerScript: { id },
@@ -1915,13 +1805,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Providers/Scripts
 	//#region Providers/Configs
 	/**
-	 * Retrieves a list of all Provider Configs in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ProviderConfig}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listProviderConfigs(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderConfigListByCompany>(new PayProviderConfigListByCompany({
 			...constraints,
@@ -1929,55 +1817,50 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given Provider Config from the server by its {@link trakit.fleetfreedom.ProviderConfig#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ProviderConfig} from the server by its {@link ProviderConfig.id}.
+	 * @param id
+	 * @returns
+	 */
 	getProviderConfig(id: ulong) {
 		return this.command<RepProviderConfigGet>(new PayProviderConfigGet({
 			providerConfig: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ProviderConfig}.
-	 * @expose
-	 * @param {!trakit.json.ProviderConfig} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link ProviderConfig}.
+	 * @param json
+	 * @returns
+	 */
 	mergeProviderConfig(json: JsonObject) {
 		return this.command<RepProviderConfigMerge>(new PayProviderConfigMerge({
 			providerConfig: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.ProviderConfig}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.ProviderConfig>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link ProviderConfig}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeProviderConfig(id: ulong) {
 		return this.command<RepProviderConfigBatchMerge>(new PayProviderConfigBatchMerge({
 			providerConfig: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ProviderConfig}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ProviderConfig}.
+	 * @param id
+	 * @returns
+	 */
 	removeProviderConfig(id: ulong) {
 		return this.command<RepProviderConfigDelete>(new PayProviderConfigDelete({
 			providerConfig: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ProviderConfig}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link ProviderConfig}.
+	 * @param id
+	 * @returns
+	 */
 	restoreProviderConfig(id: ulong) {
 		return this.command<RepProviderConfigDelete>(new PayProviderConfigRestore({
 			providerConfig: { id },
@@ -1986,13 +1869,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Providers/Configs
 	//#region Providers/Configurations
 	/**
-	 * Retrieves a list of all Provider Configurations in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ProviderConfiguration}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listProviderConfigurations(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderConfigurationListByCompany>(new PayProviderConfigurationListByCompany({
 			...constraints,
@@ -2000,55 +1881,50 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given Provider Configuration from the server by its {@link trakit.fleetfreedom.ProviderConfiguration#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ProviderConfiguration} from the server by its {@link ProviderConfiguration.id}.
+	 * @param id
+	 * @returns
+	 */
 	getProviderConfiguration(id: ulong) {
 		return this.command<RepProviderConfigurationGet>(new PayProviderConfigurationGet({
 			providerConfiguration: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ProviderConfiguration}.
-	 * @expose
-	 * @param {!trakit.json.ProviderConfiguration} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link ProviderConfiguration}.
+	 * @param json
+	 * @returns
+	 */
 	mergeProviderConfiguration(json: JsonObject) {
 		return this.command<RepProviderConfigurationMerge>(new PayProviderConfigurationMerge({
 			providerConfiguration: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.ProviderConfiguration}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.ProviderConfiguration>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link ProviderConfiguration}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeProviderConfiguration(id: ulong) {
 		return this.command<RepProviderConfigurationBatchMerge>(new PayProviderConfigurationBatchMerge({
 			providerConfiguration: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ProviderConfiguration}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ProviderConfiguration}.
+	 * @param id
+	 * @returns
+	 */
 	removeProviderConfiguration(id: ulong) {
 		return this.command<RepProviderConfigurationDelete>(new PayProviderConfigurationDelete({
 			providerConfiguration: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ProviderConfiguration}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link ProviderConfiguration}.
+	 * @param id
+	 * @returns
+	 */
 	restoreProviderConfiguration(id: ulong) {
 		return this.command<RepProviderConfigurationDelete>(new PayProviderConfigurationRestore({
 			providerConfiguration: { id },
@@ -2057,12 +1933,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Providers/Configurations
 	//#region Providers/Registrations
 	/**
-	 * Retrieves a list of all Provider Registrations in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ProviderRegistration}s in the given {@link Company}.
+	 * @param companyId
+	 * @returns
+	 */
 	listProviderRegistration(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepProviderRegistrationListByCompany>(new PayProviderRegistrationListByCompany({
 			...constraints,
@@ -2070,33 +1944,32 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given Provider Registration from the server by its {@link trakit.fleetfreedom.ProviderRegistration#id}.
-	 * @expose
-	 * @param {!number} code
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ProviderRegistration} from the server by its {@link ProviderRegistration.id}.
+	 * @param code
+	 * @returns
+	 */
 	getProviderRegistration(code: int) { 
 		return this.command<RepProviderRegistrationGet>(new PayProviderRegistrationGet({
 			providerRegistration: { id: code },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ProviderRegistration}.
-	 * @expose
-	 * @param {!trakit.json.ProviderRegistration} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new {@link ProviderRegistration}.
+	 * {@link ProviderRegistration}s cannot be updated, but they do expire on their own.
+	 * You can also delete them using {@link removeProviderRegistration}.
+	 * @param json
+	 * @returns
+	 */
 	mergeProviderRegistration(json: JsonObject) {
 		return this.command<RepProviderRegistrationMerge>(new PayProviderRegistrationMerge({
 			providerRegistration: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ProviderRegistration}.
-	 * @expose
-	 * @param {!number} code
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ProviderRegistration}.
+	 * @param code
+	 * @returns
+	 */
 	removeProviderRegistration(code: int) { 
 		return this.command<RepProviderRegistrationDelete>(new PayProviderRegistrationDelete({
 			providerRegistration: { id: code },
@@ -2106,13 +1979,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Behaviours
 	/**
-	 * Retrieves a list of all Behaviours in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link Behaviour}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listBehaviours(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourListByCompany>(new PayBehaviourListByCompany({
 			...constraints,
@@ -2120,55 +1991,50 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given behaviour from the server by its {@link trakit.fleetfreedom.Behaviour#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link Behaviour} from the server by its {@link Behaviour.id}.
+	 * @param id
+	 * @returns
+	 */
 	getBehaviour(id: ulong) {
 		return this.command<RepBehaviourGet>(new PayBehaviourGet({
 			behaviour: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Behaviour}.
-	 * @expose
-	 * @param {!trakit.json.Behaviour} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Behaviour}.
+	 * @param json
+	 * @returns
+	 */
 	mergeBehaviour(json: JsonObject) {
 		return this.command<RepBehaviourMerge>(new PayBehaviourMerge({
 			behaviour: json,
 		}));
 	}
 	/**
-	 * Merges a batch of {@link trakit.fleetfreedom.Behaviour}s.
-	 * @expose
-	 * @param {!Array.<trakit.json.Behaviour>} array
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Merges a batch of {@link Behaviour}s.
+	 * @param array
+	 * @returns
+	 */
 	multiMergeBehaviour(id: ulong) {
 		return this.command<RepBehaviourBatchMerge>(new PayBehaviourBatchMerge({
 			behaviour: { id },
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Behaviour}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Behaviour}.
+	 * @param id
+	 * @returns
+	 */
 	removeBehaviour(id: ulong) {
 		return this.command<RepBehaviourDelete>(new PayBehaviourDelete({
 			behaviour: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Behaviour}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Behaviour}.
+	 * @param id
+	 * @returns
+	 */
 	restoreBehaviour(id: ulong) {
 		return this.command<RepBehaviourDelete>(new PayBehaviourRestore({
 			behaviour: { id },
@@ -2177,13 +2043,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Behaviours
 	//#region Behaviours/Scripts
 	/**
-	 * Retrieves a list of all behaviour scripts in the trunk for the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link BehaviourScript}s in the trunk for the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listBehaviourScripts(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourScriptListByCompany>(new PayBehaviourScriptListByCompany({
 			...constraints,
@@ -2191,44 +2055,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given script from the server by its {@link trakit.fleetfreedom.Behaviour#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link BehaviourScript} from the server by its {@link BehaviourScript.id}.
+	 * @param id
+	 * @returns
+	 */
 	getBehaviourScript(id: ulong) {
 		return this.command<RepBehaviourScriptGet>(new PayBehaviourScriptGet({
 			behaviourScript: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.Behaviour}.
-	 * @expose
-	 * @param {!trakit.json.Behaviour} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link Behaviour}.
+	 * @param json
+	 * @returns
+	 */
 	mergeBehaviourScript(json: JsonObject) {
 		return this.command<RepBehaviourScriptMerge>(new PayBehaviourScriptMerge({
 			behaviourScript: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.Behaviour}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link Behaviour}.
+	 * @param id
+	 * @returns
+	 */
 	removeBehaviourScript(id: ulong) {
 		return this.command<RepBehaviourScriptDelete>(new PayBehaviourScriptDelete({
 			behaviourScript: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.Behaviour}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link Behaviour}.
+	 * @param id
+	 * @returns
+	 */
 	restoreBehaviourScript(id: ulong) {
 		return this.command<RepBehaviourScriptDelete>(new PayBehaviourScriptRestore({
 			behaviourScript: { id },
@@ -2237,12 +2097,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Behaviours/Scripts
 	//#region Behaviours/Logs
 	/**
-	 * Retrieves a list of all BehaviourLogs in the given behaviour.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {!number} behaviourId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link BehaviourLog}s from the given {@link Asset}.
+	 * @param behaviourId
+	 * @returns
+	 */
 	listBehaviourAssetLogs(behaviourId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogListByAsset>(new PayBehaviourLogListByAsset({
 			...constraints,
@@ -2250,23 +2108,20 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Deletes all the {@link trakit.fleetfreedom.BehaviourLog}s for the given behaviour.
-	 * @expose
-	 * @param {!number} behaviourId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes all the {@link BehaviourLog}s from the given {@link Asset}.
+	 * @param behaviourId
+	 * @returns
+	 */
 	clearBehaviourAssetLogs(behaviourId: ulong) {
 		return this.command<RepBehaviourLogBatchDeleteByAsset>(new PayBehaviourLogBatchDeleteByAsset({
 			behaviour: { id: behaviourId },
 		}));
 	}
 	/**
-	 * Retrieves a list of all BehaviourLogs in the given behaviour.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {!number} behaviourId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link BehaviourLog}s from the given {@link Behaviour}.
+	 * @param behaviourId
+	 * @returns
+	 */
 	listBehaviourLogs(behaviourId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogListByBehaviour>(new PayBehaviourLogListByBehaviour({
 			...constraints,
@@ -2274,23 +2129,20 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Deletes all the {@link trakit.fleetfreedom.BehaviourLog}s for the given behaviour.
-	 * @expose
-	 * @param {!number} behaviourId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes all the {@link BehaviourLog}s from the given {@link Behaviour}.
+	 * @param behaviourId
+	 * @returns
+	 */
 	clearBehaviourLogs(behaviourId: ulong) {
 		return this.command<RepBehaviourLogBatchDeleteByBehaviour>(new PayBehaviourLogBatchDeleteByBehaviour({
 			behaviour: { id: behaviourId },
 		}));
 	}
 	/**
-	 * Retrieves a list of all BehaviourLogs in the given behaviour script.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {!number} scriptId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link BehaviourLog}s from the given {@link BehaviourScript}.
+	 * @param scriptId
+	 * @returns
+	 */
 	listBehaviourScriptLogs(scriptId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogListByScript>(new PayBehaviourLogListByScript({
 			...constraints,
@@ -2298,11 +2150,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Deletes all the {@link trakit.fleetfreedom.BehaviourLog}s for the given behaviour script.
-	 * @expose
-	 * @param {!number} scriptId
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes all the {@link BehaviourLog}s from the given {@link BehaviourScript}.
+	 * @param scriptId
+	 * @returns
+	 */
 	clearBehaviourScriptLogs(scriptId: ulong, constraints?: JsonObject) {
 		return this.command<RepBehaviourLogBatchDeleteByScript>(new PayBehaviourLogBatchDeleteByScript({
 			...constraints,
@@ -2313,13 +2164,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Reports/Templates
 	/**
-	 * Retrieves a list of all Report Templates in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ReportTemplate}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listReportTemplates(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepReportTemplateListByCompany>(new PayReportTemplateListByCompany({
 			...constraints,
@@ -2327,44 +2176,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given template from the server by its {@link trakit.fleetfreedom.ReportTemplate#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ReportTemplate} from the server by its {@link ReportTemplate.id}.
+	 * @param id
+	 * @returns
+	 */
 	getReportTemplate(id: ulong) {
 		return this.command<RepReportTemplateGet>(new PayReportTemplateGet({
 			reportTemplate: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ReportTemplate}.
-	 * @expose
-	 * @param {!trakit.json.ReportTemplate} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link ReportTemplate}.
+	 * @param json
+	 * @returns
+	 */
 	mergeReportTemplate(json: JsonObject) {
 		return this.command<RepReportTemplateMerge>(new PayReportTemplateMerge({
 			reportTemplate: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ReportTemplate}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ReportTemplate}.
+	 * @param id
+	 * @returns
+	 */
 	removeReportTemplate(id: ulong) {
 		return this.command<RepReportTemplateDelete>(new PayReportTemplateDelete({
 			reportTemplate: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ReportTemplate}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link ReportTemplate}.
+	 * @param id
+	 * @returns
+	 */
 	restoreReportTemplate(id: ulong) {
 		return this.command<RepReportTemplateDelete>(new PayReportTemplateRestore({
 			reportTemplate: { id },
@@ -2373,13 +2218,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Reports/Templates
 	//#region Reports/Schedules
 	/**
-	 * Retrieves a list of all Report Schedules in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ReportSchedule}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listReportSchedules(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepReportScheduleListByCompany>(new PayReportScheduleListByCompany({
 			...constraints,
@@ -2387,44 +2230,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given schedule from the server by its {@link trakit.fleetfreedom.ReportSchedule#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ReportSchedule} from the server by its {@link ReportSchedule.id}.
+	 * @param id
+	 * @returns
+	 */
 	getReportSchedule(id: ulong) {
 		return this.command<RepReportScheduleGet>(new PayReportScheduleGet({
 			reportSchedule: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ReportSchedule}.
-	 * @expose
-	 * @param {!trakit.json.ReportSchedule} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link ReportSchedule}.
+	 * @param json
+	 * @returns
+	 */
 	mergeReportSchedule(json: JsonObject) {
 		return this.command<RepReportScheduleMerge>(new PayReportScheduleMerge({
 			reportSchedule: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ReportSchedule}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ReportSchedule}.
+	 * @param id
+	 * @returns
+	 */
 	removeReportSchedule(id: ulong) {
 		return this.command<RepReportScheduleDelete>(new PayReportScheduleDelete({
 			reportSchedule: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ReportSchedule}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link ReportSchedule}.
+	 * @param id
+	 * @returns
+	 */
 	restoreReportSchedule(id: ulong) {
 		return this.command<RepReportScheduleDelete>(new PayReportScheduleRestore({
 			reportSchedule: { id },
@@ -2433,13 +2272,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Reports/Schedules
 	//#region Reports/Results
 	/**
-	 * Retrieves a list of all Report Results in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsByDts=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link ReportResult}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listReportResults(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepReportResultListByCompany>(new PayReportResultListByCompany({
 			...constraints,
@@ -2447,44 +2284,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given report from the server by its {@link trakit.fleetfreedom.ReportResult#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link ReportResult} from the server by its {@link ReportResult.id}.
+	 * @param id
+	 * @returns
+	 */
 	getReportResult(id: ulong) {
 		return this.command<RepReportResultGet>(new PayReportResultGet({
 			reportResult: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.ReportResult}.
-	 * @expose
-	 * @param {!trakit.json.ReportResult} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link ReportResult}.
+	 * @param json
+	 * @returns
+	 */
 	mergeReportResult(json: JsonObject) {
 		return this.command<RepReportResultMerge>(new PayReportResultMerge({
 			reportResult: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.ReportResult}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link ReportResult}.
+	 * @param id
+	 * @returns
+	 */
 	removeReportResult(id: ulong) {
 		return this.command<RepReportResultDelete>(new PayReportResultDelete({
 			reportResult: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.ReportResult}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link ReportResult}.
+	 * @param id
+	 * @returns
+	 */
 	restoreReportResult(id: ulong) {
 		return this.command<RepReportResultDelete>(new PayReportResultRestore({
 			reportResult: { id },
@@ -2494,13 +2327,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Maintenance/Schedules
 	/**
-	 * Retrieves a list of all Maintenance Schedules in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstraintsById=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link MaintenanceSchedule}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listMaintenanceSchedules(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepMaintenanceScheduleListByCompany>(new PayMaintenanceScheduleListByCompany({
 			...constraints,
@@ -2508,44 +2339,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given schedule from the server by its {@link trakit.fleetfreedom.MaintenanceSchedule#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link MaintenanceSchedule} from the server by its {@link MaintenanceSchedule.id}.
+	 * @param id
+	 * @returns
+	 */
 	getMaintenanceSchedule(id: ulong) {
 		return this.command<RepMaintenanceScheduleGet>(new PayMaintenanceScheduleGet({
 			maintenanceSchedule: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.MaintenanceSchedule}.
-	 * @expose
-	 * @param {!trakit.json.MaintenanceSchedule} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link MaintenanceSchedule}.
+	 * @param json
+	 * @returns
+	 */
 	mergeMaintenanceSchedule(json: JsonObject) {
 		return this.command<RepMaintenanceScheduleMerge>(new PayMaintenanceScheduleMerge({
 			maintenanceSchedule: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.MaintenanceSchedule}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link MaintenanceSchedule}.
+	 * @param id
+	 * @returns
+	 */
 	removeMaintenanceSchedule(id: ulong) {
 		return this.command<RepMaintenanceScheduleDelete>(new PayMaintenanceScheduleDelete({
 			maintenanceSchedule: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.MaintenanceSchedule}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link MaintenanceSchedule}.
+	 * @param id
+	 * @returns
+	 */
 	restoreMaintenanceSchedule(id: ulong) {
 		return this.command<RepMaintenanceScheduleDelete>(new PayMaintenanceScheduleRestore({
 			maintenanceSchedule: { id },
@@ -2554,13 +2381,11 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	//#endregion Maintenance/Schedules
 	//#region Maintenance/Jobs
 	/**
-	 * Retrieves a list of all Maintenance Jobs in the given company.
-	 * If a company is not given it will use the currently selected company.
-	 * @expose
-	 * @param {number=} companyId
-	 * @param {ParamListConstrainMaintenanceJob=} constraints
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a list of all {@link MaintenanceJob}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
 	listMaintenanceJobs(companyId: ulong, constraints?: JsonObject) {
 		return this.command<RepMaintenanceJobListByCompany>(new PayMaintenanceJobListByCompany({
 			...constraints,
@@ -2568,44 +2393,40 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	/**
-	 * Retrieves a given job from the server by its {@link trakit.fleetfreedom.MaintenanceJob#id}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Retrieves a given {@link MaintenanceJob} from the server by its {@link MaintenanceJob.id}.
+	 * @param id
+	 * @returns
+	 */
 	getMaintenanceJob(id: ulong) {
 		return this.command<RepMaintenanceJobGet>(new PayMaintenanceJobGet({
 			maintenanceJob: { id },
 		}));
 	}
 	/**
-	 * Merges a {@link trakit.fleetfreedom.MaintenanceJob}.
-	 * @expose
-	 * @param {!trakit.json.MaintenanceJob} json
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Creates a new, or updates an existing {@link MaintenanceJob}.
+	 * @param json
+	 * @returns
+	 */
 	mergeMaintenanceJob(json: JsonObject) {
 		return this.command<RepMaintenanceJobMerge>(new PayMaintenanceJobMerge({
 			maintenanceJob: json,
 		}));
 	}
 	/**
-	 * Deletes a {@link trakit.fleetfreedom.MaintenanceJob}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Deletes a {@link MaintenanceJob}.
+	 * @param id
+	 * @returns
+	 */
 	removeMaintenanceJob(id: ulong) {
 		return this.command<RepMaintenanceJobDelete>(new PayMaintenanceJobDelete({
 			maintenanceJob: { id },
 		}));
 	}
 	/**
-	 * Restores a deleted {@link trakit.fleetfreedom.MaintenanceJob}.
-	 * @expose
-	 * @param {!number} id
-	 * @return {!Promise<SyncMindflayer>}
-	 **/
+	 * Restores a deleted {@link MaintenanceJob}.
+	 * @param id
+	 * @returns
+	 */
 	restoreMaintenanceJob(id: ulong) {
 		return this.command<RepMaintenanceJobDelete>(new PayMaintenanceJobRestore({
 			maintenanceJob: { id },
