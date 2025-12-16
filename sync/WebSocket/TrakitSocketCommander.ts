@@ -23,22 +23,27 @@ import {
 	ulong,
 	url
 } from '@trakit/objects';
-import { createClientErrorResponse, makeObjectName, makeReplyClass } from "../API/Functions";
+import {
+	createClientErrorResponse,
+	getJsonKeyValue,
+	makeObjectName,
+	makeReplyClass
+} from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
-import { getJsonKeyValue, makeCommandName } from "./Functions";
 import { MSG_SYNC } from "./Constants";
+import { makeCommandName } from "./Functions";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
- **/
+ */
 const TIMEOUT_COMMAND = 120 * 1000;
 /**
  * Amount of time (in milliseconds) to let the underlying WebSocket idle before sending a noop command.
- **/
+ */
 const TIMEOUT_NOOP = 300 * 1000;
 /**
  * Maximum time (in milliseconds) to wait before trying to re-connect to Trak-iT's WebSocket.
- **/
+ */
 const TIMEOUT_MAX_RECONNECT = 300 * 1000;
 /**
  * Name of the connection "command", where we expect a connectionResponse message upon establishing a connection.
@@ -108,11 +113,11 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * A timestamp from the last time we received any kind of message from the underlying WebSocket (requested or otherwise).
 	 * Does not reset when we send a message, only on receive.
 	 * This is used by the keep-alive process.
-	 **/
+	 */
 	get lastReceived(): Date { return this.#lastReceived; }
 	/**
 	 * The name of the most recent message received by the underlying WebSocket.
-	 **/
+	 */
 	get lastMessage(): string { return this.#lastMessage; }
 	/**
 	 * Timestamp recorded right after sending the most recent message.
@@ -121,7 +126,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Returns a {@link TrakitSocketStatus} about the underlying WebSocket.
 	 * Also takes into account a null connection, and an open connection that has not yet received the first message.
-	 **/
+	 */
 	get state(): TrakitSocketStatus {
 		switch (this.#socket?.readyState) {
 			case WebSocket.CONNECTING: return TrakitSocketStatus.opening;
@@ -139,33 +144,31 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
 	 */
-	onOpen?: ((this: TrakitSocketCommander, account: RepSelfGet) => any);
-	/**
-	 * Gets invoked any time the connection's account information is updated while the connection is open.
-	 */
-	onAccount?: ((this: TrakitSocketCommander, account: RepSelfGet) => any);
+	onOpen?: ((this: TrakitSocketCommander, account: RepSelfGet) => any) | nothing;
 	/**
 	 * Gets invoked any time the WebSocket connection is closed.
 	 */
-	onClose?: ((this: TrakitSocketCommander, reply: Reply) => any);
+	onClose?: ((this: TrakitSocketCommander, reply: Reply) => any) | nothing;
 	/**
-	 * Gets invoked any time a message is received from the WebSocket.
+	 * Gets invoked any time a message is received by the WebSocket.
+	 * This is useful for logging or debugging, but you should use the {@link onUpdate}, {@link onDelete},
+	 * and {@link onList} events to track changes to objects.
 	 */
-	onMessage?: ((this: TrakitSocketCommander, name: string, body: JsonObject) => any);
+	onMessage?: ((this: TrakitSocketCommander, name: string, body: JsonObject) => any) | nothing;
 	/**
 	 * Gets invoked any time an error occurs on the WebSocket.
 	 */
-	onError?: ((this: TrakitSocketCommander, reply: Reply) => any);
+	onError?: ((this: TrakitSocketCommander, reply: Reply) => any) | nothing;
 
 	//#region Internal WebSocket control
 	/**
 	 * Counter used to correlate requests to responses.
-	 **/
+	 */
 	#requestId: number = 0;
 	/**
 	 * A collection of pending command Promises.
 	 * Each key is a reqId (except for connection and disconnection) and each value is a function invoked with a {@link Reply} object.
-	 **/
+	 */
 	#requestsPending: Map<string | number, (response: JsonObject) => void> = new Map();
 	/**
 	 * Settles the promise for the given request ID with the provided message content.
@@ -179,47 +182,51 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
     
 	/**
 	 * The underlying WebSocket.
-	 **/
+	 */
 	#socket!: WebSocket;
 	/**
 	 * Marked true after `connectionResponse` message, and the underlying WebSocket is ready to send and receive messages.
 	 * Marked false upon disconnection from the underlying WebSocket.
-	 **/
+	 */
 	#socketReady: boolean = false;
 	/**
 	 * Marked true when a valid session (account is valid and password is not expired) is established from `connectionResponse` or `loginResponse`.
 	 * If false, the re-connect process will not function, nor will the "noop" keep-alive messages be sent.
-	 **/
+	 */
 	#socketOperable: boolean = true;    // defualt true, so that the first connection will auto-reconnect.
     
 	/**
 	 * Handler for when the underlying WebSocket connection opens.
 	 * This handler will reset the keep-alive and re-connect timers, as well as bind message and error handlers (the socket only has open/close hadlers when constructed)
 	 * It does not fire the "connection" event, or mark the TrakitSocket as ready, as those things are handled in the onmessage handler.
-	 **/
+	 */
 	#socketOpen(event: Event) {
 		this.#socket.onopen = null;
 		this.#socket.onmessage = (msg) => this.#socketMessage(msg);
-		this.#socket.onerror = (err) => this.#socketError(err);
 		this.#delayReconnect = 0;
 	}
 	/**
 	 * This is a generic "error" handler for the underlying WebSocket.
 	 * Since WebSocket errors are generic and thrown without any detail (at least none documented),
 	 * I'm not sure what good this thing will do.
-	 **/
+	 */
 	#socketError(event: Event) {
-		this.onError?.({
+		this.onError?.(new Reply({
 			"errorCode": ErrorCode.service,
 			"message": "WebSocket error",
-		} as Reply);
+			"errorDetails": {
+				"kind": "connection",
+				"state": this.state,
+				"reconnect": this.reconnectEnabled,
+			}
+		}));
 	}
 	/**
 	 * Handler for when the underlyng WebSocket connection is severed.
 	 * Will first find all pending command promise settlers and invoke them.
 	 * A special case is made for the disconnection Promise and it is marked as successful (if it exists).
 	 * This also fires the "disconnection" event, and starts the re-connect timer.
-	 **/
+	 */
 	#socketClose(event: CloseEvent) {
 		clearTimeout(this.#timerKeepAlive);
 		clearTimeout(this.#timerReconnect);
@@ -286,7 +293,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Some specific messages (such as connection, getSessionDetails, login, logout, noop, sessionEnded, and updateOwnPassword) are handled with special cases.
 	 * After special handling, a "message" event is (optionally, depending on the message name) fired, then the Promise resolver (if it exists) is invoked.
 	 * This handler also fires the "connection" event, not the onopen handler.
-	 **/
+	 */
 	#socketMessage(event: MessageEvent<string>) {
 		this.#lastReceived = new Date;
 
@@ -320,8 +327,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				// Promise is settled here, not below
 				this.#requestSettle(CMD_CONNECTION, msgContent);
 				// then we fire event here, not below
-				this.onOpen?.(this.account);
 				this.onAccount?.(this.account);
+				this.onOpen?.(this.account);
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":
@@ -436,27 +443,27 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Flag set to specifically allow automatic re-connection to Trak-iT's WebSocket.
 	 * This value is set to false in the message handler if the connectionResponse message does not have an errorCode zero.
 	 * Conversly, it is set to true if a login or password change is successful.
-	 **/
+	 */
 	reconnectEnabled: boolean = true;
 	/**
 	 * The amount of time (in milliseconds) to wait before trying to re-connect.
 	 * This time doubles with every attempt, and maxes out at {@link TIMEOUT_MAX_RECONNECT}.
-	 **/
+	 */
 	#delayReconnect: number = 0;
 	/**
 	 * Handle for the timer associated with performing the waiting operation.
-	 **/
+	 */
 	#timerReconnect: number = 0;
 	//#endregion Reconnection
 
 	//#region Keep-Alive
 	/**
 	 * Flag set to specifically send "noop" messages on a timer to ensure the firewall doesn't prematurely kill the underlying WebSocket.
-	 **/
+	 */
 	keepAliveEnabled: boolean = false;
 	/**
 	 * Handle for the timer associated with performing the keep-alive operation.
-	 **/
+	 */
 	#timerKeepAlive: number = 0;
 	//#endregion Keep-Alive
 
@@ -484,7 +491,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Creates a new underlying WebSocket and returns a Promise that resolves when the connectionResponse message is received.
 	 * If the underlying WebSocket is not closed (as in, any state of openning or being closed), the returned Promise will be rejected.
-	 **/
+	 */
 	open(): Promise<RepSelfGet> {
 		clearTimeout(this.#timerReconnect);
 		this.#timerReconnect = 0;
@@ -505,6 +512,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					}
 					this.#socket = new WebSocket(endpoint);
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
+					this.#socket.onerror = (ev) => this.#socketError(ev);
 					this.#socket.onclose = (ev) => this.#socketClose(ev);
 					this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
 						(response["errorCode"] === 0 ? resolve : reject)(this.account);
@@ -526,7 +534,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Closes the underlying WebSocket connection, and returns a Promise that resolves when the connection is confirmed to be closed.
 	 * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
-	 **/
+	 */
 	close(): Promise<Reply> {
 		return new Promise<Reply>((resolve, reject) => {
 			const state = this.state;
@@ -571,7 +579,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param command	The name of the command to send.
 	 * @param params	Optional object or value for the command.
 	 * @returns 		A Promise which is resolved when a response is received, otherwise it is rejected.
-	 **/
+	 */
 	override _relayRequest(request: [string, JsonObject]): Promise<JsonObject> {
 		const command = request[0],
 			params = request[1] || {};
@@ -619,7 +627,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	}
 	/**
 	 * Resets the keep-alive timer (to try and keep the firewall from disconnecting the underlying WebSocket).
-	 **/
+	 */
 	resetKeepAlive(): Promise<boolean> {
 		clearTimeout(this.#timerKeepAlive);
 		this.#timerKeepAlive = this.keepAliveEnabled

@@ -1,47 +1,5 @@
 import { Payload } from "@trakit/commands";
-import {
-	codified,
-	email,
-	guid,
-	JsonObject,
-	SyncName,
-	ulong,
-	utility
-} from "@trakit/objects";
-
-/**
- * Returns the name of the identifying key for the given Trak-iT Object type.
- * @param type 
- * @returns 
- */
-export function getJsonKeyName(type: SyncName) {
-	switch (type) {
-		case "User":
-		case "UserGeneral":
-		case "UserAdvanced":
-			return "login";
-		case "ProviderRegistration":
-			return "code";
-		case "Session":
-			return "handle";
-		case "Machine":
-			return "key";
-		case "Dashcam":
-			return "guid";
-		default:
-			return "id";
-	}
-}
-
-/**
- * Returns the value of the identifying key for the given Trak-iT Object.
- * @param json 
- * @param type 
- * @returns 
- */
-export function getJsonKeyValue(json: JsonObject, type: SyncName): ulong | guid | email | codified | string {
-	return json[getJsonKeyName(type)] as ulong | guid | email | codified | string;
-}
+import { utility } from "@trakit/objects";
 
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.

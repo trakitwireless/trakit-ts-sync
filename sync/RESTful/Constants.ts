@@ -7,7 +7,7 @@ export type HttpVerb = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 /**
  * A mapping of RESTful service routes to get things listed by company.
- **/
+ */
 export const OBJECT_LIST_BY_COMPANY: { [key in SyncName]: url } = {
 	/* company */
 	"Company": "/companies/generals?parent={companyId}",
@@ -79,7 +79,7 @@ export const OBJECT_LIST_BY_COMPANY: { [key in SyncName]: url } = {
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
- **/
+ */
 export const OBJECT_LIST_BY_ASSET: { [key: SyncName | string]: url } = {
 	/* messaging */
 	"AssetMessage": "/assets/{assetId}/messages",
@@ -94,7 +94,7 @@ export const OBJECT_LIST_BY_ASSET: { [key: SyncName | string]: url } = {
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by behaviour script.
- **/
+ */
 export const OBJECT_LIST_BY_BEHAVIOUR_SCRIPT: { [key: SyncName | string]: url } = {
 	"BehaviourLog": "/companies/{companyId}/behaviours/scripts/{scriptId}/logs",
 	"Behaviour": "/companies/{companyId}/behaviours/scripts/{scriptId}/behaviours",
@@ -102,7 +102,7 @@ export const OBJECT_LIST_BY_BEHAVIOUR_SCRIPT: { [key: SyncName | string]: url } 
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by billing profile.
- **/
+ */
 export const OBJECT_LIST_BY_BILLING_PROFILE: { [key: SyncName | string]: url } = {
 	"BillingHosting": "/billing/profiles/{profileId}/rules",
 	"BillingLicense": "/billing/profiles/{profileId}/licenses",
@@ -115,7 +115,7 @@ export const OBJECT_LIST_BY_BILLING_PROFILE: { [key: SyncName | string]: url } =
 
 /**
  * A mapping of Trak-iT RESTful routes to get things listed by asset.
- **/
+ */
 export const OBJECT_LIST_BY_USER: { [key: SyncName | string]: url } = {
 	"Session": "/users/{userLogin}/sessions",
 };

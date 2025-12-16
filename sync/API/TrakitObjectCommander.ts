@@ -428,17 +428,21 @@ import { TrakitBaseCommander } from './TrakitBaseCommander';
  */
 export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommander<TRequest> {
 	/**
+	 * Gets invoked any time the connection's account information is updated while the connection is open.
+	 */
+	onAccount?: ((this: TrakitObjectCommander<TRequest>, account: RepSelfGet) => any) | nothing;
+	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
 	 */
-	onList?: (kind: SyncName, companyId: ulong, objects: IRequestable[]) => void;
+	onList?: ((this: TrakitObjectCommander<TRequest>, kind: SyncName, companyId: ulong, objects: IRequestable[]) => any) | nothing;
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is created or updated.
 	 */
-	onUpdate?: (kind: SyncName, companyId: ulong, object: IRequestable) => void;
+	onUpdate?: ((this: TrakitObjectCommander<TRequest>, kind: SyncName, companyId: ulong, object: IRequestable) => any) | nothing;
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is deleted.
 	 */
-	onDelete?: (kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) => void;
+	onDelete?: ((this: TrakitObjectCommander<TRequest>, kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) => any) | nothing;
 	
 	/**
 	 * Overridden to handle storage and events.
@@ -474,6 +478,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	public async selfDetails(): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfGet());
 		this.setAuth(reply);
+		this.onAccount?.(reply);
 		return reply;
 	}
 
@@ -491,6 +496,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			userAgent: userAgent ?? null,
 		}));
 		this.setAuth(reply);
+		this.onAccount?.(reply);
 		return reply;
 	}
 	/**
@@ -500,6 +506,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	public logout(): Promise<RepSelfLogout> {
 		const reply = this.command<RepSelfLogout>(new PaySelfLogout());
 		this.setAuth();
+		this.onAccount?.(this.account);
 		return reply;
 	}
 
@@ -1028,7 +1035,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param key
 	 * @returns
 	 */
-	getMachine(key: string) { 
+	getMachine(key: string) {
 		return this.command<RepMachineGet>(new PayMachineGet({
 			machine: { id: key },
 		}));
@@ -1048,7 +1055,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param key
 	 * @returns
 	 */
-	removeMachine(key: string) { 
+	removeMachine(key: string) {
 		return this.command<RepMachineDelete>(new PayMachineDelete({
 			machine: { id: key },
 		}));
@@ -1058,7 +1065,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param key
 	 * @returns
 	 */
-	restoreMachine(key: string) { 
+	restoreMachine(key: string) {
 		return this.command<RepMachineDelete>(new PayMachineRestore({
 			machine: { id: key },
 		}));
@@ -1092,7 +1099,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param handle
 	 * @returns
 	 */
-	killSession(handle: string) { 
+	killSession(handle: string) {
 		return this.command<RepSessionDelete>(new PaySessionDelete({
 			session: { handle },
 		}));
@@ -1397,7 +1404,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param guid
 	 * @returns
 	 */
-	getDashcamData(guid: guid) { 
+	getDashcamData(guid: guid) {
 		return this.command<RepDashcamGet>(new PayDashcamGet({
 			dashcam: { guid },
 		}));
@@ -1483,7 +1490,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param id
 	 * @returns
 	 */
-	suspendAsset(id: ulong) { 
+	suspendAsset(id: ulong) {
 		return this.command<RepAssetSuspend>(new PayAssetSuspend({
 			asset: { id },
 		}));
@@ -1493,7 +1500,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param id
 	 * @returns
 	 */
-	reviveAsset(id: ulong) { 
+	reviveAsset(id: ulong) {
 		return this.command<RepAssetSuspend>(new PayAssetReactivate({
 			asset: { id },
 		}));
@@ -1604,7 +1611,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param assetId
 	 * @returns
 	 */
-	getDispatchTasksByAsset(assetId: ulong, constraints?: JsonObject) { 
+	getDispatchTasksByAsset(assetId: ulong, constraints?: JsonObject) {
 		return this.command<RepDispatchTaskListByAsset>(new PayDispatchTaskListByAsset({
 			...constraints,
 			asset: { id: assetId },
@@ -1679,7 +1686,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param assetId
 	 * @returns
 	 */
-	getDispatchJobsByAsset(assetId: ulong, constraints?: JsonObject) { 
+	getDispatchJobsByAsset(assetId: ulong, constraints?: JsonObject) {
 		return this.command<RepDispatchJobListByAsset>(new PayDispatchJobListByAsset({
 			...constraints,
 			asset: { id: assetId },
@@ -1740,7 +1747,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param json
 	 * @returns
 	 */
-	changeDispatchJob(json: JsonObject) { 
+	changeDispatchJob(json: JsonObject) {
 		return this.command<RepDispatchJobMerge>(new PayDispatchJobChange({
 			dispatchJob: json,
 		}));
@@ -1935,7 +1942,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param ids
 	 * @returns
 	 */
-	multiRemoveProvider(ids: string[]) { 
+	multiRemoveProvider(ids: string[]) {
 		return this.command<RepProviderBatchDelete>(new PayProviderBatchDelete({
 			providers: ids.map(id => ({ id })),
 		}));
@@ -2288,7 +2295,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param code
 	 * @returns
 	 */
-	getProviderRegistration(code: int) { 
+	getProviderRegistration(code: int) {
 		return this.command<RepProviderRegistrationGet>(new PayProviderRegistrationGet({
 			providerRegistration: { id: code },
 		}));
@@ -2310,7 +2317,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param code
 	 * @returns
 	 */
-	removeProviderRegistration(code: int) { 
+	removeProviderRegistration(code: int) {
 		return this.command<RepProviderRegistrationDelete>(new PayProviderRegistrationDelete({
 			providerRegistration: { id: code },
 		}));

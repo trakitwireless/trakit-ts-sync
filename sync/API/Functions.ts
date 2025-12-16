@@ -1,6 +1,6 @@
 import * as commands from "@trakit/commands";
 import { ErrorCode, Payload, Reply } from "@trakit/commands";
-import { JsonObject, JsonValue, nothing, SyncName, utility } from "@trakit/objects";
+import { codified, email, guid, JsonObject, JsonValue, nothing, SyncName, ulong, utility } from "@trakit/objects";
 
 /**
  * Creates a standardized error response.
@@ -19,6 +19,41 @@ export function createClientErrorResponse(ex: Error, response?: JsonValue): Json
 		}
 	};
 }
+
+/**
+ * Returns the name of the identifying key for the given Trak-iT Object type.
+ * @param type 
+ * @returns 
+ */
+export function getJsonKeyName(type: SyncName) {
+	switch (type) {
+		case "User":
+		case "UserGeneral":
+		case "UserAdvanced":
+			return "login";
+		case "ProviderRegistration":
+			return "code";
+		case "Session":
+			return "handle";
+		case "Machine":
+			return "key";
+		case "Dashcam":
+			return "guid";
+		default:
+			return "id";
+	}
+}
+/**
+ * Returns the value of the identifying key for the given Trak-iT Object.
+ * @param json 
+ * @param type 
+ * @returns 
+ */
+export function getJsonKeyValue(json: JsonObject, type: SyncName): ulong | guid | email | codified | string {
+	return json[getJsonKeyName(type)] as ulong | guid | email | codified | string;
+}
+
+
 /**
  * Translated type name to object name to account for some legacy message names.
  * @param typeName 
@@ -29,9 +64,6 @@ export function makeObjectName(typeName: string): SyncName {
 	switch (typeName) {
 		case "CompanyLabels":
 			typeName = "CompanyStyle";
-			break;
-		case "CompanyPolicies":
-			typeName = "CompanyPolicy";
 			break;
 		default:
 			typeName = utility.singularize(typeName);
