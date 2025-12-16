@@ -1,8 +1,12 @@
 ﻿import {
 	ErrorCode,
+	PayAssetAdvancedGet,
+	PayAssetAdvancedListByCompany,
 	PayAssetBatchMerge,
 	PayAssetDelete,
 	PayAssetDispatchMerge,
+	PayAssetGeneralGet,
+	PayAssetGeneralListByCompany,
 	PayAssetGet,
 	PayAssetListByCompany,
 	PayAssetMerge,
@@ -34,14 +38,21 @@
 	PayBehaviourScriptMerge,
 	PayBehaviourScriptRestore,
 	PayCompanyDelete,
+	PayCompanyDirectoryGet,
+	PayCompanyDirectoryListByCompany,
+	PayCompanyGeneralGet,
 	PayCompanyGeneralListByCompany,
 	PayCompanyGet,
 	PayCompanyMerge,
+	PayCompanyPolicyGet,
+	PayCompanyPolicyListByCompany,
 	PayCompanyResellerDelete,
 	PayCompanyResellerGet,
 	PayCompanyResellerMerge,
 	PayCompanyResellerRestore,
 	PayCompanyRestore,
+	PayCompanyStyleGet,
+	PayCompanyStyleListByCompany,
 	PayContactBatchDelete,
 	PayContactBatchMerge,
 	PayContactDelete,
@@ -115,6 +126,8 @@
 	PayPlaceListByCompany,
 	PayPlaceMerge,
 	PayPlaceRestore,
+	PayProviderAdvancedGet,
+	PayProviderAdvancedListByCompany,
 	PayProviderBatchDelete,
 	PayProviderBatchMerge,
 	PayProviderConfigBatchMerge,
@@ -129,7 +142,11 @@
 	PayProviderConfigurationListByCompany,
 	PayProviderConfigurationMerge,
 	PayProviderConfigurationRestore,
+	PayProviderControlGet,
+	PayProviderControlListByCompany,
 	PayProviderDelete,
+	PayProviderGeneralGet,
+	PayProviderGeneralListByCompany,
 	PayProviderGet,
 	PayProviderListByCompany,
 	PayProviderMerge,
@@ -167,7 +184,11 @@
 	PaySessionDelete,
 	PaySessionListByCompany,
 	PaySessionListByUser,
+	PayUserAdvancedGet,
+	PayUserAdvancedListByCompany,
 	PayUserDelete,
+	PayUserGeneralGet,
+	PayUserGeneralListByCompany,
 	PayUserGet,
 	PayUserGroupDelete,
 	PayUserGroupGet,
@@ -177,9 +198,13 @@
 	PayUserListByCompany,
 	PayUserMerge,
 	PayUserRestore,
+	RepAssetAdvancedGet,
+	RepAssetAdvancedListByCompany,
 	RepAssetBatchMerge,
 	RepAssetDelete,
 	RepAssetDispatchMerge,
+	RepAssetGeneralGet,
+	RepAssetGeneralListByCompany,
 	RepAssetGet,
 	RepAssetListByCompany,
 	RepAssetMerge,
@@ -206,12 +231,19 @@
 	RepBehaviourScriptListByCompany,
 	RepBehaviourScriptMerge,
 	RepCompanyDelete,
+	RepCompanyDirectoryGet,
+	RepCompanyDirectoryListByCompany,
+	RepCompanyGeneralGet,
 	RepCompanyGeneralListByCompany,
 	RepCompanyGet,
 	RepCompanyMerge,
+	RepCompanyPolicyGet,
+	RepCompanyPolicyListByCompany,
 	RepCompanyResellerDelete,
 	RepCompanyResellerGet,
 	RepCompanyResellerMerge,
+	RepCompanyStyleGet,
+	RepCompanyStyleListByCompany,
 	RepContactBatchDelete,
 	RepContactBatchMerge,
 	RepContactDelete,
@@ -276,6 +308,8 @@
 	RepPlaceGet,
 	RepPlaceListByCompany,
 	RepPlaceMerge,
+	RepProviderAdvancedGet,
+	RepProviderAdvancedListByCompany,
 	RepProviderBatchDelete,
 	RepProviderBatchMerge,
 	RepProviderConfigBatchMerge,
@@ -288,7 +322,11 @@
 	RepProviderConfigurationGet,
 	RepProviderConfigurationListByCompany,
 	RepProviderConfigurationMerge,
+	RepProviderControlGet,
+	RepProviderControlListByCompany,
 	RepProviderDelete,
+	RepProviderGeneralGet,
+	RepProviderGeneralListByCompany,
 	RepProviderGet,
 	RepProviderListByCompany,
 	RepProviderMerge,
@@ -320,14 +358,18 @@
 	RepSessionDelete,
 	RepSessionListByCompany,
 	RepSessionListByUser,
+	RepUserAdvancedGet,
+	RepUserAdvancedListByCompany,
 	RepUserDelete,
+	RepUserGeneralGet,
+	RepUserGeneralListByCompany,
 	RepUserGet,
 	RepUserGroupDelete,
 	RepUserGroupGet,
 	RepUserGroupListByCompany,
 	RepUserGroupMerge,
 	RepUserListByCompany,
-	RepUserMerge
+	RepUserMerge,
 } from '@trakit/commands';
 import {
 	Asset,
@@ -558,18 +600,6 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	//#region Companies
 	/**
-	 * Retrieves a list of all {@link CompanyGeneral}s in the tree for the given company.
-	 * @param id
-	 * @param constraints
-	 * @returns
-	 */
-	listCompanies(id: ulong, constraints?: JsonObject) {
-		return this.command<RepCompanyGeneralListByCompany>(new PayCompanyGeneralListByCompany({
-			...constraints,
-			company: { id },
-		}));
-	}
-	/**
 	 * Retrieves a given {@link Company} from the server by its {@link Company.id}.
 	 * @param id
 	 * @returns
@@ -610,6 +640,102 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	//#endregion Companies
+	//#region Companies/General
+	/**
+	 * Retrieves a list of all {@link CompanyGeneral}s in the tree for the given company.
+	 * @param id
+	 * @param constraints
+	 * @returns
+	 */
+	listCompanyGenerals(id: ulong, constraints?: JsonObject) {
+		return this.command<RepCompanyGeneralListByCompany>(new PayCompanyGeneralListByCompany({
+			...constraints,
+			company: { id },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link CompanyGeneral} from the server by its {@link Company.id}.
+	 * @param id
+	 * @returns
+	 */
+	getCompanyGeneral(id: ulong) {
+		return this.command<RepCompanyGeneralGet>(new PayCompanyGeneralGet({
+			company: { id },
+		}));
+	}
+	//#endregion Companies/General
+	//#region Companies/Policy
+	/**
+	 * Retrieves a list of all {@link CompanyPolicy}s in the tree for the given company.
+	 * @param id
+	 * @param constraints
+	 * @returns
+	 */
+	listCompanyPolicies(id: ulong, constraints?: JsonObject) {
+		return this.command<RepCompanyPolicyListByCompany>(new PayCompanyPolicyListByCompany({
+			...constraints,
+			company: { id },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link CompanyPolicy} from the server by its {@link Company.id}.
+	 * @param id
+	 * @returns
+	 */
+	getCompanyPolicy(id: ulong) {
+		return this.command<RepCompanyPolicyGet>(new PayCompanyPolicyGet({
+			company: { id },
+		}));
+	}
+	//#endregion Companies/Policy
+	//#region Companies/Style
+	/**
+	 * Retrieves a list of all {@link CompanyStyle}s in the tree for the given company.
+	 * @param id
+	 * @param constraints
+	 * @returns
+	 */
+	listCompanyStyles(id: ulong, constraints?: JsonObject) {
+		return this.command<RepCompanyStyleListByCompany>(new PayCompanyStyleListByCompany({
+			...constraints,
+			company: { id },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link CompanyStyle} from the server by its {@link Company.id}.
+	 * @param id
+	 * @returns
+	 */
+	getCompanyStyle(id: ulong) {
+		return this.command<RepCompanyStyleGet>(new PayCompanyStyleGet({
+			company: { id },
+		}));
+	}
+	//#endregion Companies/Style
+	//#region Companies/Directory
+	/**
+	 * Retrieves a list of all {@link CompanyDirectory}s in the tree for the given company.
+	 * @param id
+	 * @param constraints
+	 * @returns
+	 */
+	listCompanyDirectories(id: ulong, constraints?: JsonObject) {
+		return this.command<RepCompanyDirectoryListByCompany>(new PayCompanyDirectoryListByCompany({
+			...constraints,
+			company: { id },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link CompanyDirectory} from the server by its {@link Company.id}.
+	 * @param id
+	 * @returns
+	 */
+	getCompanyDirectory(id: ulong) {
+		return this.command<RepCompanyDirectoryGet>(new PayCompanyDirectoryGet({
+			company: { id },
+		}));
+	}
+	//#endregion Companies/Directory
 	//#region Companies/Reseller
 	/**
 	 * Retrieves a given {@link CompanyReseller} from the server by its {@link CompanyReseller.id}.
@@ -780,7 +906,56 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			user: { login },
 		}));
 	}
-	//#endregion User
+	//#endregion Users
+	//#region Users/General
+	/**
+	 * Retrieves a list of all {@link UserGeneral}s in the given company.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listUserGenerals(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepUserGeneralListByCompany>(new PayUserGeneralListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link UserGeneral} from the server by its {@link User.id}.
+	 * @param login
+	 * @returns
+	 */
+	getUserGeneral(login: email) {
+		return this.command<RepUserGeneralGet>(new PayUserGeneralGet({
+			user: { login },
+		}));
+	}
+	//#endregion Users/General
+	//#region Users/Advanced
+	/**
+	 * Retrieves a list of all {@link UserAdvanced}s in the given company.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listUserAdvanceds(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepUserAdvancedListByCompany>(new PayUserAdvancedListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link UserAdvanced} from the server by its {@link User.id}.
+	 * @param login
+	 * @returns
+	 */
+	getUserAdvanced(login: email) {
+		return this.command<RepUserAdvancedGet>(new PayUserAdvancedGet({
+			user: { login },
+		}));
+	}
+	//#endregion Users/Advanced
+
 	//#region User Groups
 	/**
 	 * Retrieves a list of all {@link UserGroup}s in the given company.
@@ -1333,6 +1508,72 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		// not yet implemented
 	}
 	//#endregion Assets
+	//#region Assets/General
+	/**
+	 * Retrieves a list of all {@link AssetGeneral}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listAssetGenerals(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepAssetGeneralListByCompany>(new PayAssetGeneralListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link AssetGeneral} from the server by its {@link Asset.id}.
+	 * @param id
+	 * @returns
+	 */
+	getAssetGeneral(id: ulong) {
+		return this.command<RepAssetGeneralGet>(new PayAssetGeneralGet({
+			asset: { id },
+		}));
+	}
+	/**
+	 * Searches all available companies for {@link AssetGeneral}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
+	searchAssetGenerals(expression: expression, constraints?: JsonObject) {
+		// not yet implemented
+	}
+	//#endregion Assets/General
+	//#region Assets/Advanced
+	/**
+	 * Retrieves a list of all {@link AssetAdvanced}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listAssetAdvanceds(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepAssetAdvancedListByCompany>(new PayAssetAdvancedListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link AssetAdvanced} from the server by its {@link Asset.id}.
+	 * @param id
+	 * @returns
+	 */
+	getAssetAdvanced(id: ulong) {
+		return this.command<RepAssetAdvancedGet>(new PayAssetAdvancedGet({
+			asset: { id },
+		}));
+	}
+	/**
+	 * Searches all available companies for {@link AssetAdvanced}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
+	searchAssetAdvanceds(expression: expression, constraints?: JsonObject) {
+		// not yet implemented
+	}
+	//#endregion Assets/Advanced
 	//#region Assets/Dispatch
 	/**
 	 * Updates the given {@link Asset}'s {@link DispatchJob}s and optimizes the steps based on back-end logic.
@@ -1749,6 +1990,105 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		// not yet implemented
 	}
 	//#endregion Provider
+	//#region Providers/General
+	/**
+	 * Retrieves a list of all {@link ProviderGeneral}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listProviderGenerals(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepProviderGeneralListByCompany>(new PayProviderGeneralListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link ProviderGeneral} from the server by its {@link Provider.id}.
+	 * @param id
+	 * @returns
+	 */
+	getProviderGeneral(id: string) {
+		return this.command<RepProviderGeneralGet>(new PayProviderGeneralGet({
+			provider: { id },
+		}));
+	}
+	/**
+	 * Searches all available companies for {@link ProviderGeneral}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
+	searchProviderGenerals(expression: expression, constraints?: JsonObject) {
+		// not yet implemented
+	}
+	//#endregion Provider/General
+	//#region Providers/Advanced
+	/**
+	 * Retrieves a list of all {@link ProviderAdvanced}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listProviderAdvanceds(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepProviderAdvancedListByCompany>(new PayProviderAdvancedListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link ProviderAdvanced} from the server by its {@link Provider.id}.
+	 * @param id
+	 * @returns
+	 */
+	getProviderAdvanced(id: string) {
+		return this.command<RepProviderAdvancedGet>(new PayProviderAdvancedGet({
+			provider: { id },
+		}));
+	}
+	/**
+	 * Searches all available companies for {@link ProviderAdvanced}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
+	searchProviderAdvanceds(expression: expression, constraints?: JsonObject) {
+		// not yet implemented
+	}
+	//#endregion Provider/Advanced
+	//#region Providers/Control
+	/**
+	 * Retrieves a list of all {@link ProviderControl}s in the given {@link Company}.
+	 * @param companyId
+	 * @param constraints
+	 * @returns
+	 */
+	listProviderControls(companyId: ulong, constraints?: JsonObject) {
+		return this.command<RepProviderControlListByCompany>(new PayProviderControlListByCompany({
+			...constraints,
+			company: { id: companyId },
+		}));
+	}
+	/**
+	 * Retrieves a given {@link ProviderControl} from the server by its {@link Provider.id}.
+	 * @param id
+	 * @returns
+	 */
+	getProviderControl(id: string) {
+		return this.command<RepProviderControlGet>(new PayProviderControlGet({
+			provider: { id },
+		}));
+	}
+	/**
+	 * Searches all available companies for {@link ProviderControl}s that match the given expression.
+	 * @param expression
+	 * @param constraints
+	 * @returns
+	 */
+	searchProviderControls(expression: expression, constraints?: JsonObject) {
+		// not yet implemented
+	}
+	//#endregion Provider/Control
 	//#region Providers/Scripts
 	/**
 	 * Retrieves a list of all {@link ProviderScript}s in the trunk for the given {@link Company}.
