@@ -150,7 +150,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	onClose?: ((this: TrakitSocketCommander, reply: Reply) => any) | nothing;
 	/**
-	 * Gets invoked any time a message is received by the WebSocket.
+	 * Gets invoked any time a message is received by the Trak-iT WebSocket connection.
 	 * This is useful for logging or debugging, but you should use the {@link onUpdate}, {@link onDelete},
 	 * and {@link onList} events to track changes to objects.
 	 */
@@ -642,7 +642,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 
 	//#region Subscriptions
 	/**
-	 * 
+	 * Subscribes to the specified subscription types for the given company.
 	 * @param companyId 
 	 * @param subscriptions 
 	 * @returns 
@@ -659,7 +659,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			}));
 	}
 	/**
-	 * 
+	 * Unsubscribes from the specified subscription types for the given company.
 	 * @param companyId 
 	 * @param subscriptions 
 	 * @returns 
@@ -676,7 +676,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			}));
 	}
 	/**
-	 * 
+	 * Retrieves the list of active subscriptions for the current account.
 	 * @returns 
 	 */
 	listSubscriptions(): Promise<RepSubscriptionList> {
