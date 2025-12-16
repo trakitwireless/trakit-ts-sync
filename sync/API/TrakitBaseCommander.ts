@@ -39,7 +39,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 * @param path  Optional path to append to the base address.
 	 * @returns     The constructed URL string.
 	 */
-	protected createBaseUrl(path: URL | url | nothing = null): URL {
+	protected createBaseUrl(path?: URL | url | nothing): URL {
 		const route = this.baseAddress
 			? new URL(path ?? "", this.baseAddress)
 			: new URL(path as url),
@@ -51,12 +51,12 @@ export abstract class TrakitBaseCommander<TRequest> {
 	}
 
 	constructor(
-		baseAddress?: URL | url | nothing,
 		account?: RepSelfGet | { machine: { key: string } }
 				| Machine | { key: string }
 				| { ghostId: guid }
 				| guid
-				| nothing
+				| nothing,
+		baseAddress?: URL | url | nothing,
 	) {
 		this.baseAddress = baseAddress
 			? new URL(baseAddress)
@@ -67,33 +67,33 @@ export abstract class TrakitBaseCommander<TRequest> {
 	//#region Authorization
 	/**
 	 * Sets the authentication mechanism using either a session id or a Machine object.
-	 * @param value  The session id (string), {@link Machine} object, or {@link RepSelfGet} object.
+	 * @param account  The session id (string), {@link Machine} object, or {@link RepSelfGet} object.
 	 */
 	setAuth(
-		value?: RepSelfGet | { machine: { key: string } }
+		account?: RepSelfGet | { machine: { key: string } }
 				| Machine | { key: string }
 				| { ghostId: guid }
 				| guid
 				| nothing
 	): void {
-		if (value instanceof RepSelfGet) {
-			this.account = value;
-		} else if (typeof value === "string") {
+		if (account instanceof RepSelfGet) {
+			this.account = account;
+		} else if (typeof account === "string") {
 			this.setAuth({
-				ghostId: value,
+				ghostId: account,
 			});
-		} else if (value instanceof Machine || (value as { key: string })?.key) {
+		} else if (account instanceof Machine || (account as { key: string })?.key) {
 			this.setAuth({
-				machine: ((value as any).toJSON?.() ?? value) as { key: string },
+				machine: ((account as any).toJSON?.() ?? account) as { key: string },
 			});
-		} else if ((value as any)?.machine?.key || (value as any)?.ghostId) {
+		} else if ((account as any)?.machine?.key || (account as any)?.ghostId) {
 			this.setAuth(new RepSelfGet({
 				errorCode: ErrorCode.success,
-				message: `Authenticated via ${(value as any)?.machine?.key ? "Machine" : "Session"}`,
-				...((value as any).toJSON?.() ?? value),
+				message: `Authenticated via ${(account as any)?.machine?.key ? "Machine" : "Session"}`,
+				...((account as any).toJSON?.() ?? account),
 			}));
 		} else {
-			this.account = new RepSelfGet;
+			this.setAuth(new RepSelfGet);
 		}
 	}
 	//#endregion Authorization

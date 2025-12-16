@@ -33,7 +33,7 @@ import {
 const SPLITTER = /[A-Z][a-z]+/;
 
 /**
- * 
+ * Uses Trak-iT's RESTful service to access and manipulate Trak-iT API objects.
  */
 export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	/**
@@ -51,14 +51,14 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	static readonly URI_BETA: url = "https://mindflayer.trakit.ca/";
 
 	constructor(
-		baseAddress?: URL | url | nothing,
 		account?: RepSelfGet | { machine: { key: string } }
 				| Machine | { key: string }
 				| { ghostId: guid }
 				| guid
-				| nothing
+				| nothing,
+		baseAddress?: URL | url | nothing,
 	) {
-		super(baseAddress ?? TrakitRestfulCommander.URI_PROD, account);
+		super(account, baseAddress ?? TrakitRestfulCommander.URI_PROD);
 		this.headers.set("Content-Type", "application/json");
 	}
 
@@ -252,6 +252,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 				new Date
 			));
 		} else if (this.account.ghostId) {
+			// this should be updated to use an Authorization header instead of query-string
 			route.searchParams.set("ghostId", this.account.ghostId);
 		}
 		if (headers.size > 0) {

@@ -74,8 +74,8 @@ export enum TrakitSocketStatus {
 }
 
 /**
- * Uses Trak-iT's {@link WebSocket} service to access and manipulate all Trak-iT API Objects.
- **/
+ * Uses Trak-iT's {@link WebSocket} service to access and manipulate Trak-iT API objects.
+ */
 export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonObject]> {
 	/**
 	 * Production RESTful service URL.
@@ -118,7 +118,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Timestamp recorded right after sending the most recent message.
 	 */
 	get lastSent(): Date { return this.#lastSent; }
-
 	/**
 	 * Returns a {@link TrakitSocketStatus} about the underlying WebSocket.
 	 * Also takes into account a null connection, and an open connection that has not yet received the first message.
@@ -135,10 +134,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * True when the WebSocket is ready to send and receive messages.
 	 * This value can be false if the connection is established, but the account has not authenticated yet, or your password has expired.
 	 */
-	get ready(): boolean {
-		return this.#socketReady
-			&& this.#socketOperable;
-	}
+	get ready(): boolean { return this.#socketReady && this.#socketOperable; }
 
 	/**
 	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
@@ -465,14 +461,14 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	//#endregion Keep-Alive
 
 	constructor(
-		baseAddress?: URL | url | nothing,
 		account?: RepSelfGet | { machine: { key: string } }
-			| Machine | { key: string }
-			| { ghostId: guid }
-			| guid
-			| nothing
+				| Machine | { key: string }
+				| { ghostId: guid }
+				| guid
+				| nothing,
+		baseAddress?: URL | url | nothing,
 	) {
-		super(baseAddress ?? TrakitSocketCommander.URI_PROD, account);
+		super(account, baseAddress ?? TrakitSocketCommander.URI_PROD);
 	}
 	/**
 	 * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
