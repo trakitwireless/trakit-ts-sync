@@ -13,8 +13,8 @@ export function createClientErrorResponse(ex: Error, response?: JsonValue): Json
 		"message": "Client exception",
 		"errorDetails": {
 			"kind": "stack",
-			"message": ex.message,
-			"stack": ex.stack ?? null,
+			"message": ex?.message ?? "Unknonwn error",
+			"stack": ex?.stack ?? null,
 			"value": response ?? null,
 		}
 	};
