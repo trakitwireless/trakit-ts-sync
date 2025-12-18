@@ -20,8 +20,11 @@
 				"../trakit-ts-commands/index.ts"
 			],
 			"@trakit/objects": [
-				"../trakit-ts-objects/objects/index.ts"
+				"../trakit-ts-objects/index.ts"
 			],
 		}
-	}
+	},
+	"include": [
+		"./index.ts"
+	]
 }
