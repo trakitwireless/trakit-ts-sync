@@ -25,7 +25,7 @@ const obfuscate = {
 
 export default [
 	{
-		input: 'index.ts',
+		input: './sync/index.ts',
 		output: [
 			{
 				file: '_publish/trakit-sync.min.js',
@@ -35,11 +35,11 @@ export default [
 		],
 		plugins: [typescript({
 			tsconfig: './tsconfig.json',
-			tsconfigOverride: {
-				compilerOptions: {
-					declaration: false,
-				}
-			}
+			//tsconfigOverride: {
+			//	compilerOptions: {
+			//		declaration: false,
+			//	}
+			//}
 		})],
 		external: ['@trakit/objects', '@trakit/commands']
 	}

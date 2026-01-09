@@ -1,9 +1,9 @@
 {
   "name": "@trakit/sync",
   "type": "module",
-  "version": "0.0.1",
-  "main": "_publish/trakit-sync.min.js",
-  "types": "_publish/index.d.ts",
+  "version": "0.0.5",
+  "main": "./trakit-sync.min.js",
+  "types": "./index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
