@@ -12,9 +12,9 @@
     "url": "git+https://github.com/trakitwireless/trakit-ts-sync.git"
   },
   "files": [
-	"_publish/",
-	"LICENSE.md",
-	"README.md"
+    "_publish/",
+    "LICENSE.md",
+    "README.md"
   ],
   "keywords": [
     "trakit"

@@ -1,5 +1,6 @@
 import typescript from 'rollup-plugin-typescript2';
 import terser from '@rollup/plugin-terser';
+//import json from '@rollup/plugin-json';
 
 const obfuscate = {
 	ecma: 2020,
@@ -33,14 +34,17 @@ export default [
 				plugins: [terser(obfuscate)]
 			}
 		],
-		plugins: [typescript({
-			tsconfig: './tsconfig.json',
-			//tsconfigOverride: {
-			//	compilerOptions: {
-			//		declaration: false,
-			//	}
-			//}
-		})],
+		plugins: [
+			//json(),
+			typescript({
+				tsconfig: './tsconfig.json',
+				//tsconfigOverride: {
+				//	compilerOptions: {
+				//		declaration: false,
+				//	}
+				//}
+			})
+		],
 		external: ['@trakit/objects', '@trakit/commands']
 	}
 ];
