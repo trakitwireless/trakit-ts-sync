@@ -47,6 +47,20 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	#rest: TrakitRestfulCommander;
 
 	/**
+	 * When true, the Trak-iT WebSocket will automatically attempt to establish a connection.
+	 * This value defaults to true if the commander is instantiated with a `ghostId`.
+	 */
+	get autoConnect(): boolean {
+		return this.#socket.reconnectEnabled;
+	}
+	set autoConnect(value: boolean) {
+		this.#socket.reconnectEnabled = !!value;
+		if (value && this.#socket.state === TrakitSocketStatus.closed) {
+			this.#socket.open();
+		}
+	}
+
+	/**
 	 * Event raised when the Trak-iT WebSocket connection is opened.
 	 */
 	onOpen?: ((this: TrakitSyncCommander, account: RepSelfGet) => any) | null;
@@ -91,6 +105,8 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		this.#socket.onError = (reply: Reply) => this.#socketError(reply);
 		this.#socket.onMessage = (kind: string, body: JsonObject) => this.#socketMessage(kind, body);
 		this.#socket.onClose = (reply: Reply) => this.#socketClose(reply);
+
+		this.autoConnect = !!this.account.ghostId;
 	}
 	/**
 	 * Disposes of the Trak-iT WebSocket connection, and cleans up references.
