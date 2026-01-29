@@ -17,10 +17,10 @@
 		"skipLibCheck": true,
 		"paths": {
 			"@trakit/commands": [
-				"../trakit-ts-commands/index.ts"
+				"../trakit-ts-commands/commands/index.ts"
 			],
 			"@trakit/objects": [
-				"../trakit-ts-objects/index.ts"
+				"../trakit-ts-objects/objects/index.ts"
 			],
 		}
 	},
