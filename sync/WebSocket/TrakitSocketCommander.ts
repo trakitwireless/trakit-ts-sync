@@ -381,18 +381,17 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param msgContent The JSON object containing the account information.
 	 */
 	#socketAccount(msgContent: JsonObject): void {
-		const msgUser = { ...msgContent.user as JsonObject },
-			msgContact = msgUser.contact as JsonObject,
-			msgMachine = msgContent.machine as JsonObject;
 		if (msgContent.user) {
-			if (msgContact) {
+			const msgUser = { ...msgContent.user as JsonObject };
+			if (msgUser.contact) {
+				const msgContact = msgUser.contact as JsonObject;
 				this.#socketSync([, "contact", "Merged"], msgContact);
 				msgUser.contact = msgContact["id"];
 			}
 			this.#socketSync([, "user", "Merged"], msgUser);
 		}
-		if (msgMachine) {
-			this.#socketSync([, "machine", "Merged"], msgMachine);
+		if (msgContent.machine) {
+			this.#socketSync([, "machine", "Merged"], msgContent.machine as JsonObject);
 		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0

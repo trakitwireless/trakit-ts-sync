@@ -59,6 +59,12 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			this.#socket.open();
 		}
 	}
+	/**
+	 * Indicates whether the Trak-iT WebSocket is currently connected.
+	 */
+	get online(): boolean {
+		return this.#socket.state === TrakitSocketStatus.open;
+	}
 
 	/**
 	 * Event raised when the Trak-iT WebSocket connection is opened.
@@ -237,10 +243,13 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	isSynced(companyId: ulong, types: SyncName[]): boolean {
-		const current = this.#getCurrentSync(companyId),
-			requested = SYNCS_TO_SUBS(types);
-		return requested.every(sub => current.regions.includes(sub))
-			&& this.#socket.state === TrakitSocketStatus.open;
+		let synced = this.#socket.state === TrakitSocketStatus.open;
+		if (synced) {
+			const current = this.#getCurrentSync(companyId),
+				requested = SYNCS_TO_SUBS(types);
+			synced = requested.every(sub => current.regions.includes(sub));
+		}
+		return synced;
 	}
 	/**
 	 * Begins synchronizing the given regions.
