@@ -1,7 +1,7 @@
 {
   "name": "@trakit/sync",
   "type": "module",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "./trakit-sync.min.js",
   "types": "./index.d.ts",
   "scripts": {
@@ -12,9 +12,10 @@
     "url": "git+https://github.com/trakitwireless/trakit-ts-sync.git"
   },
   "files": [
-    "_publish/",
-    "LICENSE.md",
-    "README.md"
+	"LICENSE",
+	"README.md",
+	"**/*.js",
+	"**/*.d.ts"
   ],
   "keywords": [
     "trakit"

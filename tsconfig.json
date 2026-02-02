@@ -3,7 +3,11 @@
 		"target": "ESNext",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"declaration": true, // Optionally generate types
+		"declaration": true,
+		"declarationMap": true,
+		"declarationDir": "./_publish",
+		"emitDeclarationOnly": false,
+		"rootDir": "./sync",
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"isolatedModules": true,
@@ -17,12 +21,14 @@
 		"skipLibCheck": true,
 		"paths": {
 			"@trakit/commands": [
-				"../trakit-ts-commands/commands/index.ts"
+				"../trakit-ts-commands/_publish/index.d.ts",
+				//"../trakit-ts-commands/commands/index.ts",
 			],
 			"@trakit/objects": [
-				"../trakit-ts-objects/objects/index.ts"
-			],
-		}
+				"../trakit-ts-objects/_publish/index.d.ts",
+				//"../trakit-ts-objects/objects/index.ts",
+			]
+		},
 	},
 	"include": [
 		"./sync/index.ts"
