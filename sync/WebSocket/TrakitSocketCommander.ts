@@ -500,17 +500,27 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			switch (state) {
 				case TrakitSocketStatus.closed:
 					const endpoint = this.createBaseUrl();
-					if (this.account.machine) {
-						endpoint.searchParams.delete("shadowKey");
-						if (this.account.machine.secret?.length) {
-							endpoint.searchParams.delete("shadowSig");// sign without key or sig
-							endpoint.searchParams.append("shadowSig", await this.account.machine.createHmacSignature(endpoint));
-						}
-						endpoint.searchParams.append("shadowKey", this.account.machine.key);
-					} else if (this.account.ghostId) {
-						endpoint.searchParams.set("ghostId", this.account.ghostId);
-					}
-					this.#socket = new WebSocket(endpoint);
+					this.#socket = new WebSocket(
+						endpoint,
+						this.account.machine
+							? (
+								this.account.machine.secret?.length
+									? "HMAC256#" + btoa(
+										this.account.machine.key
+										+ ":"
+										+ (await this.account.machine.createHmacSignature(endpoint))
+									)
+									: "MACHINE#" + btoa(
+										this.account.machine.key
+									)
+							)
+								.replaceAll("/", "|")
+								.replace(/=*$/, "")
+							: (
+								this.account.ghostId
+								|| undefined
+							)
+					);
 					this.#socket.onopen = (ev) => this.#socketOpen(ev);
 					this.#socket.onerror = (ev) => this.#socketError(ev);
 					this.#socket.onclose = (ev) => this.#socketClose(ev);
