@@ -23,6 +23,7 @@ import {
 	ulong,
 	url
 } from '@trakit/objects';
+import { TrakitAccountEvent } from "../API/Events";
 import {
 	createClientErrorResponse,
 	getJsonKeyValue,
@@ -31,6 +32,7 @@ import {
 } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { MSG_SYNC } from "./Constants";
+import { TrakitSocketCloseEvent, TrakitSocketMessageEvent } from './Events';
 import { makeCommandName } from "./Functions";
 
 /**
@@ -141,25 +143,51 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	get ready(): boolean { return this.#socketReady && this.#socketOperable; }
 
+	//#region Events
 	/**
 	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
 	 */
-	onOpen?: ((this: TrakitSocketCommander, account: RepSelfGet) => any) | nothing;
+	_handleOpen(this: TrakitSocketCommander, account: RepSelfGet): any {
+		const handlers = this._handlers.get("open");
+		if (handlers?.length) {
+			const event = new TrakitAccountEvent(account);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
 	/**
 	 * Gets invoked any time the WebSocket connection is closed.
 	 */
-	onClose?: ((this: TrakitSocketCommander, reply: Reply) => any) | nothing;
+	_handleClose(this: TrakitSocketCommander, reply: Reply) {
+		const handlers = this._handlers.get("close");
+		if (handlers?.length) {
+			const event = new TrakitSocketCloseEvent("close", reply);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
 	/**
 	 * Gets invoked any time a message is received by the Trak-iT WebSocket connection.
 	 * This is useful for logging or debugging, but you should use the {@link onUpdate}, {@link onDelete},
 	 * and {@link onList} events to track changes to objects.
 	 */
-	onMessage?: ((this: TrakitSocketCommander, name: string, body: JsonObject) => any) | nothing;
+	_handleMessage(this: TrakitSocketCommander, name: string, body: JsonObject) {
+		const handlers = this._handlers.get("message");
+		if (handlers?.length) {
+			const event = new TrakitSocketMessageEvent(name, body);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
 	/**
 	 * Gets invoked any time an error occurs on the WebSocket.
 	 */
-	onError?: ((this: TrakitSocketCommander, reply: Reply) => any) | nothing;
-
+	_handleError(this: TrakitSocketCommander, reply: Reply) {
+		const handlers = this._handlers.get("error");
+		if (handlers?.length) {
+			const event = new TrakitSocketCloseEvent("error", reply);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
+	//#endregion Events
+	
 	//#region Internal WebSocket control
 	/**
 	 * Counter used to correlate requests to responses.
@@ -211,7 +239,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * I'm not sure what good this thing will do.
 	 */
 	#socketError(event: Event) {
-		this.onError?.(new Reply({
+		this._handleError(new Reply({
 			"errorCode": ErrorCode.service,
 			"message": "WebSocket error",
 			"errorDetails": {
@@ -260,7 +288,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					: {
 						...response,
 						"reqId": reqId,
-						"errorCode": ErrorCode.unknown,
+						"errorCode": ErrorCode.service,
 						"errorDetails": {
 							...errorDetails,
 						},
@@ -269,7 +297,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		}
 
 		// fire event
-		this.onClose?.(new Reply(response));
+		this._handleClose?.(new Reply(response));
 
 		// start reconnect timer
 		this.#timerReconnect = this.reconnectEnabled
@@ -315,7 +343,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		 * The "noopResponse", because the "no operation" messages do not need an event.
 		 */
 		if (!(msgName === "connectionResponse" || msgName === "noopResponse")) {
-			this.onMessage?.(msgName, msgContent);
+			this._handleMessage(msgName, msgContent);
 		}
 
 		// then, handle special messages
@@ -327,13 +355,13 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				// Promise is settled here, not below
 				this.#requestSettle(CMD_CONNECTION, msgContent);
 				// then we fire event here, not below
-				this.onAccount?.(this.account);
-				this.onOpen?.(this.account);
+				this._handleAccount(this.account);
+				this._handleOpen(this.account);
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":
 				this.#socketAccount(msgContent);
-				this.onAccount?.(this.account);
+				this._handleAccount(this.account);
 				break;
 			case "updateOwnPasswordResponse":
 				if (!this.#socketOperable) {
@@ -342,15 +370,15 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				break;
 			case "sessionMachineMerged":
 				this.account.machine?.fromJSON(msgContent);
-				this.onAccount?.(this.account);
+				this._handleAccount(this.account);
 				break;
 			case "sessionGeneralMerged":
 				this.account.user?.general?.fromJSON(msgContent);
-				this.onAccount?.(this.account);
+				this._handleAccount(this.account);
 				break;
 			case "sessionAdvancedMerged":
 				this.account.user?.advanced?.fromJSON(msgContent);
-				this.onAccount?.(this.account);
+				this._handleAccount(this.account);
 				break;
 			case "logoutResponse":
 				this.close();
@@ -358,7 +386,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			case "sessionEnded":
 				this.#socketAccount(msgContent);
 				this.#socketOperable = false;
-				this.onAccount?.(this.account);
+				this._handleAccount(this.account);
 				break;
 		}
 
@@ -381,18 +409,17 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param msgContent The JSON object containing the account information.
 	 */
 	#socketAccount(msgContent: JsonObject): void {
-		const msgUser = { ...msgContent.user as JsonObject },
-			msgContact = msgUser.contact as JsonObject,
-			msgMachine = msgContent.machine as JsonObject;
 		if (msgContent.user) {
-			if (msgContact) {
+			const msgUser = { ...msgContent.user as JsonObject };
+			if (msgUser.contact) {
+				const msgContact = msgUser.contact as JsonObject;
 				this.#socketSync([, "contact", "Merged"], msgContact);
 				msgUser.contact = msgContact["id"];
 			}
 			this.#socketSync([, "user", "Merged"], msgUser);
 		}
-		if (msgMachine) {
-			this.#socketSync([, "machine", "Merged"], msgMachine);
+		if (msgContent.machine) {
+			this.#socketSync([, "machine", "Merged"], msgContent.machine as JsonObject);
 		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
@@ -426,10 +453,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					case "Merged":
 					case "Suspended":
 						const object = (reply as ReplySyncGet<IRequestable>).getObject?.();
-						if (object) this.onUpdate?.(type, companyId, object);
+						if (object) this._handleUpdate(type, companyId, object);
 						break;
 					case "Deleted":
-						this.onDelete?.(type, companyId, getJsonKeyValue(msgContent, type));
+						this._handleDelete(type, companyId, getJsonKeyValue(msgContent, type));
 						break;
 				}
 			}
@@ -480,9 +507,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
 	 */
-	dispose(): void {
-		this.#socketOperable = false;	// prevent re-connect
+	override dispose(): void {
 		this.close().finally(() => {
+			super.dispose();
+			// drop it like it's hot
 			(this.#socket as any) =
 				(this.#requestsPending as any) = null;
 		});
@@ -551,6 +579,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			switch (state) {
 				case TrakitSocketStatus.opening:
 				case TrakitSocketStatus.open:
+					this.#socketOperable = false;	// prevent re-connect
 					this.reconnectEnabled = false;
 					this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
 						(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));

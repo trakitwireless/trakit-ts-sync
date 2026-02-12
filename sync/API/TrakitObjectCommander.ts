@@ -421,28 +421,115 @@ import {
 	UserGroup,
 	UserNotifications
 } from '@trakit/objects';
+import {
+	TrakitAccountEvent,
+	TrakitDeleteEvent,
+	TrakitEventHandler,
+	TrakitListEvent,
+	TrakitUpdateEvent,
+} from './Events';
 import { TrakitBaseCommander } from './TrakitBaseCommander';
 
 /**
  * Base class to retrieve, modify, and delete Trak-iT objects via the APIs.
  */
 export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommander<TRequest> {
+	//#region Events
+	/**
+	 * A map of event types to their registered handlers.
+	 */
+	protected _handlers = new Map<string, TrakitEventHandler[]>();
+
 	/**
 	 * Gets invoked any time the connection's account information is updated while the connection is open.
 	 */
-	onAccount?: ((this: TrakitObjectCommander<TRequest>, account: RepSelfGet) => any) | nothing;
+	protected _handleAccount(account: RepSelfGet): any {
+		const handlers = this._handlers.get("account");
+		if (handlers?.length) {
+			const event = new TrakitAccountEvent(account);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
 	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
 	 */
-	onList?: ((this: TrakitObjectCommander<TRequest>, kind: SyncName, companyId: ulong, objects: IRequestable[]) => any) | nothing;
+	protected _handleList(kind: SyncName, companyId: ulong, objects: IRequestable[]): any {
+		const handlers = this._handlers.get("list");
+		if (handlers?.length) {
+			const event = new TrakitListEvent(kind, companyId, objects);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is created or updated.
 	 */
-	onUpdate?: ((this: TrakitObjectCommander<TRequest>, kind: SyncName, companyId: ulong, object: IRequestable) => any) | nothing;
+	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable): any { 
+		const handlers = this._handlers.get("update");
+		if (handlers?.length) {
+			const event = new TrakitUpdateEvent(kind, companyId, object);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is deleted.
 	 */
-	onDelete?: ((this: TrakitObjectCommander<TRequest>, kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) => any) | nothing;
+	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string): any {
+		const handlers = this._handlers.get("delete");
+		if (handlers?.length) {
+			const event = new TrakitDeleteEvent(kind, companyId, key);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
+	
+	/**
+	 * Adds an event handler for a specific event type.
+	 * @param type		The type of event to listen for.
+	 * @param handler	The function to call when the event occurs.
+	 * @returns			True if the handler was added, false if it was already registered.
+	 */
+	on(type: string, handler: TrakitEventHandler): boolean {
+		let handlers = this._handlers.get(type);
+		if (!handlers) this._handlers.set(type, handlers = []);
+		const exists = handlers.includes(handler);
+		if (!exists) handlers.push(handler);
+		return !exists;
+	}
+	/**
+	 * Removes an event handler for a specific event type.
+	 * If no handler is provided, all handlers for the event type will be removed.
+	 * @param type		The type of event to stop listening for.
+	 * @param handler	The function to remove from the event listeners.
+	 * @returns			True if the handler(s) got removed, otherwise false.
+	 */
+	off(type: string, handler?: TrakitEventHandler | nothing): boolean {
+		const handlers = this._handlers.get(type);
+		if (handlers?.length) {
+			if (handler) {
+				const index = handlers.indexOf(handler);
+				return !!(index > -1 && handlers.splice(index, 1));
+			} else {
+				return !(handlers.length = 0);
+			}
+		}
+		return false;
+	}
+	/**
+	 * Checks if a specific event handler is registered for a given event type.
+	 * @param type		The type of event to check.
+	 * @param handler	The function to check for.
+	 * @returns			True if the handler is registered, otherwise false.
+	 */
+	handles(type: string, handler: TrakitEventHandler): boolean {
+		return this._handlers.get(type)?.includes(handler) ?? false;
+	}
+	//#endregion Events
+
+	dispose(): void {
+		// unbind event handlers
+		for (const name of [...this._handlers.keys()]) {
+			this.off(name);
+		}
+	}
 	
 	/**
 	 * Overridden to handle storage and events.
@@ -455,16 +542,16 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 				companyId = reply.getCompanyId();
 			if (reply instanceof ReplySyncList) {
 				if (!action.filter) {
-					this.onList?.(action.object, companyId, reply.getList());
+					this._handleList(action.object, companyId, reply.getList());
 				} else {
-					reply.getList().forEach(obj => this.onUpdate?.(action.object, companyId, obj));
+					reply.getList().forEach(obj => this._handleUpdate(action.object, companyId, obj));
 				}
 			} else if (reply instanceof ReplySyncGet) {
-				this.onUpdate?.(action.object, companyId, reply.getObject());
+				this._handleUpdate(action.object, companyId, reply.getObject());
 			} else if (reply instanceof ReplySyncDelete) {
-				this.onDelete?.(action.object, companyId, reply.getKey());
+				this._handleDelete(action.object, companyId, reply.getKey());
 			} else if (reply instanceof ReplySyncBatchDelete) {
-				reply.getResults().forEach(result => this.onDelete?.(action.object, result.getCompanyId(), result.getKey()));
+				reply.getResults().forEach(result => this._handleDelete(action.object, result.getCompanyId(), result.getKey()));
 			}
 		}
 		return reply;
@@ -478,7 +565,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	public async selfDetails(): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfGet());
 		this.setAuth(reply);
-		this.onAccount?.(reply);
+		this._handleAccount(reply);
 		return reply;
 	}
 
@@ -496,7 +583,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			userAgent: userAgent ?? null,
 		}));
 		this.setAuth(reply);
-		this.onAccount?.(reply);
+		this._handleAccount(reply);
 		return reply;
 	}
 	/**
@@ -504,10 +591,10 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @returns The logout response.
 	 */
 	public logout(): Promise<RepSelfLogout> {
-		const reply = this.command<RepSelfLogout>(new PaySelfLogout());
+		const promise = this.command<RepSelfLogout>(new PaySelfLogout()); // not awaited
 		this.setAuth();
-		this.onAccount?.(this.account);
-		return reply;
+		this._handleAccount(this.account);
+		return promise;
 	}
 
 	/**

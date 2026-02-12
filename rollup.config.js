@@ -45,6 +45,9 @@ export default [
 				//}
 			})
 		],
-		external: ['@trakit/objects', '@trakit/commands']
+		external: [
+			'@trakit/objects',
+			'@trakit/commands',
+		],
 	}
 ];

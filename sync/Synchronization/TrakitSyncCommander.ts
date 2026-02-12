@@ -7,21 +7,19 @@
 	SubscriptionType
 } from "@trakit/commands";
 import {
-	codified,
-	email,
 	guid,
-	IRequestable,
-	JsonObject,
 	Machine,
 	nothing,
 	SyncName,
 	ulong,
 	url
 } from '@trakit/objects';
+import { TrakitAccountEvent, TrakitDeleteEvent, TrakitEvent, TrakitListEvent, TrakitUpdateEvent } from "../API/Events";
 import { makePayloadClass } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { TrakitRestfulCommander } from "../RESTful/TrakitRestfulCommander";
 import { OBJECT_SUBSCRIPTIONS } from "../WebSocket/Constants";
+import { TrakitSocketCloseEvent } from "../WebSocket/Events";
 import { SubscribedRegions } from "../WebSocket/SubscribedRegions";
 import { TrakitSocketCommander, TrakitSocketStatus } from "../WebSocket/TrakitSocketCommander";
 import { SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Functions";
@@ -47,23 +45,43 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	#rest: TrakitRestfulCommander;
 
 	/**
-	 * Event raised when the Trak-iT WebSocket connection is opened.
+	 * When true, the Trak-iT WebSocket will automatically attempt to establish a connection.
+	 * This value defaults to true if the commander is instantiated with a `ghostId`.
 	 */
-	onOpen?: ((this: TrakitSyncCommander, account: RepSelfGet) => any) | null;
+	get autoConnect(): boolean {
+		return this.#socket.reconnectEnabled;
+	}
+	set autoConnect(value: boolean) {
+		this.#socket.reconnectEnabled = !!value;
+		if (value && this.#socket.state === TrakitSocketStatus.closed) {
+			this.#socket.open();
+		}
+	}
 	/**
-	 * Event raised when an error occurs on the Trak-iT WebSocket connection.
+	 * Indicates whether the Trak-iT WebSocket is currently connected.
 	 */
-	onError?: ((this: TrakitSyncCommander, account: Reply) => any) | null;
-	/**
-	 * Gets invoked any time a message is received by the Trak-iT WebSocket connection.
-	 * This is useful for logging or debugging, but you should use the {@link onUpdate}, {@link onDelete},
-	 * and {@link onList} events to track changes to objects.
-	 */
-	onMessage?: (this: TrakitSyncCommander, kind: string, content: JsonObject) => void;
-	/**
-	 * Event raised when the Trak-iT WebSocket connection is closed.
-	 */
-	onClose?: ((this: TrakitSyncCommander, account: Reply) => any) | null;
+	get online(): boolean {
+		return this.#socket.state === TrakitSocketStatus.open;
+	}
+
+	///**
+	// * Event raised when the Trak-iT WebSocket connection is opened.
+	// */
+	//onOpen?: ((this: TrakitSyncCommander, account: RepSelfGet) => any) | null;
+	///**
+	// * Event raised when an error occurs on the Trak-iT WebSocket connection.
+	// */
+	//onError?: ((this: TrakitSyncCommander, account: Reply) => any) | null;
+	///**
+	// * Gets invoked any time a message is received by the Trak-iT WebSocket connection.
+	// * This is useful for logging or debugging, but you should use the {@link onUpdate}, {@link onDelete},
+	// * and {@link onList} events to track changes to objects.
+	// */
+	//onMessage?: (this: TrakitSyncCommander, kind: string, content: JsonObject) => void;
+	///**
+	// * Event raised when the Trak-iT WebSocket connection is closed.
+	// */
+	//onClose?: ((this: TrakitSyncCommander, account: Reply) => any) | null;
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
@@ -75,28 +93,48 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		wssAddress?: URL | url | nothing,
 	) {
 		super(account);
-		this.#rest = new TrakitRestfulCommander(this.account, httpAddress);
-		this.#socket = new TrakitSocketCommander(this.account, wssAddress);
+		const onOpen = (event: TrakitEvent) => this.#socketOpen((event as TrakitAccountEvent).account),
+			onClose = (event: TrakitEvent) => this.#socketClose((event as TrakitSocketCloseEvent).reply),
+			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitAccountEvent).account),
+			onList = (event: TrakitEvent) => this._handleList(
+				(event as TrakitListEvent).kind,
+				(event as TrakitListEvent).companyId,
+				(event as TrakitListEvent).objects
+			),
+			onUpdate = (event: TrakitEvent) => this._handleUpdate(
+				(event as TrakitUpdateEvent).kind,
+				(event as TrakitUpdateEvent).companyId,
+				(event as TrakitUpdateEvent).object
+			),
+			onDelete = (event: TrakitEvent) => this._handleDelete(
+				(event as TrakitDeleteEvent).kind,
+				(event as TrakitDeleteEvent).companyId,
+				(event as TrakitDeleteEvent).key
+			);
+		this.#rest = new TrakitRestfulCommander(this.account, httpAddress ?? TrakitRestfulCommander.URI_PROD);
+		this.#rest.on("account", onAccount);
+		this.#rest.on("list", onList);
+		this.#rest.on("update", onUpdate);
+		this.#rest.on("delete", onDelete);
 		
-		this.#rest.onAccount =
-			this.#socket.onAccount = (account: RepSelfGet) => this.#onAccount?.(account);
-		this.#rest.onList =
-			this.#socket.onList = (kind: SyncName, companyId: ulong, objects: IRequestable[]) => this.onList?.(kind, companyId, objects);
-		this.#rest.onUpdate =
-			this.#socket.onUpdate = (kind: SyncName, companyId: ulong, object: IRequestable) => this.onUpdate?.(kind, companyId, object);
-		this.#rest.onDelete =
-			this.#socket.onDelete = (kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) => this.onDelete?.(kind, companyId, key);
+		this.#socket = new TrakitSocketCommander(this.account, wssAddress ?? TrakitSocketCommander.URI_PROD);
+		this.#socket.on("account", onAccount);
+		this.#socket.on("list", onList);
+		this.#socket.on("update", onUpdate);
+		this.#socket.on("delete", onDelete);
+		this.#socket.on("open", onOpen);
+		this.#socket.on("close", onClose);
 		
-		this.#socket.onOpen = (account) => this.#socketOpen(account);
-		this.#socket.onError = (reply: Reply) => this.#socketError(reply);
-		this.#socket.onMessage = (kind: string, body: JsonObject) => this.#socketMessage(kind, body);
-		this.#socket.onClose = (reply: Reply) => this.#socketClose(reply);
+		this.autoConnect = !!(
+			this.account.ghostId
+			|| this.account.machine?.key
+		);
 	}
 	/**
 	 * Disposes of the Trak-iT WebSocket connection, and cleans up references.
 	 */
-	dispose() {
-		// this.#rest?.dispose();
+	override dispose() {
+		this.#rest.dispose();
 		this.#socket.dispose();
 		(this.#rest as any) =
 			(this.#socket as any) = null;
@@ -107,10 +145,10 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 */
 	override setAuth(
 		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string; }
-				| { ghostId: guid; }
-				| guid
-				| nothing
+			| Machine | { key: string; }
+			| { ghostId: guid; }
+			| guid
+			| nothing
 	): void {
 		super.setAuth(account);
 		if (account !== this.#rest?.account) this.#rest?.setAuth(this.account);
@@ -125,9 +163,9 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		switch (action.object as string) {
 			case "Subscription":
 			case "Self":
-				return this.#socket.command<TReply>(payload);
+				return this.socket<TReply>(payload);
 			default:
-				return this.#rest.command<TReply>(payload);
+				return this.rest<TReply>(payload);
 		}
 	}
 	/**
@@ -160,14 +198,6 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 
 	//#region Events
 	/**
-	 * Sets the authentication for both the RESTful service and WebSocket, then raises the `onAccount` event.
-	 * @param account 
-	 */
-	#onAccount(account: RepSelfGet) {
-		this.setAuth(account);
-		this.onAccount?.(account);
-	}
-	/**
 	 * Handles the `connection` event from the Trak-iT WebSocket.
 	 * This will re-subscribe to any regions that were subscribed to before the disconnection occured.
 	 * Also restarts the subscription expirer, and raises the `onOpen` event.
@@ -185,7 +215,6 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		});
 		// start expired subscription timer
 		this.#syncExpirer();
-		this.onOpen?.(account);
 	}
 	/**
 	 * Handles the `disconnection` event from the Trak-iT WebSocket.
@@ -199,19 +228,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		this.#syncTimer = 0;
 		// we don't remove any subscriptions, they remain until explicitly unsubscribed or expired
 		// they are re-subscribed when we reconnect in {@link #onOpen}
-		this.onClose?.(reply);
 	}
-	/**
-	 * Handles message events from the Trak-iT WebSocket by raising the `onMessage` event.
-	 * @param kind 
-	 * @param content 
-	 */
-	#socketMessage(kind: string, content: JsonObject) { this.onMessage?.(kind, content); }
-	/**
-	 * Handles error events from the Trak-iT WebSocket by raising the `onError` event.
-	 * @param error 
-	 */
-	#socketError(error: Reply) { this.onError?.(error); }
 	//#endregion Events
 	//#region Sync
 	/**
@@ -221,10 +238,13 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	isSynced(companyId: ulong, types: SyncName[]): boolean {
-		const current = this.#getCurrentSync(companyId),
-			requested = SYNCS_TO_SUBS(types);
-		return requested.every(sub => current.regions.includes(sub))
-			&& this.#socket.state === TrakitSocketStatus.open;
+		let synced = this.#socket.state === TrakitSocketStatus.open;
+		if (synced) {
+			const current = this.#getCurrentSync(companyId),
+				requested = SYNCS_TO_SUBS(types);
+			synced = requested.every(sub => current.regions.includes(sub));
+		}
+		return synced;
 	}
 	/**
 	 * Begins synchronizing the given regions.
