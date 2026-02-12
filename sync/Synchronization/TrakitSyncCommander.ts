@@ -14,12 +14,12 @@ import {
 	ulong,
 	url
 } from '@trakit/objects';
-import { TrakitAccountEvent, TrakitDeleteEvent, TrakitEvent, TrakitListEvent, TrakitUpdateEvent } from "../API/Events";
+import { TrakitEventAccount, TrakitEventDelete, TrakitEvent, TrakitEventList, TrakitEventUpdate } from "../API/Events";
 import { makePayloadClass } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { TrakitRestfulCommander } from "../RESTful/TrakitRestfulCommander";
 import { OBJECT_SUBSCRIPTIONS } from "../WebSocket/Constants";
-import { TrakitSocketCloseEvent } from "../WebSocket/Events";
+import { TrakitEventSocketClose } from "../WebSocket/Events";
 import { SubscribedRegions } from "../WebSocket/SubscribedRegions";
 import { TrakitSocketCommander, TrakitSocketStatus } from "../WebSocket/TrakitSocketCommander";
 import { SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Functions";
@@ -93,23 +93,23 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		wssAddress?: URL | url | nothing,
 	) {
 		super(account);
-		const onOpen = (event: TrakitEvent) => this.#socketOpen((event as TrakitAccountEvent).account),
-			onClose = (event: TrakitEvent) => this.#socketClose((event as TrakitSocketCloseEvent).reply),
-			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitAccountEvent).account),
+		const onOpen = (event: TrakitEvent) => this.#socketOpen((event as TrakitEventAccount).account),
+			onClose = (event: TrakitEvent) => this.#socketClose((event as TrakitEventSocketClose).reply),
+			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitEventAccount).account),
 			onList = (event: TrakitEvent) => this._handleList(
-				(event as TrakitListEvent).kind,
-				(event as TrakitListEvent).companyId,
-				(event as TrakitListEvent).objects
+				(event as TrakitEventList).kind,
+				(event as TrakitEventList).companyId,
+				(event as TrakitEventList).objects
 			),
 			onUpdate = (event: TrakitEvent) => this._handleUpdate(
-				(event as TrakitUpdateEvent).kind,
-				(event as TrakitUpdateEvent).companyId,
-				(event as TrakitUpdateEvent).object
+				(event as TrakitEventUpdate).kind,
+				(event as TrakitEventUpdate).companyId,
+				(event as TrakitEventUpdate).object
 			),
 			onDelete = (event: TrakitEvent) => this._handleDelete(
-				(event as TrakitDeleteEvent).kind,
-				(event as TrakitDeleteEvent).companyId,
-				(event as TrakitDeleteEvent).key
+				(event as TrakitEventDelete).kind,
+				(event as TrakitEventDelete).companyId,
+				(event as TrakitEventDelete).key
 			);
 		this.#rest = new TrakitRestfulCommander(this.account, httpAddress ?? TrakitRestfulCommander.URI_PROD);
 		this.#rest.on("account", onAccount);

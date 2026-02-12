@@ -422,11 +422,11 @@ import {
 	UserNotifications
 } from '@trakit/objects';
 import {
-	TrakitAccountEvent,
-	TrakitDeleteEvent,
+	TrakitEventAccount,
+	TrakitEventDelete,
 	TrakitEventHandler,
-	TrakitListEvent,
-	TrakitUpdateEvent,
+	TrakitEventList,
+	TrakitEventUpdate,
 } from './Events';
 import { TrakitBaseCommander } from './TrakitBaseCommander';
 
@@ -446,7 +446,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	protected _handleAccount(account: RepSelfGet): any {
 		const handlers = this._handlers.get("account");
 		if (handlers?.length) {
-			const event = new TrakitAccountEvent(account);
+			const event = new TrakitEventAccount(account);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -456,7 +456,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	protected _handleList(kind: SyncName, companyId: ulong, objects: IRequestable[]): any {
 		const handlers = this._handlers.get("list");
 		if (handlers?.length) {
-			const event = new TrakitListEvent(kind, companyId, objects);
+			const event = new TrakitEventList(kind, companyId, objects);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -466,7 +466,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable): any { 
 		const handlers = this._handlers.get("update");
 		if (handlers?.length) {
-			const event = new TrakitUpdateEvent(kind, companyId, object);
+			const event = new TrakitEventUpdate(kind, companyId, object);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -476,7 +476,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string): any {
 		const handlers = this._handlers.get("delete");
 		if (handlers?.length) {
-			const event = new TrakitDeleteEvent(kind, companyId, key);
+			const event = new TrakitEventDelete(kind, companyId, key);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}

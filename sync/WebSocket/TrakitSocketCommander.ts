@@ -23,7 +23,7 @@ import {
 	ulong,
 	url
 } from '@trakit/objects';
-import { TrakitAccountEvent } from "../API/Events";
+import { TrakitEventAccount } from "../API/Events";
 import {
 	createClientErrorResponse,
 	getJsonKeyValue,
@@ -32,7 +32,7 @@ import {
 } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { MSG_SYNC } from "./Constants";
-import { TrakitSocketCloseEvent, TrakitSocketMessageEvent } from './Events';
+import { TrakitEventSocketClose, TrakitEventSocketMessage } from './Events';
 import { makeCommandName } from "./Functions";
 
 /**
@@ -150,7 +150,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleOpen(this: TrakitSocketCommander, account: RepSelfGet): any {
 		const handlers = this._handlers.get("open");
 		if (handlers?.length) {
-			const event = new TrakitAccountEvent(account);
+			const event = new TrakitEventAccount(account);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -160,7 +160,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleClose(this: TrakitSocketCommander, reply: Reply) {
 		const handlers = this._handlers.get("close");
 		if (handlers?.length) {
-			const event = new TrakitSocketCloseEvent("close", reply);
+			const event = new TrakitEventSocketClose("close", reply);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -172,7 +172,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleMessage(this: TrakitSocketCommander, name: string, body: JsonObject) {
 		const handlers = this._handlers.get("message");
 		if (handlers?.length) {
-			const event = new TrakitSocketMessageEvent(name, body);
+			const event = new TrakitEventSocketMessage(name, body);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -182,7 +182,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleError(this: TrakitSocketCommander, reply: Reply) {
 		const handlers = this._handlers.get("error");
 		if (handlers?.length) {
-			const event = new TrakitSocketCloseEvent("error", reply);
+			const event = new TrakitEventSocketClose("error", reply);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}

@@ -26,7 +26,7 @@ export abstract class TrakitEvent {
  * Base class for all Trak-iT synchronization events.
  * Used for listing objects, getting single objects, as well as updates and deletions.
  */
-export abstract class TrakitSyncEvent extends TrakitEvent {
+export abstract class TrakitEventSync extends TrakitEvent {
 	/**
 	 * The type of object(s) being synchronized.
 	 */
@@ -45,7 +45,7 @@ export abstract class TrakitSyncEvent extends TrakitEvent {
 /**
  * Event raised when the Trak-iT account information is updated.
  */
-export class TrakitAccountEvent extends TrakitEvent {
+export class TrakitEventAccount extends TrakitEvent {
 	/**
 	 * The updated account information retrieved from the Trak-iT service.
 	 */
@@ -60,7 +60,7 @@ export class TrakitAccountEvent extends TrakitEvent {
  * Event raised when all objects for a given {@link Company} are retrieved from a Trak-iT service.
  * This is the equivalent of a "replace all" operation, and is used to synchronize local objects with the server.
  */
-export class TrakitListEvent extends TrakitSyncEvent {
+export class TrakitEventList extends TrakitEventSync {
 	/**
 	 * The list of objects retrieved from the Trak-iT service for the specified {@link Company}.
 	 */
@@ -74,7 +74,7 @@ export class TrakitListEvent extends TrakitSyncEvent {
 /**
  * Event raised when a single object for a given {@link Company} is updated.
  */
-export class TrakitUpdateEvent extends TrakitSyncEvent {
+export class TrakitEventUpdate extends TrakitEventSync {
 	/**
 	 * The object retrieved from the Trak-iT service for the specified {@link Company}.
 	 */
@@ -88,7 +88,7 @@ export class TrakitUpdateEvent extends TrakitSyncEvent {
 /**
  * Event raised when a single object for a given {@link Company} is deleted.
  */
-export class TrakitDeleteEvent extends TrakitSyncEvent {
+export class TrakitEventDelete extends TrakitEventSync {
 	/**
 	 * The unique identifier of the object deleted from the Trak-iT service.
 	 */

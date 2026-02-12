@@ -5,7 +5,7 @@ import { TrakitEvent } from "../API/Events";
 /**
  * Represents a message event received from the Trak-iT WebSocket.
  */
-export class TrakitSocketMessageEvent extends TrakitEvent {
+export class TrakitEventSocketMessage extends TrakitEvent {
 	/**
 	 * The name of the message event, used to identify the type of message received.
 	 */
@@ -24,7 +24,7 @@ export class TrakitSocketMessageEvent extends TrakitEvent {
 /**
  * Used when the Trak-iT WebSocket is closed, or an error occurs that causes the connection to close.
  */
-export class TrakitSocketCloseEvent extends TrakitEvent {
+export class TrakitEventSocketClose extends TrakitEvent {
 	/**
 	 * The reply contains the details and reason provided by the Trak-iT service when the WebSocket is closed.
 	 */
