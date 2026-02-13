@@ -31,6 +31,7 @@ export default [
 			{
 				file: '_publish/trakit-sync.min.js',
 				format: 'es',
+				exports: 'named',
 				plugins: [terser(obfuscate)]
 			}
 		],
