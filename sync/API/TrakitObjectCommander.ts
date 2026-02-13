@@ -422,6 +422,7 @@ import {
 	UserNotifications
 } from '@trakit/objects';
 import {
+	TrakitEvent,
 	TrakitEventAccount,
 	TrakitEventDelete,
 	TrakitEventHandler,
@@ -441,44 +442,28 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	protected _handlers = new Map<string, TrakitEventHandler[]>();
 
 	/**
-	 * Gets invoked any time the connection's account information is updated while the connection is open.
+	 * Gets invoked any time the service's account information is updated while the connection is open.
 	 */
-	protected _handleAccount(account: RepSelfGet): any {
-		const handlers = this._handlers.get("account");
-		if (handlers?.length) {
-			const event = new TrakitEventAccount(account);
-			handlers.forEach(handler => handler.call(this, event));
-		}
+	protected _handleAccount(account: RepSelfGet) {
+		this.fire("account", () => new TrakitEventAccount(account));
 	}
 	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
 	 */
-	protected _handleList(kind: SyncName, companyId: ulong, objects: IRequestable[]): any {
-		const handlers = this._handlers.get("list");
-		if (handlers?.length) {
-			const event = new TrakitEventList(kind, companyId, objects);
-			handlers.forEach(handler => handler.call(this, event));
-		}
+	protected _handleList(kind: SyncName, companyId: ulong, objects: IRequestable[]) {
+		this.fire("list", () => new TrakitEventList(kind, companyId, objects));
 	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is created or updated.
 	 */
-	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable): any { 
-		const handlers = this._handlers.get("update");
-		if (handlers?.length) {
-			const event = new TrakitEventUpdate(kind, companyId, object);
-			handlers.forEach(handler => handler.call(this, event));
-		}
+	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable) { 
+		this.fire("update", () => new TrakitEventUpdate(kind, companyId, object));
 	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is deleted.
 	 */
-	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string): any {
-		const handlers = this._handlers.get("delete");
-		if (handlers?.length) {
-			const event = new TrakitEventDelete(kind, companyId, key);
-			handlers.forEach(handler => handler.call(this, event));
-		}
+	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string){
+		this.fire("delete", () => new TrakitEventDelete(kind, companyId, key));
 	}
 	
 	/**
@@ -512,6 +497,18 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			}
 		}
 		return false;
+	}
+	/**
+	 * Raises an event of a specific type, invoking all registered handlers with the provided event data.
+	 * @param type		The name of the event to raise.
+	 * @param create	A function that creates the event object.  This function is invoked just once and only if there are handlers registered for the event type.
+	 */
+	protected fire(type: string, create: () => TrakitEvent) {
+		const handlers = this._handlers.get(type);
+		if (handlers?.length) {
+			const event = create();
+			handlers.forEach(handler => handler.call(this, event), this);
+		}
 	}
 	/**
 	 * Checks if a specific event handler is registered for a given event type.

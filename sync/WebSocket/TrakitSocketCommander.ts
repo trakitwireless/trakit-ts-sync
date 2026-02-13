@@ -384,8 +384,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.close();
 			// no break
 			case "sessionEnded":
-				this.#socketAccount(msgContent);
 				this.#socketOperable = false;
+				this.#socketAccount(msgContent);
 				this._handleAccount(this.account);
 				break;
 		}
@@ -522,7 +522,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	open(): Promise<RepSelfGet> {
 		clearTimeout(this.#timerReconnect);
-		this.#timerReconnect = 0;
 		return new Promise<RepSelfGet>(async (resolve, reject) => {
 			const state = this.state;
 			switch (state) {

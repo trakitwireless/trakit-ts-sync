@@ -93,38 +93,24 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		wssAddress?: URL | url | nothing,
 	) {
 		super(account);
-		const onOpen = (event: TrakitEvent) => this.#socketOpen((event as TrakitEventAccount).account),
-			onClose = (event: TrakitEvent) => this.#socketClose((event as TrakitEventSocketClose).reply),
-			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitEventAccount).account),
-			onList = (event: TrakitEvent) => this._handleList(
-				(event as TrakitEventList).kind,
-				(event as TrakitEventList).companyId,
-				(event as TrakitEventList).objects
-			),
-			onUpdate = (event: TrakitEvent) => this._handleUpdate(
-				(event as TrakitEventUpdate).kind,
-				(event as TrakitEventUpdate).companyId,
-				(event as TrakitEventUpdate).object
-			),
-			onDelete = (event: TrakitEvent) => this._handleDelete(
-				(event as TrakitEventDelete).kind,
-				(event as TrakitEventDelete).companyId,
-				(event as TrakitEventDelete).key
-			);
+
+		const onOpen = (event: TrakitEvent) => this.#handleOpen((event as TrakitEventAccount).account),
+			onClose = (event: TrakitEvent) => this.#handleClose((event as TrakitEventSocketClose).reply),
+			onAccount = (event: TrakitEvent) => this.#handleAccount((event as TrakitEventAccount).account),
+			onUplift = (event: TrakitEvent) => this.fire(event.type, () => event);
+	
 		this.#rest = new TrakitRestfulCommander(this.account, httpAddress ?? TrakitRestfulCommander.URI_PROD);
 		this.#rest.on("account", onAccount);
-		this.#rest.on("list", onList);
-		this.#rest.on("update", onUpdate);
-		this.#rest.on("delete", onDelete);
 		
 		this.#socket = new TrakitSocketCommander(this.account, wssAddress ?? TrakitSocketCommander.URI_PROD);
 		this.#socket.on("account", onAccount);
-		this.#socket.on("list", onList);
-		this.#socket.on("update", onUpdate);
-		this.#socket.on("delete", onDelete);
 		this.#socket.on("open", onOpen);
 		this.#socket.on("close", onClose);
-		
+		for (const type of ["account", "open", "close", "list", "update", "delete"]) {
+			this.#rest.on(type, onUplift);	// won't fire open/closed, but whatever
+			this.#socket.on(type, onUplift);
+		}
+
 		this.autoConnect = !!(
 			this.account.ghostId
 			|| this.account.machine?.key
@@ -138,21 +124,6 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		this.#socket.dispose();
 		(this.#rest as any) =
 			(this.#socket as any) = null;
-	}
-	/**
-	 * Overridden to set the authentication for both the RESTful service and WebSocket.
-	 * @inheritdoc
-	 */
-	override setAuth(
-		account?: RepSelfGet | { machine: { key: string } }
-			| Machine | { key: string; }
-			| { ghostId: guid; }
-			| guid
-			| nothing
-	): void {
-		super.setAuth(account);
-		if (account !== this.#rest?.account) this.#rest?.setAuth(this.account);
-		if (account !== this.#socket?.account) this.#socket?.setAuth(this.account);
 	}
 	/**
 	 * Overridden to route commands to either the Trak-iT WebSocket or RESTful service based on the type of action.
@@ -203,7 +174,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Also restarts the subscription expirer, and raises the `onOpen` event.
 	 * @param account 
 	 */
-	#socketOpen(account: RepSelfGet) {
+	#handleOpen(account: RepSelfGet) {
 		this.#syncRegions.forEach((current, companyId) => {
 			// remove all regions from in-sync list; ALL OF THEM.
 			// but, re-sync to the ones that were not going to expire
@@ -222,12 +193,21 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Finally, it raises the `onClose` event.
 	 * @param reply 
 	 */
-	#socketClose(reply: Reply) {
+	#handleClose(reply: Reply) {
 		// stop trying to remove expired subscriptions
 		clearTimeout(this.#syncTimer);
-		this.#syncTimer = 0;
 		// we don't remove any subscriptions, they remain until explicitly unsubscribed or expired
 		// they are re-subscribed when we reconnect in {@link #onOpen}
+	}
+	/**
+	 * Handles the `account` event from the Trak-iT WebSocket and the REST services.
+	 * Updates the authentication information for both the REST and WebSocket services.
+	 * @param account 
+	 */
+	#handleAccount(account: RepSelfGet): void {
+		this.setAuth(account);
+		this.#rest?.setAuth(this.account);
+		this.#socket?.setAuth(this.account);
 	}
 	//#endregion Events
 	//#region Sync
