@@ -349,7 +349,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		// then, handle special messages
 		switch (msgName) {
 			case "connectionResponse":
-				this.#socketAccount(msgContent);
+				this.#socketSelf(msgContent);
 				this.#lastConnected = new Date(this.#lastReceived);
 				this.#socketReady = true;
 				// Promise is settled here, not below
@@ -360,7 +360,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":
-				this.#socketAccount(msgContent);
+				this.#socketSelf(msgContent);
 				this._handleAccount(this.account);
 				break;
 			case "updateOwnPasswordResponse":
@@ -368,16 +368,16 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					this.#socketOperable = msgContent["errorCode"] === 0;
 				}
 				break;
-			case "sessionMachineMerged":
-				this.account.machine?.fromJSON(msgContent);
-				this._handleAccount(this.account);
-				break;
 			case "sessionGeneralMerged":
-				this.account.user?.general?.fromJSON(msgContent);
+				this.#socketSync([, "userGeneral", "Merged"], this.#socketSelfGeneral(msgContent));
 				this._handleAccount(this.account);
 				break;
 			case "sessionAdvancedMerged":
-				this.account.user?.advanced?.fromJSON(msgContent);
+				this.#socketSync([, "userAdvanced", "Merged"], this.#socketSelfAdvanced(msgContent));
+				this._handleAccount(this.account);
+				break;
+			case "sessionMachineMerged":
+				this.#socketSync([, "machine", "Merged"], this.#socketSelfAdvanced(msgContent));
 				this._handleAccount(this.account);
 				break;
 			case "logoutResponse":
@@ -385,7 +385,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			// no break
 			case "sessionEnded":
 				this.#socketOperable = false;
-				this.#socketAccount(msgContent);
+				this.#socketSelf(msgContent);
 				this._handleAccount(this.account);
 				break;
 		}
@@ -408,22 +408,67 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Updates the account information based on the received message content.
 	 * @param msgContent The JSON object containing the account information.
 	 */
-	#socketAccount(msgContent: JsonObject): void {
+	#socketSelf(msgContent: JsonObject): void {
 		if (msgContent.user) {
-			const msgUser = { ...msgContent.user as JsonObject };
-			if (msgUser.contact) {
-				const msgContact = msgUser.contact as JsonObject;
-				this.#socketSync([, "contact", "Merged"], msgContact);
-				msgUser.contact = msgContact["id"];
-			}
-			this.#socketSync([, "user", "Merged"], msgUser);
+			// raises contact sync event, then all group sync events, then user sync event
+			this.#socketSync(
+				[, "user", "Merged"],
+				this.#socketSelfAdvanced(
+					this.#socketSelfGeneral(
+						msgContent.user as JsonObject
+					)
+				)
+			);
 		}
 		if (msgContent.machine) {
-			this.#socketSync([, "machine", "Merged"], msgContent.machine as JsonObject);
+			// raises all group sync events, then machine sync event
+			this.#socketSync(
+				[, "machine", "Merged"],
+				this.#socketSelfAdvanced(
+					msgContent.machine as JsonObject
+				)
+			);
 		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
+	}
+	/**
+	 * Strips the `contact` object out of the `msgSelfGeneral` object, raises a sync event for the contact,
+	 * then returns a copy of the `msgSelfGeneral` with the `contact` replaced with the `id`,
+	 * so that the object can be used to raise a `UserGeneral` sync event.
+	 * @param msgSelfGeneral The JSON object containing the account information.
+	 * @returns A {@link UserGeneral} compatible JSON object with the updated account information.
+	 */
+	#socketSelfGeneral(msgSelfGeneral: JsonObject): JsonObject {
+		if (msgSelfGeneral?.contact) {
+			const msgContact = msgSelfGeneral.contact as JsonObject;
+			this.#socketSync([, "contact", "Merged"], msgContact);
+			return {
+				...msgSelfGeneral,
+				contact: msgContact["id"],
+			};
+		}
+		return msgSelfGeneral;
+	}
+	/**
+	 * Strips the `groups` array out of the `msgSelfAdvanced` object, raises a sync event for each `UserGroup`,
+	 * then returns a copy of the `msgSelfAdvanced` with the `groups` array replaced with the `id` of each object,
+	 * so that the object can be used to raise a `UserAdvanced` or `Machine` sync event.
+	 * @param msgSelfAdvanced The JSON object containing the account information.
+	 * @returns A {@link UserAdvanced} compatible JSON object with the updated account information.
+	 */
+	#socketSelfAdvanced(msgSelfAdvanced: JsonObject): JsonObject {
+		if ((msgSelfAdvanced?.groups as JsonObject[])?.length) {
+			return {
+				...msgSelfAdvanced,
+				groups: (msgSelfAdvanced.groups as JsonObject[]).map(msgGroup => {
+					this.#socketSync([, "userGroup", "Merged"], msgGroup);
+					return msgGroup["id"];
+				}),
+			};
+		}
+		return msgSelfAdvanced;
 	}
 	/**
 	 * Constructs a {@link ReplySync} object based on the message name,
