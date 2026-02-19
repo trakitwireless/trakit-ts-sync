@@ -687,6 +687,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					});
 					try {
 						this.#socket.send(command + " " + JSON.stringify(params));
+						this.#lastSent = new Date;
 					} catch (ex: Error | any) {
 						this.#requestSettle(reqId, createClientErrorResponse(ex));
 					}

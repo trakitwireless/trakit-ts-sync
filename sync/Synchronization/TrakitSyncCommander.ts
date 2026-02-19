@@ -38,50 +38,54 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	/**
 	 * The Trak-iT WebSocket's main connection.
 	 */
-	#socket: TrakitSocketCommander;
+	protected _socket: TrakitSocketCommander;
 	/**
 	 * The Trak-iT RESTful service.
 	 */
-	#rest: TrakitRestfulCommander;
+	protected _rest: TrakitRestfulCommander;
 
 	/**
 	 * When true, the Trak-iT WebSocket will automatically attempt to establish a connection.
 	 * This value defaults to true if the commander is instantiated with a `ghostId`.
 	 */
 	get autoConnect(): boolean {
-		return this.#socket.reconnectEnabled;
+		return this._socket.reconnectEnabled;
 	}
 	set autoConnect(value: boolean) {
-		this.#socket.reconnectEnabled = !!value;
-		if (value && this.#socket.state === TrakitSocketStatus.closed) {
-			this.#socket.open();
+		this._socket.reconnectEnabled = !!value;
+		if (value && this._socket.state === TrakitSocketStatus.closed) {
+			this._socket.open();
 		}
 	}
 	/**
 	 * Indicates whether the Trak-iT WebSocket is currently connected.
 	 */
-	get online(): boolean {
-		return this.#socket.state === TrakitSocketStatus.open;
+	get socketOnline(): boolean {
+		return this._socket.state === TrakitSocketStatus.open;
 	}
-
-	///**
-	// * Event raised when the Trak-iT WebSocket connection is opened.
-	// */
-	//onOpen?: ((this: TrakitSyncCommander, account: RepSelfGet) => any) | null;
-	///**
-	// * Event raised when an error occurs on the Trak-iT WebSocket connection.
-	// */
-	//onError?: ((this: TrakitSyncCommander, account: Reply) => any) | null;
-	///**
-	// * Gets invoked any time a message is received by the Trak-iT WebSocket connection.
-	// * This is useful for logging or debugging, but you should use the {@link onUpdate}, {@link onDelete},
-	// * and {@link onList} events to track changes to objects.
-	// */
-	//onMessage?: (this: TrakitSyncCommander, kind: string, content: JsonObject) => void;
-	///**
-	// * Event raised when the Trak-iT WebSocket connection is closed.
-	// */
-	//onClose?: ((this: TrakitSyncCommander, account: Reply) => any) | null;
+	/**
+	 * Address of the underlying Trak-iT WebSocket service.
+	 */
+	get socketDetails() {
+		return {
+			state: this._socket.state,
+			ready: this._socket.ready,
+			lastConnected: this._socket.lastConnected,
+			lastSent: this._socket.lastSent,
+			lastReceived: this._socket.lastReceived,
+			lastMessage: this._socket.lastMessage,
+		};
+	}
+	/**
+	 * URL of the underlying Trak-iT WebSocket service.
+	 */
+	get socketAddress(): URL | null { return this._socket.baseAddress; }
+	set socketAddress(value: URL) { this._socket.baseAddress = value; }
+	/**
+	 * URL of the underlying Trak-iT RESTful service.
+	 */
+	get restAddress(): URL | null { return this._rest.baseAddress; }
+	set restAddress(value: URL) { this._rest.baseAddress = value; }
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
@@ -89,26 +93,26 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 				| { ghostId: guid }
 				| guid
 				| nothing,
-		httpAddress?: URL | url | nothing,
-		wssAddress?: URL | url | nothing,
+		restAddress?: URL | url | nothing,
+		socketAddress?: URL | url | nothing,
 	) {
 		super(account);
 
 		const onOpen = (event: TrakitEvent) => this.#handleOpen((event as TrakitEventAccount).account),
 			onClose = (event: TrakitEvent) => this.#handleClose((event as TrakitEventSocketClose).reply),
-			onAccount = (event: TrakitEvent) => this.#handleAccount((event as TrakitEventAccount).account),
+			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitEventAccount).account),
 			onUplift = (event: TrakitEvent) => this.fire(event.type, () => event);
 	
-		this.#rest = new TrakitRestfulCommander(this.account, httpAddress ?? TrakitRestfulCommander.URI_PROD);
-		this.#rest.on("account", onAccount);
+		this._rest = new TrakitRestfulCommander(this.account, restAddress ?? TrakitRestfulCommander.URI_PROD);
+		this._rest.on("account", onAccount);
 		
-		this.#socket = new TrakitSocketCommander(this.account, wssAddress ?? TrakitSocketCommander.URI_PROD);
-		this.#socket.on("account", onAccount);
-		this.#socket.on("open", onOpen);
-		this.#socket.on("close", onClose);
+		this._socket = new TrakitSocketCommander(this.account, socketAddress ?? TrakitSocketCommander.URI_PROD);
+		this._socket.on("account", onAccount);
+		this._socket.on("open", onOpen);
+		this._socket.on("close", onClose);
 		for (const type of ["account", "open", "close", "list", "update", "delete"]) {
-			this.#rest.on(type, onUplift);	// won't fire open/closed, but whatever
-			this.#socket.on(type, onUplift);
+			this._rest.on(type, onUplift);	// won't fire open/closed, but whatever
+			this._socket.on(type, onUplift);
 		}
 
 		this.autoConnect = !!(
@@ -120,24 +124,38 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Disposes of the Trak-iT WebSocket connection, and cleans up references.
 	 */
 	override dispose() {
-		this.#rest.dispose();
-		this.#socket.dispose();
-		(this.#rest as any) =
-			(this.#socket as any) = null;
+		this._rest.dispose();
+		this._socket.dispose();
+		(this._rest as any) =
+			(this._socket as any) = null;
 	}
+
+	/**
+	 * @inheritDoc
+	 */
+	override setAuth(
+		account?: RepSelfGet | { machine: { key: string } }
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing
+	): void {
+		super.setAuth(account);
+		this._rest?.setAuth(this.account);
+		this._socket?.setAuth(this.account);
+	}
+
 	/**
 	 * Overridden to route commands to either the Trak-iT WebSocket or RESTful service based on the type of action.
 	 * @inheritdoc
 	 */
 	override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		const action = payload.getAction();
-		switch (action.object as string) {
-			case "Subscription":
-			case "Self":
-				return this.socket<TReply>(payload);
-			default:
-				return this.rest<TReply>(payload);
+		const action = payload.getAction(),
+			channel = action.object as string;
+		if (channel === "Subscription" || (channel === "Self" && this.socketOnline)) {
+			return this.socket<TReply>(payload);
 		}
+		return this.rest<TReply>(payload);
 	}
 	/**
 	 * Overridden to throw an error if used; it shouldn't be in use because of the {@link command} override.
@@ -156,7 +174,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	rest<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		return this.#rest.command<TReply>(payload);
+		return this._rest.command<TReply>(payload);
 	}
 	/**
 	 * Sends a command specifically to the Trak-iT WebSocket service.
@@ -164,7 +182,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	socket<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		return this.#socket.command<TReply>(payload);
+		return this._socket.command<TReply>(payload);
 	}
 
 	//#region Events
@@ -199,16 +217,6 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		// we don't remove any subscriptions, they remain until explicitly unsubscribed or expired
 		// they are re-subscribed when we reconnect in {@link #onOpen}
 	}
-	/**
-	 * Handles the `account` event from the Trak-iT WebSocket and the REST services.
-	 * Updates the authentication information for both the REST and WebSocket services.
-	 * @param account 
-	 */
-	#handleAccount(account: RepSelfGet): void {
-		this.setAuth(account);
-		this.#rest?.setAuth(this.account);
-		this.#socket?.setAuth(this.account);
-	}
 	//#endregion Events
 	//#region Sync
 	/**
@@ -218,7 +226,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	isSynced(companyId: ulong, types: SyncName[]): boolean {
-		let synced = this.#socket.state === TrakitSocketStatus.open;
+		let synced = this._socket.state === TrakitSocketStatus.open;
 		if (synced) {
 			const current = this.#getCurrentSync(companyId),
 				requested = SYNCS_TO_SUBS(types);
@@ -239,7 +247,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			current = this.#getCurrentSync(companyId),
 			requested = SYNCS_TO_SUBS(types).filter(sub => !current.regions.includes(sub));
 		if (requested.length > 0) {
-			const subscribed = (await this.#socket.subscribe(companyId, requested)).merged as SubscriptionType[];
+			const subscribed = (await this._socket.subscribe(companyId, requested)).merged as SubscriptionType[];
 			// remove expiration from any requested subscriptions, not new subscriptions
 			// some subscriptions may have been requested to be removed before re-synching
 			current.removeExpiries(requested);
@@ -288,7 +296,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 */
 	#syncExpirer() {
 		const expirations: Promise<Reply>[] = [];
-		if (this.#socket.state === TrakitSocketStatus.open) {
+		if (this._socket.state === TrakitSocketStatus.open) {
 			this.#syncRegions.forEach((subscribed, companyId) => {
 				const expired = subscribed.purgeExpired();
 				if (expired.length) expirations.push(this.unsubscribe(companyId, expired));
@@ -323,7 +331,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	subscribe(companyId: ulong, subscriptions: SubscriptionType[]): Promise<RepSubscription> {
-		return this.#socket.subscribe(companyId, subscriptions);
+		return this._socket.subscribe(companyId, subscriptions);
 	}
 	/**
 	 * Unsubscribes from the specified subscription types for the given company.
@@ -332,14 +340,14 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @returns 
 	 */
 	unsubscribe(companyId: ulong, subscriptions: SubscriptionType[]): Promise<RepSubscription> {
-		return this.#socket.unsubscribe(companyId, subscriptions);
+		return this._socket.unsubscribe(companyId, subscriptions);
 	}
 	/**
 	 * Retrieves the list of active subscriptions for the current account.
 	 * @returns 
 	 */
 	listSubscriptions(): Promise<RepSubscriptionList> {
-		return this.#socket.listSubscriptions();
+		return this._socket.listSubscriptions();
 	}
 	//#endregion Subscriptions
 	////#region Generics
