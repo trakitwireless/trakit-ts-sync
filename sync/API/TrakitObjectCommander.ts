@@ -445,25 +445,25 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * Gets invoked any time the service's account information is updated while the connection is open.
 	 */
 	protected _handleAccount(account: RepSelfGet) {
-		this.fire("account", () => new TrakitEventAccount(account));
+		this.fire("account", () => new TrakitEventAccount("account", account));
 	}
 	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
 	 */
 	protected _handleList(kind: SyncName, companyId: ulong, objects: IRequestable[]) {
-		this.fire("list", () => new TrakitEventList(kind, companyId, objects));
+		this.fire("list", () => new TrakitEventList("list", kind, companyId, objects));
 	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is created or updated.
 	 */
 	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable) { 
-		this.fire("update", () => new TrakitEventUpdate(kind, companyId, object));
+		this.fire("update", () => new TrakitEventUpdate("update", kind, companyId, object));
 	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is deleted.
 	 */
 	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string){
-		this.fire("delete", () => new TrakitEventDelete(kind, companyId, key));
+		this.fire("delete", () => new TrakitEventDelete("delete", kind, companyId, key));
 	}
 	
 	/**
