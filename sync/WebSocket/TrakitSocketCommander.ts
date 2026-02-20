@@ -32,7 +32,7 @@ import {
 } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { MSG_SYNC } from "./Constants";
-import { TrakitEventSocketClose, TrakitEventSocketMessage } from './Events';
+import { TrakitEventSocketBroadcast, TrakitEventSocketClose, TrakitEventSocketMessage } from './Events';
 import { makeCommandName } from "./Functions";
 
 /**
@@ -150,7 +150,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleOpen(this: TrakitSocketCommander, account: RepSelfGet): any {
 		const handlers = this._handlers.get("open");
 		if (handlers?.length) {
-			const event = new TrakitEventAccount(account);
+			const event = new TrakitEventAccount("open", account);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -172,7 +172,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleMessage(this: TrakitSocketCommander, name: string, body: JsonObject) {
 		const handlers = this._handlers.get("message");
 		if (handlers?.length) {
-			const event = new TrakitEventSocketMessage(name, body);
+			const event = new TrakitEventSocketMessage("message", name, body);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -183,6 +183,16 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		const handlers = this._handlers.get("error");
 		if (handlers?.length) {
 			const event = new TrakitEventSocketClose("error", reply);
+			handlers.forEach(handler => handler.call(this, event));
+		}
+	}
+	/**
+	 * Gets invoked any time a broadcast message is received on the WebSocket.
+	 */
+	_handleBroadcast(this: TrakitSocketCommander, json: JsonObject) {
+		const handlers = this._handlers.get("broadcast");
+		if (handlers?.length) {
+			const event = new TrakitEventSocketBroadcast("broadcast", json);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -357,16 +367,28 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				// then we fire event here, not below
 				this._handleAccount(this.account);
 				this._handleOpen(this.account);
+				this.#requestSettle(msgContent["reqId"] as int, msgContent);
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":
 				this.#socketSelf(msgContent);
 				this._handleAccount(this.account);
+				this.#requestSettle(msgContent["reqId"] as int, msgContent);
 				break;
 			case "updateOwnPasswordResponse":
 				if (!this.#socketOperable) {
 					this.#socketOperable = msgContent["errorCode"] === 0;
 				}
+				this.#requestSettle(msgContent["reqId"] as int, msgContent);
+				break;
+			case "logoutResponse":
+				this.#requestSettle(msgContent["reqId"] as int, msgContent);
+				this.close();
+			// no break
+			case "sessionEnded":
+				this.#socketOperable = false;
+				this.#socketSelf(msgContent);
+				this._handleAccount(this.account);
 				break;
 			case "sessionGeneralMerged":
 				this.#socketSync([, "userGeneral", "Merged"], this.#socketSelfGeneral(msgContent));
@@ -380,24 +402,20 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.#socketSync([, "machine", "Merged"], this.#socketSelfAdvanced(msgContent));
 				this._handleAccount(this.account);
 				break;
-			case "logoutResponse":
-				this.close();
-			// no break
-			case "sessionEnded":
-				this.#socketOperable = false;
-				this.#socketSelf(msgContent);
-				this._handleAccount(this.account);
+			case "broadcast":
+				this._handleBroadcast(msgContent);
 				break;
-		}
-
-		// handle command promise settlement
-		if (msgName.endsWith("Response")) {
-			this.#requestSettle(msgContent["reqId"] as int, msgContent);
-		} else if (!msgName.startsWith("session")) {
-			// fire the sync events for other messages (ie; __Merged, __Deleted, and __Suspended)
-			// ignore self stuff (ie; session__Merged)
-			const msgMatch = MSG_SYNC.exec(msgName) as string[];
-			if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
+			default:
+				// handle command promise settlement
+				if (msgName.endsWith("Response")) {
+					this.#requestSettle(msgContent["reqId"] as int, msgContent);
+				} else {
+					// fire the sync events for other messages (ie; __Merged, __Deleted, and __Suspended)
+					// ignore self stuff (ie; session__Merged)
+					const msgMatch = MSG_SYNC.exec(msgName) as string[];
+					if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
+				}
+				break;
 		}
 
 		// lastly, reset keep-alive process
@@ -487,26 +505,26 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					? "Get"
 					: msgMatch[2].slice(0, -1).slice(0, 7)
 			);
-		if (SyncReply) {
-			const reply = new SyncReply({
-				"errorCode": ErrorCode.success,
-				"message": msgMatch[2] + " event",
-				[msgMatch[1]]: msgContent,
-			}) as ReplySync;
-			if (reply.store()) {
-				switch (msgMatch[2]) {
-					case "Merged":
-					case "Suspended":
-						const object = (reply as ReplySyncGet<IRequestable>).getObject?.();
-						if (object) this._handleUpdate(type, companyId, object);
-						break;
-					case "Deleted":
-						this._handleDelete(type, companyId, getJsonKeyValue(msgContent, type));
-						break;
-				}
-			}
-			return reply;
+		if (!SyncReply) {
+			throw new Error("No Reply class found for " + type + " and action " + msgMatch[2]);
 		}
+		const reply = new SyncReply({
+			"errorCode": ErrorCode.success,
+			"message": msgMatch[2] + " event",
+			[msgMatch[1]]: msgContent,
+		}) as ReplySync;
+		if (reply.store()) {
+			switch (msgMatch[2]) {
+				case "Merged":
+				case "Suspended":
+					this._handleUpdate(type, companyId, (reply as ReplySyncGet<IRequestable>).getObject());
+					break;
+				case "Deleted":
+					this._handleDelete(type, companyId, getJsonKeyValue(msgContent, type));
+					break;
+			}
+		}
+		return reply;
 	}
 	//#endregion Internal WebSocket control
 

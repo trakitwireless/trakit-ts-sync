@@ -110,8 +110,11 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		this._socket.on("account", onAccount);
 		this._socket.on("open", onOpen);
 		this._socket.on("close", onClose);
-		for (const type of ["account", "open", "close", "list", "update", "delete"]) {
-			this._rest.on(type, onUplift);	// won't fire open/closed, but whatever
+		for (const type of ["account", "list", "update", "delete"]) {
+			this._rest.on(type, onUplift);
+			this._socket.on(type, onUplift);
+		}
+		for (const type of ["open", "close", "broadcast"]) {
 			this._socket.on(type, onUplift);
 		}
 
@@ -260,13 +263,10 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 						? "Get" :
 						"ListByCompany"
 				);
-				if (SyncPayload) {
-					promises.push(this.command<Reply>(new SyncPayload({
-						company: { id: companyId },
-					})));
-				} else {
-					console.warn(`No payload could be made for sync type ${type}`);
-				}
+				if (!SyncPayload) throw new Error(`No payload class could be made for sync type ${type}`);
+				promises.push(this.command<Reply>(new SyncPayload({
+					company: { id: companyId },
+				})));
 			});
 		}
 		return Promise.all(promises);
@@ -278,18 +278,19 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * @param companyId
 	 * @param types
 	 */
-	async desync(companyId: ulong, types: SyncName[]) {
+	desync(companyId: ulong, types: SyncName[]) {
 		const current = this.#getCurrentSync(companyId),
 			requested = types.reduce((acc, s) => acc.concat(OBJECT_SUBSCRIPTIONS[s] || []), [] as SubscriptionType[])
 				.filter(sub => current.regions.includes(sub))
 				.filter((sub, index, array) => array.indexOf(sub) === index); // make unique
 		// does not send "unsubscribe" to the Trak-iT WebSocket, this is done in the {@link #subscriptionTimer} process.
 		current.addExpiries(requested);
+		return requested;
 	}
 	/**
 	 * All active subscriptions per company.
 	 */
-	#syncRegions: Map<number, SubscribedRegions> = new Map;
+	#syncRegions: Map<ulong, SubscribedRegions> = new Map;
 	/**
 	 * Callback used to clear expired subscriptions from the dictionary.
 	 * Also resets the timer after sending unsubscribe Promise to Trak-iT's WebSocket is resolved.
