@@ -16,8 +16,8 @@ export class TrakitEventSocketMessage extends TrakitEvent {
 	 */
 	readonly body: JsonObject;
 
-	constructor(name: string, body: JsonObject) {
-		super("message");
+	constructor(type: string, name: string, body: JsonObject) {
+		super(type);
 		this.name = name;
 		this.body = body;
 	}
@@ -42,8 +42,8 @@ export class TrakitEventSocketClose extends TrakitEvent {
 export class TrakitEventSocketBroadcast extends TrakitEvent {
 	readonly broadcast: Broadcast;
 	
-	constructor(json: JsonObject) {
-		super("broadcast");
+	constructor(type: string, json: JsonObject) {
+		super(type);
 		this.broadcast = Broadcast.fromJson(json);
 	}
 }

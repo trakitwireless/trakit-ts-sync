@@ -66,8 +66,8 @@ export class TrakitEventList extends TrakitEventSync {
 	 */
 	readonly objects: IRequestable[];
 
-	constructor(kind: SyncName, companyId: ulong, objects: IRequestable[]) {
-		super("list", kind, companyId);
+	constructor(type: string, kind: SyncName, companyId: ulong, objects: IRequestable[]) {
+		super(type, kind, companyId);
 		this.objects = objects;
 	}
 }
@@ -80,8 +80,8 @@ export class TrakitEventUpdate extends TrakitEventSync {
 	 */
 	readonly object: IRequestable;
 
-	constructor(kind: SyncName, companyId: ulong, object: IRequestable) {
-		super("update", kind, companyId);
+	constructor(type: string, kind: SyncName, companyId: ulong, object: IRequestable) {
+		super(type, kind, companyId);
 		this.object = object;
 	}
 }
@@ -94,8 +94,8 @@ export class TrakitEventDelete extends TrakitEventSync {
 	 */
 	readonly key: ulong | guid | email | codified | string;
 
-	constructor(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) {
-		super("delete", kind, companyId);
+	constructor(type: string, kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) {
+		super(type, kind, companyId);
 		this.key = key;
 	}
 }
