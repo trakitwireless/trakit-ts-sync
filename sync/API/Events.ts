@@ -51,8 +51,8 @@ export class TrakitEventAccount extends TrakitEvent {
 	 */
 	readonly account: RepSelfGet;
 
-	constructor(account: RepSelfGet) {
-		super("account");
+	constructor(type: string, account: RepSelfGet) {
+		super(type);
 		this.account = account;
 	}
 }

@@ -1,6 +1,7 @@
 import { Reply } from '@trakit/commands';
 import { JsonObject } from "@trakit/objects";
 import { TrakitEvent } from "../API/Events";
+import { Broadcast } from "./Broadcast";
 
 /**
  * Represents a message event received from the Trak-iT WebSocket.
@@ -33,5 +34,16 @@ export class TrakitEventSocketClose extends TrakitEvent {
 	constructor(type: string, reply: Reply) {
 		super(type);
 		this.reply = reply;
+	}
+}
+/**
+ * Event raised when a broadcast message is received from the Trak-iT WebSocket.
+ */
+export class TrakitEventSocketBroadcast extends TrakitEvent {
+	readonly broadcast: Broadcast;
+	
+	constructor(json: JsonObject) {
+		super("broadcast");
+		this.broadcast = Broadcast.fromJson(json);
 	}
 }
