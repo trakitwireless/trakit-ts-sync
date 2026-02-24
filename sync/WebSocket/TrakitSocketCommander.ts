@@ -365,57 +365,52 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				// Promise is settled here, not below
 				this.#requestSettle(CMD_CONNECTION, msgContent);
 				// then we fire event here, not below
-				this._handleAccount(this.account);
+				this._handleAccount();
 				this._handleOpen(this.account);
-				this.#requestSettle(msgContent["reqId"] as int, msgContent);
 				break;
 			case "loginResponse":
 			case "getSessionDetailsResponse":
 				this.#socketSelf(msgContent);
-				this._handleAccount(this.account);
-				this.#requestSettle(msgContent["reqId"] as int, msgContent);
+				this._handleAccount();
 				break;
 			case "updateOwnPasswordResponse":
 				if (!this.#socketOperable) {
 					this.#socketOperable = msgContent["errorCode"] === 0;
 				}
-				this.#requestSettle(msgContent["reqId"] as int, msgContent);
 				break;
 			case "logoutResponse":
-				this.#requestSettle(msgContent["reqId"] as int, msgContent);
 				this.close();
 			// no break
 			case "sessionEnded":
 				this.#socketOperable = false;
 				this.#socketSelf(msgContent);
-				this._handleAccount(this.account);
+				this._handleAccount();
 				break;
 			case "sessionGeneralMerged":
 				this.#socketSync([, "userGeneral", "Merged"], this.#socketSelfGeneral(msgContent));
-				this._handleAccount(this.account);
+				this._handleAccount(true);
 				break;
 			case "sessionAdvancedMerged":
 				this.#socketSync([, "userAdvanced", "Merged"], this.#socketSelfAdvanced(msgContent));
-				this._handleAccount(this.account);
+				this._handleAccount(true);
 				break;
 			case "sessionMachineMerged":
 				this.#socketSync([, "machine", "Merged"], this.#socketSelfAdvanced(msgContent));
-				this._handleAccount(this.account);
+				this._handleAccount(true);
 				break;
 			case "broadcast":
 				this._handleBroadcast(msgContent);
 				break;
-			default:
-				// handle command promise settlement
-				if (msgName.endsWith("Response")) {
-					this.#requestSettle(msgContent["reqId"] as int, msgContent);
-				} else {
-					// fire the sync events for other messages (ie; __Merged, __Deleted, and __Suspended)
-					// ignore self stuff (ie; session__Merged)
-					const msgMatch = MSG_SYNC.exec(msgName) as string[];
-					if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
-				}
-				break;
+		}
+
+		// handle command promise settlement
+		if (msgName.endsWith("Response")) {
+			this.#requestSettle(msgContent["reqId"] as int, msgContent);
+		} else if (!msgName.startsWith("session")) {
+			// fire the sync events for other messages (ie; __Merged, __Deleted, and __Suspended)
+			// ignore self stuff (ie; session__Merged)
+			const msgMatch = MSG_SYNC.exec(msgName) as string[];
+			if (msgMatch?.length) this.#socketSync(msgMatch as [unknown, string, string], msgContent);
 		}
 
 		// lastly, reset keep-alive process
