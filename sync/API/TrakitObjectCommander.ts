@@ -443,9 +443,25 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	/**
 	 * Gets invoked any time the service's account information is updated while the connection is open.
+	 * @param reset When true, a new instance of RepSelfGet is created to reset all values, otherwise the existing RepSelfGet instance is updated with new values.
 	 */
-	protected _handleAccount(account: RepSelfGet) {
-		this.fire("account", () => new TrakitEventAccount("account", account));
+	protected _handleAccount(reset?: boolean) {
+		if (reset) {
+			this.setAuth(new RepSelfGet({
+				serverTime: this.account.serverTime?.toISOString() ?? null,
+				ghostId: this.account.ghostId ?? null,
+				expiry: this.account.expiry?.toISOString() ?? null,
+				user: this.account.userLogin
+					? { "login": this.account.userLogin } as JsonObject
+					: null,
+				machine: this.account.machineKey
+					? { "key": this.account.machineKey } as JsonObject
+					: null,
+				sessionPolicy: this.account.sessionPolicy?.toJSON() ?? null,
+				passwordPolicy: this.account.passwordPolicy?.toJSON() ?? null,
+			}));
+		}
+		this.fire("account", () => new TrakitEventAccount("account", this.account));
 	}
 	/**
 	 * Gets invoked any time all the objects for a given kind in the given company are updated.
@@ -562,7 +578,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	public async selfDetails(): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfGet());
 		this.setAuth(reply);
-		this._handleAccount(reply);
+		this._handleAccount();
 		return reply;
 	}
 
@@ -580,7 +596,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			userAgent: userAgent ?? null,
 		}));
 		this.setAuth(reply);
-		this._handleAccount(reply);
+		this._handleAccount();
 		return reply;
 	}
 	/**
@@ -590,7 +606,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	public logout(): Promise<RepSelfLogout> {
 		const promise = this.command<RepSelfLogout>(new PaySelfLogout()); // not awaited
 		this.setAuth();
-		this._handleAccount(this.account);
+		this._handleAccount();
 		return promise;
 	}
 
