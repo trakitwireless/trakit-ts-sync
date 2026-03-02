@@ -20,8 +20,10 @@ import {
 	Machine,
 	nothing,
 	storage,
+	SyncName,
 	ulong,
-	url
+	url,
+	UserGeneral
 } from '@trakit/objects';
 import { TrakitEventAccount } from "../API/Events";
 import {
@@ -97,6 +99,17 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
 	 */
 	static readonly URI_BETA: url = "wss://kraken.trakit.ca/";
+	/**
+	 * A function that translates a WebSocket message name (such as `userGeneralMerged`) to the name of
+	 * the object {@link SyncName} being synced (such as {@link UserGeneral}), to account for some legacy
+	 * message names that don't follow the {name}{action} format rule.
+	 */
+	static msgNameToSyncName(msgName: string): SyncName | nothing {
+		const msgMatch = MSG_SYNC.exec(msgName) as string[];
+		return msgMatch?.length === 3
+			? makeObjectName(msgMatch[1]) || null
+			: undefined;
+	}
 
 	// last time a connection was established (with a connectionResponse message).
 	#lastConnected: Date = new Date(NaN);
