@@ -127,6 +127,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Disposes of the Trak-iT WebSocket connection, and cleans up references.
 	 */
 	override dispose() {
+		super.dispose();
 		this._rest.dispose();
 		this._socket.dispose();
 		(this._rest as any) =
@@ -238,6 +239,17 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		return synced;
 	}
 	/**
+	 * Retrieves the list of currently synchronized regions for the given {@param companyId}.
+	 * @param companyId 
+	 * @param includeExpiring 
+	 * @returns 
+	 */
+	getSyncs(companyId: ulong, includeExpiring: boolean = false): SyncName[] {
+		const current = this.#getCurrentSync(companyId),
+			except = includeExpiring ? [] : current.getExpiring();
+		return SUBS_TO_SYNCS(current.regions.filter(sub => !except.includes(sub)));
+	}
+	/**
 	 * Begins synchronizing the given regions.
 	 * If all regions are in-sync, the returned Promise is resolved immediately.
 	 * Otherwise it sends a subscribe command to the Trak-iT WebSocket for any out-of-sync regions,
@@ -260,8 +272,8 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 				const SyncPayload = makePayloadClass(
 					type,
 					type.startsWith("Company")
-						? "Get" :
-						"ListByCompany"
+						? "Get"
+						: "ListByCompany"
 				);
 				if (!SyncPayload) throw new Error(`No payload class could be made for sync type ${type}`);
 				promises.push(this.command<Reply>(new SyncPayload({
