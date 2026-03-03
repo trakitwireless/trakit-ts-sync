@@ -567,10 +567,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing,
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing,
 		baseAddress?: URL | url | nothing,
 	) {
 		super(account, baseAddress ?? TrakitSocketCommander.URI_PROD);
@@ -760,7 +760,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	subscribe(companyId: ulong, subscriptions: SubscriptionType[]): Promise<RepSubscription> {
 		return subscriptions?.length
 			? this.command(new PaySubscriptionMerge({
-				company: companyId,
+				company: { id: companyId },
 				subscriptionTypes: subscriptions,
 			}))
 			: Promise.resolve(new RepSubscription({
@@ -777,7 +777,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	unsubscribe(companyId: ulong, subscriptions: SubscriptionType[]): Promise<RepSubscription> {
 		return subscriptions?.length
 			? this.command(new PaySubscriptionDelete({
-				company: companyId,
+				company: { id: companyId },
 				subscriptionTypes: subscriptions,
 			}))
 			: Promise.resolve(new RepSubscription({
