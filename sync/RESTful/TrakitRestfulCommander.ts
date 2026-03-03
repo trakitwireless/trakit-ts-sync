@@ -52,14 +52,14 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing,
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing,
 		baseAddress?: URL | url | nothing,
 	) {
 		super(account, baseAddress ?? TrakitRestfulCommander.URI_PROD);
-		this.headers.set("Content-Type", "application/json");
+		//this.headers.set("Content-Type", "application/json");
 	}
 
 	/**
@@ -97,7 +97,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 			// no break => fall through to default for DispatchJob where filter is not Cancel or Change
 			default:
 				route = [...action.object.match(SPLITTER) as string[]]
-					.map(utility.pluralize)
+					.map(s => utility.pluralize(s.toLowerCase()))
 					.join("/");
 				/*
 				"Get"
