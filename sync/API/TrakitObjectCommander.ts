@@ -472,16 +472,16 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is created or updated.
 	 */
-	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable) { 
+	protected _handleUpdate(kind: SyncName, companyId: ulong, object: IRequestable) {
 		this.fire("update", () => new TrakitEventUpdate("update", kind, companyId, object));
 	}
 	/**
 	 * Gets invoked any time an object for a given kind in the given company is deleted.
 	 */
-	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string){
+	protected _handleDelete(kind: SyncName, companyId: ulong, key: ulong | guid | email | codified | string) {
 		this.fire("delete", () => new TrakitEventDelete("delete", kind, companyId, key));
 	}
-	
+
 	/**
 	 * Adds an event handler for a specific event type.
 	 * @param type		The type of event to listen for.
@@ -520,7 +520,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param create	A function that creates the event object.  This function is invoked just once and only if there are handlers registered for the event type.
 	 */
 	protected fire(type: string, create: () => TrakitEvent) {
-		const handlers = this._handlers.get(type);
+		const handlers = this._handlers.get(type)?.slice(); // copy so handlers can be removed during firing without affecting the loop
 		if (handlers?.length) {
 			const event = create();
 			handlers.forEach(handler => handler.call(this, event), this);
@@ -543,7 +543,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			this.off(name);
 		}
 	}
-	
+
 	/**
 	 * Overridden to handle storage and events.
 	 * @inheritdoc
@@ -885,7 +885,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		}));
 	}
 	//#endregion Companies/Reseller
-	
+
 	//#region Contacts
 	/**
 	 * Retrieves a list of all {@link Contact}s in the given company.
