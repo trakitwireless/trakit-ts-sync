@@ -89,10 +89,10 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing,
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing,
 		restAddress?: URL | url | nothing,
 		socketAddress?: URL | url | nothing,
 	) {
@@ -102,10 +102,10 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			onClose = (event: TrakitEvent) => this.#handleClose((event as TrakitEventSocketClose).reply),
 			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitEventAccount).account),
 			onUplift = (event: TrakitEvent) => this.fire(event.type, () => event);
-	
+
 		this._rest = new TrakitRestfulCommander(this.account, restAddress ?? TrakitRestfulCommander.URI_PROD);
 		this._rest.on("account", onAccount);
-		
+
 		this._socket = new TrakitSocketCommander(this.account, socketAddress ?? TrakitSocketCommander.URI_PROD);
 		this._socket.on("account", onAccount);
 		this._socket.on("open", onOpen);
@@ -266,7 +266,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			// remove expiration from any requested subscriptions, not new subscriptions
 			// some subscriptions may have been requested to be removed before re-synching
 			current.removeExpiries(requested);
-			
+
 			// once subscriptions are made, find the SyncNames that need to be requested
 			SUBS_TO_SYNCS(subscribed).forEach(type => {
 				const SyncPayload = makePayloadClass(
