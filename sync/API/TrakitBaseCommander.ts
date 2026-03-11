@@ -52,10 +52,10 @@ export abstract class TrakitBaseCommander<TRequest> {
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing,
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing,
 		baseAddress?: URL | url | nothing,
 	) {
 		this.baseAddress = baseAddress
@@ -71,10 +71,10 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 */
 	setAuth(
 		account?: RepSelfGet | { machine: { key: string } }
-				| Machine | { key: string }
-				| { ghostId: guid }
-				| guid
-				| nothing
+			| Machine | { key: string }
+			| { ghostId: guid }
+			| guid
+			| nothing
 	): void {
 		if (account instanceof RepSelfGet) {
 			this.account = account;
@@ -109,7 +109,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 				response: any = null,
 				reply: TReply | null = null;
 			try {
-				request = this._createRequest(payload);
+				request = await this._createRequest(payload);
 			} catch (ex: Error | any) {
 				response = createClientErrorResponse(ex);
 			}
@@ -138,7 +138,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 * @param payload The payload to send to the underlying service.
 	 * @returns       The request object to send to the underlying service.
 	 */
-	abstract _createRequest(payload: Payload): TRequest;
+	abstract _createRequest(payload: Payload): Promise<TRequest>;
 	/**
 	 * Sends a request to the underlying service, and returns a Promise that completes when a reply is received.
 	 * @param request	The request object to send to the service.

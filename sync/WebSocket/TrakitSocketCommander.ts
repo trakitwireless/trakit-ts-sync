@@ -210,7 +210,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		}
 	}
 	//#endregion Events
-	
+
 	//#region Internal WebSocket control
 	/**
 	 * Counter used to correlate requests to responses.
@@ -230,7 +230,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		this.#requestsPending.get(reqId)?.(msgContent);
 		return this.#requestsPending.delete(reqId);
 	}
-    
+
 	/**
 	 * The underlying WebSocket.
 	 */
@@ -245,7 +245,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * If false, the re-connect process will not function, nor will the "noop" keep-alive messages be sent.
 	 */
 	#socketOperable: boolean = true;    // defualt true, so that the first connection will auto-reconnect.
-    
+
 	/**
 	 * Handler for when the underlying WebSocket connection opens.
 	 * This handler will reset the keep-alive and re-connect timers, as well as bind message and error handlers (the socket only has open/close hadlers when constructed)
@@ -357,7 +357,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		 * The JSON parsed from the message received by the underlying WebSocket.
 		 */
 		const msgContent = JSON.parse(event.data.substring(msgName.length + 1)) as JsonObject;
-		
+
 		// first, set this value
 		this.#lastMessage = msgName;
 		/**
@@ -675,11 +675,11 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param payload The payload to include in the request.
 	 * @returns A request object configured with the specified parameters.
 	 */
-	override _createRequest(payload: Payload): [string, JsonObject] {
-		return [
+	override _createRequest(payload: Payload): Promise<[string, JsonObject]> {
+		return Promise.resolve([
 			makeCommandName(payload),
 			payload.toJSON(),
-		];
+		]);
 	}
 	/**
 	 * Sends a command and parameters to Trak-iT's WebSocket service.

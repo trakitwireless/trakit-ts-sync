@@ -230,7 +230,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param payload 
 	 * @returns A {@link Request} object configured with the specified parameters.
 	 */
-	override _createRequest(payload: Payload): Request {
+	override async _createRequest(payload: Payload): Promise<Request> {
 		const [verb, path] = this.getVerbRoute(payload),
 			body = payload.toJSON(),
 			route = this.createBaseUrl(path),
@@ -245,15 +245,28 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 			init.body = JSON.stringify(body);
 		}
 		if (this.account.machine) {
-			headers.set("Authorization", "HMAC256 " + this.account.machine.createHmacSignature(
-				route,
-				verb,
-				(init.body as string)?.length ?? 0,
-				new Date
-			));
+			headers.set(
+				"Authorization",
+				this.account.machine.secret?.length
+					? "HMAC256 " + btoa(
+						this.account.machine.key
+						+ ":"
+						+ (await this.account.machine.createHmacSignature(
+							route,
+							verb,
+							(init.body as string)?.length ?? 0,
+							new Date
+						))
+					)
+					: "Machine " + btoa(
+						this.account.machine.key
+					)
+			);
 		} else if (this.account.ghostId) {
-			// this should be updated to use an Authorization header instead of query-string
-			route.searchParams.set("ghostId", this.account.ghostId);
+			headers.set(
+				"Authorization",
+				"Bearer " + this.account.ghostId
+			);
 		}
 		if (headers.size > 0) {
 			init.headers = new Headers([...headers.entries()]);
