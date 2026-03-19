@@ -9,7 +9,7 @@ import {
 } from "@trakit/objects";
 import { createClientErrorResponse } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
-import { payloadToVerbRoute } from "./Functions";
+import { createCorsRequest, payloadToVerbRoute } from "./Functions";
 
 /**
  * Uses Trak-iT's RESTful service to access and manipulate Trak-iT API objects.
@@ -46,48 +46,17 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param payload 
 	 * @returns A {@link Request} object configured with the specified parameters.
 	 */
-	override async _createRequest(payload: Payload): Promise<Request> {
-		const [verb, path] = payloadToVerbRoute(payload),
-			body = payload.toJSON(),
-			route = this.createBaseUrl(path),
-			headers = new Map(this.headers),
-			init: RequestInit = {
-				method: verb,
-				cache: "no-store",
-				mode: "cors",
-				credentials: "omit",
-			};
-		if (body && verb !== "GET") {
-			init.body = JSON.stringify(body);
-		}
-		if (this.account.machine) {
-			headers.set(
-				"Authorization",
-				this.account.machine.secret?.length
-					? "HMAC256 " + btoa(
-						this.account.machine.key
-						+ ":"
-						+ (await this.account.machine.createHmacSignature(
-							route,
-							verb,
-							(init.body as string)?.length ?? 0,
-							new Date
-						))
-					)
-					: "Machine " + btoa(
-						this.account.machine.key
-					)
-			);
-		} else if (this.account.ghostId) {
-			headers.set(
-				"Authorization",
-				"Bearer " + this.account.ghostId
-			);
-		}
-		if (headers.size > 0) {
-			init.headers = new Headers([...headers.entries()]);
-		}
-		return new Request(route, init);
+	override _createRequest(payload: Payload): Promise<Request> {
+		const [verb, path] = payloadToVerbRoute(payload);
+		return createCorsRequest(
+			this.account,
+			this.createBaseUrl(path),
+			verb,
+			verb === "GET"
+				? null
+				: JSON.stringify(payload.toJSON()),
+			this.headers
+		);
 	}
 	/**
 	 * Sends the given request to Trak-iT's RESTful API and awaits a result.
@@ -96,14 +65,11 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param request.body	Optional JSON body to send with the request.
 	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
-	override _relayRequest(request: Request): Promise<JsonObject> {
-		return new Promise(async (resolve, reject) => {
-			try {
-				const response = await fetch(request);
-				resolve((await response.json()) as JsonObject);
-			} catch (ex: Error | any) {
-				reject(createClientErrorResponse(ex));
-			}
-		});
+	override async _relayRequest(request: Request): Promise<JsonObject> {
+		try {
+			return (await (await fetch(request)).json()) as JsonObject;
+		} catch (ex: Error | any) {
+			throw createClientErrorResponse(ex);
+		}
 	}
 }
