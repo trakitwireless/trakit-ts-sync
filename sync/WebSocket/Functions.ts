@@ -3,8 +3,8 @@ import { utility } from "@trakit/objects";
 
 /**
  * Returns a WebSocket command name based on the {@link Payload} type.
- * @param payload 
- * @returns 
+ * @param payload The payload being sent.
+ * @returns The corresponding WebSocket command name.
  */
 export function makeCommandName(payload: Payload): string {
 	const action = payload.getAction(),

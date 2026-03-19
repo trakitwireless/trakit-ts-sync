@@ -115,9 +115,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param payload The payload to analyze.
 	 * @returns The corresponding WebSocket command name.
 	 */
-	static getCommandName(payload: Payload): string {
-		return makeCommandName(payload);
-	}
+	static readonly getCommandName = makeCommandName;
 
 	// last time a connection was established (with a connectionResponse message).
 	#lastConnected: Date = new Date(NaN);

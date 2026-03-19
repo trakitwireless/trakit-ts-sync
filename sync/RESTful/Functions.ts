@@ -24,9 +24,9 @@ import {
 const SPLITTER = /[A-Z][a-z]+/;
 
 /**
- * Returns the appropriate HTTP verb and route based on the {@link Payload} type.
- * @param payload 
- * @returns A tuple containing the HTTP verb and route.
+ * Gets the appropriate HTTP verb and route for the given payload.
+ * @param payload	The payload being sent.
+ * @returns			A tuple containing the HTTP verb and route.
  */
 export function makeVerbRoute(payload: Payload): [HttpVerb, string] {
 	let verb: HttpVerb = "GET",
