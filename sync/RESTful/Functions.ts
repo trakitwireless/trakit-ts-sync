@@ -8,7 +8,8 @@ import {
 	IPaySingle,
 	PayListByDate,
 	PayListById,
-	PayListByKey, Payload
+	PayListByKey, Payload,
+	RepSelfGet
 } from "@trakit/commands";
 import { utility } from "@trakit/objects";
 import {
@@ -177,4 +178,61 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 			? route + "?" + query.toString()
 			: route
 	];
+}
+
+/**
+ * Constructs a CORS request for a Trak-iT API endpoint with the given account and request details.
+ * This method handles authentication headers based on the account's Machine or User's credentials.
+ * @param account 
+ * @param route 
+ * @param verb 
+ * @param body 
+ * @param defaultHeaders 
+ * @returns 
+ */
+export async function createCorsRequest(
+	account: RepSelfGet,
+	route: URL,
+	verb: HttpVerb = "GET",
+	body: BodyInit | null = null,
+	defaultHeaders: Map<string, string> | null = null
+): Promise<Request> {
+	const headers = new Map(defaultHeaders),
+		init: RequestInit = {
+			method: verb,
+			cache: "no-store",
+			mode: "cors",
+			credentials: "omit",
+		};
+	if (body && verb !== "GET") {
+		init.body = body;
+	}
+	if (account.machine) {
+		headers.set(
+			"Authorization",
+			account.machine.secret?.length
+				? "HMAC256 " + btoa(
+					account.machine.key
+					+ ":"
+					+ (await account.machine.createHmacSignature(
+						route,
+						verb,
+						(init.body as string)?.length ?? 0,
+						new Date
+					))
+				)
+				: "Machine " + btoa(
+					account.machine.key
+				)
+		);
+	} else if (account.ghostId) {
+		headers.set(
+			"Authorization",
+			"Bearer " + account.ghostId
+		);
+	}
+	if (headers.size > 0) {
+		init.headers = new Headers([...headers.entries()]);
+	}
+	return new Request(route, init);
 }
