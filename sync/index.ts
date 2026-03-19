@@ -13,9 +13,10 @@ import {
 	TrakitEventSync,
 	TrakitEventUpdate
 } from "./API/Events";
+import { createClientErrorResponse } from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
-import { payloadToVerbRoute } from "./RESTful/Functions";
+import { createCorsRequest, payloadToVerbRoute } from "./RESTful/Functions";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
 import { TrakitEventSocketClose, TrakitEventSocketMessage } from "./WebSocket/Events";
@@ -26,12 +27,13 @@ import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSoc
 /**
  * Version number for this release.
  */
-export const version = '0.0.39';
+export const version = '0.0.40';
 
 /**
  * API exports
  */
 export {
+	createClientErrorResponse,
 	TrakitBaseCommander,
 	TrakitEvent,
 	TrakitEventAccount,
@@ -46,6 +48,7 @@ export {
  * RESTful API exports
  */
 export {
+	createCorsRequest,
 	payloadToVerbRoute,
 	TrakitRestfulCommander
 };
