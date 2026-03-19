@@ -9,7 +9,7 @@ import {
 } from "@trakit/objects";
 import { createClientErrorResponse } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
-import { makeVerbRoute } from "./Functions";
+import { payloadToVerbRoute } from "./Functions";
 
 /**
  * Uses Trak-iT's RESTful service to access and manipulate Trak-iT API objects.
@@ -28,12 +28,6 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * Both services access the same data-set, so be careful making changes as they will be reflected in production as well.
 	 */
 	static readonly URI_BETA: url = "https://mindflayer.trakit.ca/";
-	/**
-	 * Gets the appropriate HTTP verb and route for the given payload.
-	 * @param payload	The payload to analyze.
-	 * @returns A tuple containing the HTTP verb and route.
-	 */
-	static readonly getVerbRoute = makeVerbRoute;
 
 	constructor(
 		account?: RepSelfGet | { machine: { key: string } }
@@ -53,7 +47,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @returns A {@link Request} object configured with the specified parameters.
 	 */
 	override async _createRequest(payload: Payload): Promise<Request> {
-		const [verb, path] = makeVerbRoute(payload),
+		const [verb, path] = payloadToVerbRoute(payload),
 			body = payload.toJSON(),
 			route = this.createBaseUrl(path),
 			headers = new Map(this.headers),

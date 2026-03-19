@@ -28,7 +28,7 @@ const SPLITTER = /[A-Z][a-z]+/;
  * @param payload	The payload being sent.
  * @returns			A tuple containing the HTTP verb and route.
  */
-export function makeVerbRoute(payload: Payload): [HttpVerb, string] {
+export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 	let verb: HttpVerb = "GET",
 		route = "",
 		query = new URLSearchParams;

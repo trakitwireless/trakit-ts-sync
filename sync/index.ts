@@ -15,11 +15,13 @@ import {
 } from "./API/Events";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
+import { payloadToVerbRoute } from "./RESTful/Functions";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
 import { TrakitEventSocketClose, TrakitEventSocketMessage } from "./WebSocket/Events";
+import { payloadToCommandName } from "./WebSocket/Functions";
 import { SubscribedRegions } from "./WebSocket/SubscribedRegions";
-import { TrakitSocketCommander } from "./WebSocket/TrakitSocketCommander";
+import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSocketCommander";
 
 /**
  * Version number for this release.
@@ -44,6 +46,7 @@ export {
  * RESTful API exports
  */
 export {
+	payloadToVerbRoute,
 	TrakitRestfulCommander
 };
 
@@ -51,8 +54,10 @@ export {
  * WebSocket API exports
  */
 export {
+	payloadToCommandName,
 	SubscribedRegions,
-	TrakitSocketCommander
+	TrakitSocketCommander,
+	TrakitSocketStatus
 };
 
 /**

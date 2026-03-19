@@ -35,7 +35,7 @@ import {
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { MSG_SYNC } from "./Constants";
 import { TrakitEventSocketBroadcast, TrakitEventSocketClose, TrakitEventSocketMessage } from './Events';
-import { makeCommandName } from "./Functions";
+import { payloadToCommandName } from "./Functions";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -110,12 +110,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			? makeObjectName(msgMatch[1]) || null
 			: undefined;
 	}
-	/**
-	 * Returns a WebSocket command name based on the {@link Payload} type.
-	 * @param payload The payload to analyze.
-	 * @returns The corresponding WebSocket command name.
-	 */
-	static readonly getCommandName = makeCommandName;
 
 	// last time a connection was established (with a connectionResponse message).
 	#lastConnected: Date = new Date(NaN);
@@ -683,7 +677,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	override _createRequest(payload: Payload): Promise<[string, JsonObject]> {
 		return Promise.resolve([
-			makeCommandName(payload),
+			payloadToCommandName(payload),
 			payload.toJSON(),
 		]);
 	}
