@@ -7,7 +7,7 @@ import {
 	nothing,
 	url
 } from "@trakit/objects";
-import { createClientErrorResponse } from "../API/Functions";
+import { createClientErrorResponse, fetchJsonObject } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { createCorsRequest, payloadToVerbRoute } from "./Functions";
 
@@ -65,11 +65,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param request.body	Optional JSON body to send with the request.
 	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
-	override async _relayRequest(request: Request): Promise<JsonObject> {
-		try {
-			return (await (await fetch(request)).json()) as JsonObject;
-		} catch (ex: Error | any) {
-			throw createClientErrorResponse(ex);
-		}
+	override _relayRequest(request: Request): Promise<JsonObject> {
+		return fetchJsonObject(request);
 	}
 }

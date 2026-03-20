@@ -93,3 +93,16 @@ export function makeReplyClass(type: SyncName, suffix?: string | nothing): (new 
 	return commands[name as keyof typeof commands] as new (json: JsonObject) => Reply;
 }
 
+/**
+ * Issues a fetch request and returns the response as a {@link JsonObject}.
+ * If the fetch fails, returns a standardized error response object.
+ * @param request 
+ * @returns 
+ */
+export async function fetchJsonObject(request: Request): Promise<JsonObject> {
+	try {
+		return (await (await fetch(request)).json()) as JsonObject;
+	} catch (ex: Error | any) {
+		throw createClientErrorResponse(ex);
+	}
+}

@@ -13,9 +13,10 @@ import {
 	TrakitEventSync,
 	TrakitEventUpdate
 } from "./API/Events";
-import { createClientErrorResponse } from "./API/Functions";
+import { createClientErrorResponse, fetchJsonObject } from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
+import { HttpVerb } from "./RESTful/Constants";
 import { createCorsRequest, payloadToVerbRoute } from "./RESTful/Functions";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
@@ -34,6 +35,7 @@ export const version = '0.0.40';
  */
 export {
 	createClientErrorResponse,
+	fetchJsonObject,
 	TrakitBaseCommander,
 	TrakitEvent,
 	TrakitEventAccount,
@@ -41,7 +43,8 @@ export {
 	TrakitEventList,
 	TrakitEventSync,
 	TrakitEventUpdate,
-	TrakitObjectCommander
+	TrakitObjectCommander,
+	type HttpVerb
 };
 
 /**
