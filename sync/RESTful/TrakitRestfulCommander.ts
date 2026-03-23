@@ -46,7 +46,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param payload 
 	 * @returns A {@link Request} object configured with the specified parameters.
 	 */
-	override _createRequest(payload: Payload): Promise<Request> {
+	override requestCreate(payload: Payload): Promise<Request> {
 		const [verb, path] = payloadToVerbRoute(payload);
 		return createCorsRequest(
 			this.account,
@@ -65,7 +65,7 @@ export class TrakitRestfulCommander extends TrakitObjectCommander<Request> {
 	 * @param request.body	Optional JSON body to send with the request.
 	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
-	override _relayRequest(request: Request): Promise<JsonObject> {
+	override requestRelay(request: Request): Promise<JsonObject> {
 		return fetchJsonObject(request);
 	}
 }

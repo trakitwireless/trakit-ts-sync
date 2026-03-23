@@ -675,7 +675,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param payload The payload to include in the request.
 	 * @returns A request object configured with the specified parameters.
 	 */
-	override _createRequest(payload: Payload): Promise<[string, JsonObject]> {
+	override requestCreate(payload: Payload): Promise<[string, JsonObject]> {
 		return Promise.resolve([
 			payloadToCommandName(payload),
 			payload.toJSON(),
@@ -689,7 +689,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param params	Optional object or value for the command.
 	 * @returns 		A Promise which is resolved when a response is received, otherwise it is rejected.
 	 */
-	override _relayRequest(request: [string, JsonObject]): Promise<JsonObject> {
+	override requestRelay(request: [string, JsonObject]): Promise<JsonObject> {
 		const command = request[0],
 			params = request[1] || {};
 		return new Promise((resolve, reject) => {
@@ -720,7 +720,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					this.resetKeepAlive();
 					break;
 				case TrakitSocketStatus.closed:
-					this.open().then(() => this._relayRequest(request).then(resolve)).catch(reject);
+					this.open().then(() => this.requestRelay(request).then(resolve)).catch(reject);
 					break;
 				default:
 					reject({
@@ -743,7 +743,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 		this.#timerKeepAlive = this.keepAliveEnabled
 			&& this.#socketOperable
 			? setTimeout(
-				() => this._relayRequest(["noop", {}]),
+				() => this.requestRelay(["noop", {}]),
 				TIMEOUT_NOOP
 			)
 			: 0;

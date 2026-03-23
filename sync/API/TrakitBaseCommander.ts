@@ -109,13 +109,13 @@ export abstract class TrakitBaseCommander<TRequest> {
 				response: any = null,
 				reply: TReply | null = null;
 			try {
-				request = await this._createRequest(payload);
+				request = await this.requestCreate(payload);
 			} catch (ex: Error | any) {
 				response = createClientErrorResponse(ex);
 			}
 			try {
 				response = response
-					?? await this._relayRequest(request as TRequest);
+					?? (await this.requestRelay(request as TRequest));
 			} catch (ex: Error | JsonObject | any) {
 				reply = payload.createReply(
 					ex instanceof Error
@@ -125,7 +125,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 			}
 			try {
 				reply = reply
-					?? payload.createReply(response) as TReply;
+					?? (payload.createReply(response) as TReply);
 			} catch (ex: Error | any) {
 				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
 			}
@@ -138,11 +138,11 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 * @param payload The payload to send to the underlying service.
 	 * @returns       The request object to send to the underlying service.
 	 */
-	abstract _createRequest(payload: Payload): Promise<TRequest>;
+	abstract requestCreate(payload: Payload): Promise<TRequest>;
 	/**
 	 * Sends a request to the underlying service, and returns a Promise that completes when a reply is received.
 	 * @param request	The request object to send to the service.
 	 * @returns			A promise that resolves for any response, and rejects for client-side and transport errors.
 	 */
-	abstract _relayRequest(request: TRequest): Promise<any>;
+	abstract requestRelay(request: TRequest): Promise<any>;
 }

@@ -165,12 +165,12 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Overridden to throw an error if used; it shouldn't be in use because of the {@link command} override.
 	 * @inheritdoc
 	 */
-	override _createRequest(payload: Payload): any { throw new Error("Method not implemented."); }
+	override requestCreate(payload: Payload): any { throw new Error("Method not implemented."); }
 	/**
 	 * Overridden to throw an error if used; it shouldn't be in use because of the {@link command} override.
 	 * @inheritdoc
 	 */
-	override _relayRequest(request: Payload): Promise<any> { throw new Error("Method not implemented."); }
+	override requestRelay(request: Payload): Promise<any> { throw new Error("Method not implemented."); }
 
 	/**
 	 * Sends a command specifically to the Trak-iT RESTful service.
