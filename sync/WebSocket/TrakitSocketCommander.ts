@@ -407,6 +407,14 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this.#socketSync([, "userAdvanced", "Merged"], this.#socketSelfAdvanced(msgContent));
 				this._handleAccount(true);
 				break;
+			case "sessionAuthenticationMerged":
+				this.#socketSync([, "userAuthentication", "Merged"], msgContent);
+				this._handleAccount(true);
+				break;
+			case "sessionSettingMerged":
+				this.#socketSync([, "userSetting", "Merged"], msgContent);
+				this._handleAccount(true);
+				break;
 			case "sessionMachineMerged":
 				this.#socketSync([, "machine", "Merged"], this.#socketSelfAdvanced(msgContent));
 				this._handleAccount(true);
