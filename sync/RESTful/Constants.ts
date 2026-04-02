@@ -23,6 +23,8 @@ export const OBJECT_LIST_BY_COMPANY: { [key in SyncName]: url } = {
 	"User": "/companies/{companyId}/users",
 	"UserGeneral": "/companies/{companyId}/users/generals",
 	"UserAdvanced": "/companies/{companyId}/users/advanceds",
+	"UserAuthentication": "/companies/{companyId}/users/authentications",
+	"UserSetting": "/companies/{companyId}/users/settings",
 	"UserGroup": "/companies/{companyId}/users/groups",
 	"Session": "/companies/{companyId}/users/sessions",
 	/* file hosting */

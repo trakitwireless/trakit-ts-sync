@@ -50,12 +50,20 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName]: SubscriptionType[] } = {
 	"User": [
 		SubscriptionType.userGeneral,
 		SubscriptionType.userAdvanced,
+		SubscriptionType.userAuthentication,
+		SubscriptionType.userSetting,
 	],
 	"UserGeneral": [
 		SubscriptionType.userGeneral,
 	],
 	"UserAdvanced": [
 		SubscriptionType.userAdvanced,
+	],
+	"UserAuthentication": [
+		SubscriptionType.userAuthentication,
+	],
+	"UserSetting": [
+		SubscriptionType.userSetting,
 	],
 	"UserGroup": [
 		SubscriptionType.userGroup,
