@@ -94,10 +94,10 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 					case "List":
 						//verb = "GET";
 						switch (action.filter) {
-							case "BillingProfile":	// IPayListByBillingProfile
-								route = action.object in OBJECT_LIST_BY_BILLING_PROFILE
-									? OBJECT_LIST_BY_BILLING_PROFILE[action.object as keyof typeof OBJECT_LIST_BY_BILLING_PROFILE].replace("{profileId}", (payload as any).billingProfile.id)
-									: `billing/profiles/${(payload as any as IPayListByBillingProfile).billingProfile.id}/${route}`;
+							case "Asset":	// IPayListByAsset
+								route = action.object in OBJECT_LIST_BY_ASSET
+									? OBJECT_LIST_BY_ASSET[action.object as keyof typeof OBJECT_LIST_BY_ASSET].replace("{assetId}", (payload as any).asset.id)
+									: `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
 								break;
 							case "BillingProfile":	// IPayListByBillingProfile
 								route = action.object in OBJECT_LIST_BY_BILLING_PROFILE
@@ -108,11 +108,6 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 								route = action.object in OBJECT_LIST_BY_COMPANY
 									? OBJECT_LIST_BY_COMPANY[action.object as keyof typeof OBJECT_LIST_BY_COMPANY].replace("{companyId}", (payload as any).company.id)
 									: `companies/${(payload as any as IPayListByCompany).company.id}/${route}`;
-								break;
-							case "Asset":	// IPayListByAsset
-								route = action.object in OBJECT_LIST_BY_ASSET
-									? OBJECT_LIST_BY_ASSET[action.object as keyof typeof OBJECT_LIST_BY_ASSET].replace("{assetId}", (payload as any).asset.id)
-									: `assets/${(payload as any as IPayListByAsset).asset.id}/${route}`;
 								break;
 							case "User":	// IPayListByUser
 								route = `users/${encodeURIComponent((payload as any as IPayListByUser).user.login)}/${route}`;

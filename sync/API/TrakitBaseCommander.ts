@@ -1,5 +1,13 @@
 ﻿import {
 	ErrorCode,
+	IPayListByAsset,
+	IPayListByBillingProfile,
+	IPayListByLabels,
+	IPayListByReferences,
+	IPayListByUser,
+	PayListByDate,
+	PayListById,
+	PayListByKey,
 	Payload,
 	Reply,
 	RepSelfGet
@@ -9,9 +17,13 @@ import {
 	JsonObject,
 	Machine,
 	nothing,
-	url
+	url,
+	utility
 } from '@trakit/objects';
 import { createClientErrorResponse } from './Functions';
+import { IPaySingle } from '@trakit/commands';
+import { IPayListByCompany } from '@trakit/commands';
+import { OBJECT_LIST_BY_BILLING_PROFILE, OBJECT_LIST_BY_COMPANY, OBJECT_LIST_BY_ASSET } from '../RESTful/Constants';
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.
@@ -99,38 +111,50 @@ export abstract class TrakitBaseCommander<TRequest> {
 	//#endregion Authorization
 
 	/**
+	 * A mapping of commands that are currently executing, to ensure that duplicate commands
+	 * with the same payload are not sent to the underlying service multiple times concurrently.
+	 */
+	_commandPromises = new Map<string, Promise<Reply>>();
+
+	/**
 	 * Sends a command to the underlying service, and returns a Promise that completes when a reply is received.
 	 * @param payload   The payload to send to the service.
 	 * @returns         A promise that settles based on the underlying service's response.
 	 */
 	command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		return new Promise(async (resolve, reject) => {
-			let request: TRequest | null = null,
-				response: any = null,
-				reply: TReply | null = null;
-			try {
-				request = await this.requestCreate(payload);
-			} catch (ex: Error | any) {
-				response = createClientErrorResponse(ex);
-			}
-			try {
-				response = response
-					?? (await this.requestRelay(request as TRequest));
-			} catch (ex: Error | JsonObject | any) {
-				reply = payload.createReply(
-					ex instanceof Error
-						? createClientErrorResponse(ex)
-						: ex as JsonObject
-				) as TReply;
-			}
-			try {
-				reply = reply
-					?? (payload.createReply(response) as TReply);
-			} catch (ex: Error | any) {
-				reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
-			}
-			(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
-		});
+		const payloadKey = payload.constructor.name + JSON.stringify(payload.toJSON());
+		let payloadPromise = this._commandPromises.get(payloadKey);
+		if (!payloadPromise) {
+			this._commandPromises.set(payloadKey, payloadPromise = new Promise(async (resolve, reject) => {
+				let request: TRequest | null = null,
+					response: any = null,
+					reply: TReply | null = null;
+				try {
+					request = await this.requestCreate(payload);
+				} catch (ex: Error | any) {
+					response = createClientErrorResponse(ex);
+				}
+				try {
+					response = response
+						?? (await this.requestRelay(request as TRequest));
+				} catch (ex: Error | JsonObject | any) {
+					reply = payload.createReply(
+						ex instanceof Error
+							? createClientErrorResponse(ex)
+							: ex as JsonObject
+					) as TReply;
+				}
+				try {
+					reply = reply
+						?? (payload.createReply(response) as TReply);
+				} catch (ex: Error | any) {
+					reply = payload.createReply(createClientErrorResponse(ex, response)) as TReply;
+				}
+				(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
+				this._commandPromises.delete(payloadKey);
+			}));
+		}
+		return payloadPromise as Promise<TReply>;
 	}
 
 	/**
