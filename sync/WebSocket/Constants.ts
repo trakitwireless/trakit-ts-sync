@@ -51,7 +51,7 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName]: SubscriptionType[] } = {
 		SubscriptionType.userGeneral,
 		SubscriptionType.userAdvanced,
 		SubscriptionType.userAuthentication,
-		SubscriptionType.userSetting,
+		SubscriptionType.userState,
 	],
 	"UserGeneral": [
 		SubscriptionType.userGeneral,
@@ -62,8 +62,8 @@ export const OBJECT_SUBSCRIPTIONS: { [key in SyncName]: SubscriptionType[] } = {
 	"UserAuthentication": [
 		SubscriptionType.userAuthentication,
 	],
-	"UserSetting": [
-		SubscriptionType.userSetting,
+	"UserState": [
+		SubscriptionType.userState,
 	],
 	"UserGroup": [
 		SubscriptionType.userGroup,
