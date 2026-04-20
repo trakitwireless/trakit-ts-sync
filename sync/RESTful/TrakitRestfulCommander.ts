@@ -7,7 +7,7 @@ import {
 	nothing,
 	url
 } from "@trakit/objects";
-import { createClientErrorResponse, fetchJsonObject } from "../API/Functions";
+import { fetchJsonObject } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { createCorsRequest, payloadToVerbRoute } from "./Functions";
 

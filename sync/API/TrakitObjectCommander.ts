@@ -443,24 +443,22 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 
 	/**
 	 * Gets invoked any time the service's account information is updated while the connection is open.
-	 * @param reset When true, a new instance of RepSelfGet is created to reset all values, otherwise the existing RepSelfGet instance is updated with new values.
+	 * @param account The new account, and if not given will take the existing account object and re-create it.
 	 */
-	protected _handleAccount(reset?: boolean) {
-		if (reset) {
-			this.setAuth(new RepSelfGet({
-				serverTime: this.account.serverTime?.toISOString() ?? null,
-				ghostId: this.account.ghostId ?? null,
-				expiry: this.account.expiry?.toISOString() ?? null,
-				user: this.account.userLogin
-					? { "login": this.account.userLogin } as JsonObject
-					: null,
-				machine: this.account.machineKey
-					? { "key": this.account.machineKey } as JsonObject
-					: null,
-				sessionPolicy: this.account.sessionPolicy?.toJSON() ?? null,
-				passwordPolicy: this.account.passwordPolicy?.toJSON() ?? null,
-			}));
-		}
+	protected _handleAccount(account?: RepSelfGet | nothing) {
+		this.setAuth(account ?? new RepSelfGet({
+			serverTime: this.account.serverTime?.toISOString() ?? null,
+			ghostId: this.account.ghostId ?? null,
+			expiry: this.account.expiry?.toISOString() ?? null,
+			user: this.account.userLogin
+				? { "login": this.account.userLogin } as JsonObject
+				: null,
+			machine: this.account.machineKey
+				? { "key": this.account.machineKey } as JsonObject
+				: null,
+			sessionPolicy: this.account.sessionPolicy?.toJSON() ?? null,
+			passwordPolicy: this.account.passwordPolicy?.toJSON() ?? null,
+		}));
 		this.fire("account", () => new TrakitEventAccount("account", this.account));
 	}
 	/**
@@ -577,8 +575,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 */
 	public async selfDetails(): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfGet());
-		this.setAuth(reply);
-		this._handleAccount();
+		this._handleAccount(reply);
 		return reply;
 	}
 
@@ -595,8 +592,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			password: password,
 			userAgent: userAgent ?? null,
 		}));
-		this.setAuth(reply);
-		this._handleAccount();
+		this._handleAccount(reply);
 		return reply;
 	}
 	/**
@@ -605,8 +601,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 */
 	public logout(): Promise<RepSelfLogout> {
 		const promise = this.command<RepSelfLogout>(new PaySelfLogout()); // not awaited
-		this.setAuth();
-		this._handleAccount();
+		this._handleAccount(new RepSelfGet()); // reset account immediately
 		return promise;
 	}
 
