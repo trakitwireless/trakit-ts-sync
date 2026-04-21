@@ -15,7 +15,7 @@ import {
 	url
 } from '@trakit/objects';
 import { TrakitEventAccount, TrakitEventDelete, TrakitEvent, TrakitEventList, TrakitEventUpdate } from "../API/Events";
-import { makePayloadClass } from "../API/Functions";
+import { createClientErrorResponse, makePayloadClass } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { TrakitRestfulCommander } from "../RESTful/TrakitRestfulCommander";
 import { OBJECT_SUBSCRIPTIONS } from "../WebSocket/Constants";
@@ -262,23 +262,37 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			current = this.#getCurrentSync(companyId),
 			requested = SYNCS_TO_SUBS(types).filter(sub => !current.regions.includes(sub));
 		if (requested.length > 0) {
-			const subscribed = (await this._socket.subscribe(companyId, requested)).merged as SubscriptionType[];
 			// remove expiration from any requested subscriptions, not new subscriptions
 			// some subscriptions may have been requested to be removed before re-synching
-			current.removeExpiries(requested);
+			// do this right away so they don't get accidentally expired while waiting for the subscribe command to resolve
+			current.preserveRegions(requested);
+
+			// send subscribe command to Trak-iT WebSocket for any out-of-sync regions
+			const subscribed = await this._socket.subscribe(companyId, requested);
+
+			// any unsuccessful regions are expired immediately, which will remove them from the in-sync list
+			// and cause them to be re-requested on the next sync attempt (like when switching sections)
+			current.expireRegions((subscribed.denied ?? []).concat(subscribed.invalid as SubscriptionType[] ?? []), true);
 
 			// once subscriptions are made, find the SyncNames that need to be requested
-			SUBS_TO_SYNCS(subscribed).forEach(type => {
+			SUBS_TO_SYNCS(subscribed.merged as SubscriptionType[] ?? []).forEach(type => {
 				const SyncPayload = makePayloadClass(
 					type,
 					type.startsWith("Company")
 						? "Get"
 						: "ListByCompany"
 				);
-				if (!SyncPayload) throw new Error(`No payload class could be made for sync type ${type}`);
-				promises.push(this.command<Reply>(new SyncPayload({
-					company: { id: companyId },
-				})));
+				promises.push(
+					SyncPayload
+						? this.command<Reply>(new SyncPayload({
+							company: { id: companyId },
+						}))
+						: Promise.reject(
+							createClientErrorResponse(
+								new Error(`No payload class could be made for sync type ${type}`)
+							)
+						)
+				);
 			});
 		}
 		return Promise.all(promises);
@@ -296,7 +310,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 				.filter(sub => current.regions.includes(sub))
 				.filter((sub, index, array) => array.indexOf(sub) === index); // make unique
 		// does not send "unsubscribe" to the Trak-iT WebSocket, this is done in the {@link #subscriptionTimer} process.
-		current.addExpiries(requested);
+		current.expireRegions(requested);
 		return requested;
 	}
 	/**

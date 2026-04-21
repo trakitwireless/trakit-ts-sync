@@ -67,23 +67,31 @@ export class SubscribedRegions {
 	}
 	/**
 	 * Marks the given subscription type for expiration.
-	 * @param region
+	 * @param region	
+	 * @param immediate	If true, the subscription type will be marked for immediate expiration.
 	 */
-	addExpiry(region: SubscriptionType): Date {
-		return this.#setExpiry(region, new Date((new Date).valueOf() + SubscribedRegions_EXPIRE_TIMEOUT)) as Date;
+	expireRegion(region: SubscriptionType, immediate: boolean = false): Date {
+		const nowMs = immediate
+			? 0
+			: (new Date).valueOf();
+		return this.#setExpiry(
+			region,
+			new Date(nowMs + SubscribedRegions_EXPIRE_TIMEOUT)
+		) as Date;
 	}
 	/**
 	 * Marks the given subscription types for expiration.
 	 * @param regions
+	 * @param immediate	If true, the subscription types will be marked for immediate expiration.
 	 */
-	addExpiries(regions: SubscriptionType[]): Date[] {
-		return regions.map(region => this.addExpiry(region));
+	expireRegions(regions: SubscriptionType[], immediate: boolean = false): Date[] {
+		return regions.map(region => this.expireRegion(region, immediate));
 	}
 	/**
 	 * Clears the expiration of the given subscription type.
 	 * @param region
 	 */
-	removeExpiry(region: SubscriptionType): Date | null {
+	preserveRegion(region: SubscriptionType): Date | null {
 		const expiry = this.#regions.get(region);
 		this.#setExpiry(region);
 		return expiry || null;
@@ -92,8 +100,8 @@ export class SubscribedRegions {
 	 * Clears the expiration of the given subscription types.
 	 * @param regions
 	 */
-	removeExpiries(regions: SubscriptionType[]): (Date | null)[] {
-		return regions.map(region => this.removeExpiry(region));
+	preserveRegions(regions: SubscriptionType[]): (Date | null)[] {
+		return regions.map(region => this.preserveRegion(region));
 	}
 
 	/**
