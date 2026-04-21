@@ -1,7 +1,7 @@
 {
   "name": "@trakit/sync",
   "type": "module",
-  "version": "0.0.50",
+  "version": "0.0.51",
   "main": "./trakit-sync.min.js",
   "types": "./index.d.ts",
   "scripts": {
@@ -35,7 +35,7 @@
     "vitest": "^4.0.7"
   },
   "dependencies": {
-    "@trakit/commands": "^0.0.25",
+    "@trakit/commands": "^0.0.26",
     "@trakit/objects": "^0.0.28"
   }
 }
