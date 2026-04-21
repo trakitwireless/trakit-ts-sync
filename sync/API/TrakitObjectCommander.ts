@@ -181,6 +181,7 @@
 	PaySelfLogout,
 	PaySelfPassword,
 	PaySelfPreferences,
+	PaySelfState,
 	PaySessionDelete,
 	PaySessionListByCompany,
 	PaySessionListByUser,
@@ -350,11 +351,9 @@
 	RepReportTemplateGet,
 	RepReportTemplateListByCompany,
 	RepReportTemplateMerge,
-	RepSelfContact,
 	RepSelfGet,
 	RepSelfLogout,
 	RepSelfPassword,
-	RepSelfPreferences,
 	RepSessionDelete,
 	RepSessionListByCompany,
 	RepSessionListByUser,
@@ -369,7 +368,7 @@
 	RepUserGroupListByCompany,
 	RepUserGroupMerge,
 	RepUserListByCompany,
-	RepUserMerge,
+	RepUserMerge
 } from '@trakit/commands';
 import {
 	Asset,
@@ -633,8 +632,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		options?: Map<string, string | null>,
 		roles?: string[],
 		pictures?: ulong[],
-	): Promise<RepSelfContact> {
-		return this.command<RepSelfContact>(new PaySelfContact({
+	): Promise<Reply> {
+		return this.command<Reply>(new PaySelfContact({
 			contact: {
 				name: name ?? null,
 				notes: notes ?? null,
@@ -672,8 +671,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param notify		Notification preferences.
 	 * @param formats		Format templates for dates, times, etc...
 	 * @param measurements	Measurement system preferences.
-	 * @param options		Saved JSON data used by client applications.
-	 * @returns The reply from the update preferences command.
+	 * @returns				The reply from the update preferences command.
 	 */
 	public updatePreferences(
 		language?: codified,
@@ -681,9 +679,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 		notify?: UserNotifications[] | JsonObject[],
 		formats?: Map<string, string> | JsonObject,
 		measurements?: Map<string, SystemsOfUnits> | JsonObject,
-		options?: Map<string, string> | JsonObject
-	): Promise<RepSelfPreferences> {
-		return this.command<RepSelfPreferences>(new PaySelfPreferences({
+	): Promise<Reply> {
+		return this.command<Reply>(new PaySelfPreferences({
 			language: language ?? null,
 			timezone: (timezone as Timezone)?.code ?? timezone ?? null,
 			notify: notify?.map(n => (n as UserNotifications).toJSON?.() ?? n) ?? null,
@@ -693,6 +690,17 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			measurements: measurements instanceof Map
 				? serialization.fromMap(measurements) as JsonObject
 				: measurements ?? null,
+		}));
+	}
+	/**
+	 * Allows a {@link User} to change their own state flags.
+	 * @param options	Saved JSON data used by client applications.
+	 * @returns			The reply from the update state command.
+	 */
+	public updateState(
+		options?: Map<string, string> | JsonObject,
+	): Promise<Reply> {
+		return this.command<Reply>(new PaySelfState({
 			options: options instanceof Map
 				? serialization.fromMap(options) as JsonObject
 				: options ?? null,
