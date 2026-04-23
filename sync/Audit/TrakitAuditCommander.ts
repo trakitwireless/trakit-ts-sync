@@ -9,7 +9,7 @@ import {
 } from "@trakit/objects";
 import { fetchJsonObject } from "../API/Functions";
 import { TrakitBaseCommander } from "../API/TrakitBaseCommander";
-import { createCorsRequest, payloadToVerbRoute } from "../RESTful/Functions";
+import { makeCorsRequest, payloadToVerbRoute } from "../API/Functions";
 
 /**
  * Uses Trak-iT's RESTful service to access and manipulate Trak-iT API objects.
@@ -48,7 +48,7 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	 */
 	override requestCreate(payload: Payload): Promise<Request> {
 		const [_, path] = payloadToVerbRoute(payload);
-		return createCorsRequest(
+		return makeCorsRequest(
 			this.account,
 			this.createBaseUrl(path),
 			"GET",
