@@ -6,9 +6,9 @@ import {
 	IPayListByReferences,
 	IPayListByUser,
 	IPaySingle,
-	PayListByDate,
-	PayListById,
-	PayListByKey, Payload,
+	PayloadListByDate,
+	PayloadListById,
+	PayloadListByKey, Payload,
 	RepSelfGet
 } from "@trakit/commands";
 import { utility } from "@trakit/objects";
@@ -30,10 +30,12 @@ const SPLITTER = /[A-Z][a-z]+/;
  * @returns			A tuple containing the HTTP verb and route.
  */
 export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
-	let verb: HttpVerb = "GET",
-		route = "",
-		query = new URLSearchParams;
 	const action = payload.getAction();
+	let verb: HttpVerb = "GET",
+		query = new URLSearchParams,
+		route = [...action.object.match(SPLITTER) as string[]]
+			.map(s => utility.pluralize(s.toLowerCase()))
+			.join("/");
 	switch (action.object as string) {
 		case "Self":
 			if (action.kind == "Get") {
@@ -58,9 +60,6 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 			}
 		// no break => fall through to default for DispatchJob where filter is not Cancel or Change
 		default:
-			route = [...action.object.match(SPLITTER) as string[]]
-				.map(s => utility.pluralize(s.toLowerCase()))
-				.join("/");
 			if (action.batch) {
 				verb = "PATCH";
 				switch (action.kind) {
@@ -84,8 +83,10 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 						break;
 				}
 			} else {
-				if ((payload as any).getKey) {
-					route += "/" + (payload as any as IPaySingle).getKey();
+				if ((payload as any as IPaySingle).getKey) {
+					route = utility.isCompounded(action.object)
+						? route.replace("/", "/" + (payload as any as IPaySingle).getKey() + "/")
+						: route + "/" + (payload as any as IPaySingle).getKey();
 				}
 				switch (action.kind) {
 					case "Get":
@@ -114,25 +115,25 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 								break;
 						}
 						// type IPayListByDate
-						if (utility.isntNaN((payload as any as PayListByDate)?.after?.valueOf())) {
-							query.set("after", ((payload as any as PayListByDate).after as Date).toISOString());
+						if (utility.isntNaN((payload as any as PayloadListByDate)?.after?.valueOf())) {
+							query.set("after", ((payload as any as PayloadListByDate).after as Date).toISOString());
 						}
-						if (utility.isntNaN((payload as any as PayListByDate)?.before?.valueOf())) {
-							query.set("before", ((payload as any as PayListByDate).before as Date).toISOString());
+						if (utility.isntNaN((payload as any as PayloadListByDate)?.before?.valueOf())) {
+							query.set("before", ((payload as any as PayloadListByDate).before as Date).toISOString());
 						}
 						// type IPayListById
-						if (utility.isntNaN((payload as any as PayListById)?.lowest)) {
-							query.set("lowest", (payload as any as PayListById).lowest as any as string);
+						if (utility.isntNaN((payload as any as PayloadListById)?.lowest)) {
+							query.set("lowest", (payload as any as PayloadListById).lowest as any as string);
 						}
-						if (utility.isntNaN((payload as any as PayListById)?.highest)) {
-							query.set("highest", (payload as any as PayListById).highest as any as string);
+						if (utility.isntNaN((payload as any as PayloadListById)?.highest)) {
+							query.set("highest", (payload as any as PayloadListById).highest as any as string);
 						}
 						//// type IPayListByKey
-						if ((payload as any as PayListByKey)?.first) {
-							query.set("first", (payload as any as PayListByKey).first as string);
+						if ((payload as any as PayloadListByKey)?.first) {
+							query.set("first", (payload as any as PayloadListByKey).first as string);
 						}
-						if ((payload as any as PayListByKey)?.last) {
-							query.set("last", (payload as any as PayListByKey).last as string);
+						if ((payload as any as PayloadListByKey)?.last) {
+							query.set("last", (payload as any as PayloadListByKey).last as string);
 						}
 						// type IPayListByLabels
 						if ((payload as any as IPayListByLabels)?.labels?.length) {

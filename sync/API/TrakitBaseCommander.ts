@@ -5,9 +5,9 @@
 	IPayListByLabels,
 	IPayListByReferences,
 	IPayListByUser,
-	PayListByDate,
-	PayListById,
-	PayListByKey,
+	PayloadListByDate,
+	PayloadListById,
+	PayloadListByKey,
 	Payload,
 	Reply,
 	RepSelfGet
