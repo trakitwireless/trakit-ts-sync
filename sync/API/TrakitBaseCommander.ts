@@ -39,7 +39,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 * @param path  Optional path to append to the base address.
 	 * @returns     The constructed URL string.
 	 */
-	_createBaseUrl(path?: URL | url | nothing): URL {
+	createBaseUrl(path?: URL | url | nothing): URL {
 		const route = this.baseAddress
 			? new URL(path ?? "", this.baseAddress)
 			: new URL(path as url),

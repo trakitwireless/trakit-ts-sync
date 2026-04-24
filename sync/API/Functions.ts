@@ -295,7 +295,7 @@ export async function requestCreateCommander(
 	const [verb, path] = makeVerbRoute(payload);
 	return requestCreateCors(
 		commander.account,
-		commander._createBaseUrl(path),
+		commander.createBaseUrl(path),
 		verb,
 		verb === "GET"
 			? null

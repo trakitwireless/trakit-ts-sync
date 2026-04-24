@@ -605,7 +605,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			const state = this.state;
 			switch (state) {
 				case TrakitSocketStatus.closed:
-					const endpoint = this._createBaseUrl();
+					const endpoint = this.createBaseUrl();
 					this.#socket = new WebSocket(
 						endpoint,
 						this.account.machine

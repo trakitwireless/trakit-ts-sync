@@ -13,15 +13,20 @@ import {
 	TrakitEventSync,
 	TrakitEventUpdate
 } from "./API/Events";
-import { createClientErrorResponse, fetchJsonObject } from "./API/Functions";
+import {
+	createClientErrorResponse,
+	makeVerbRoute,
+	requestCreateCommander,
+	requestCreateCors,
+	requestRelayCorsJson
+} from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
 import { HttpVerb } from "./RESTful/Constants";
-import { createCorsRequest, payloadToVerbRoute } from "./RESTful/Functions";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
 import { TrakitEventSocketClose, TrakitEventSocketMessage } from "./WebSocket/Events";
-import { payloadToCommandName } from "./WebSocket/Functions";
+import { makeCommandName } from "./WebSocket/Functions";
 import { SubscribedRegions } from "./WebSocket/SubscribedRegions";
 import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSocketCommander";
 
@@ -35,7 +40,7 @@ export const version = '0.0.53';
  */
 export {
 	createClientErrorResponse,
-	fetchJsonObject,
+	requestRelayCorsJson,
 	TrakitBaseCommander,
 	TrakitEvent,
 	TrakitEventAccount,
@@ -51,8 +56,9 @@ export {
  * RESTful API exports
  */
 export {
-	createCorsRequest,
-	payloadToVerbRoute,
+	makeVerbRoute,
+	requestCreateCommander,
+	requestCreateCors,
 	TrakitRestfulCommander
 };
 
@@ -60,7 +66,7 @@ export {
  * WebSocket API exports
  */
 export {
-	payloadToCommandName,
+	makeCommandName,
 	SubscribedRegions,
 	TrakitSocketCommander,
 	TrakitSocketStatus
