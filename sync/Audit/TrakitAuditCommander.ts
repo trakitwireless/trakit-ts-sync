@@ -3,13 +3,17 @@ import {
 	RepSelfGet
 } from "@trakit/commands";
 import {
-	guid, JsonObject, Machine,
+	guid,
+	JsonObject,
+	Machine,
 	nothing,
 	url
 } from "@trakit/objects";
-import { fetchJsonObject } from "../API/Functions";
+import {
+	requestRelayCorsJson,
+	requestCreateCommander
+} from "../API/Functions";
 import { TrakitBaseCommander } from "../API/TrakitBaseCommander";
-import { makeCorsRequest, payloadToVerbRoute } from "../API/Functions";
 
 /**
  * Uses Trak-iT's RESTful service to access and manipulate Trak-iT API objects.
@@ -47,14 +51,7 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	 * @returns A {@link Request} object configured with the specified parameters.
 	 */
 	override requestCreate(payload: Payload): Promise<Request> {
-		const [_, path] = payloadToVerbRoute(payload);
-		return makeCorsRequest(
-			this.account,
-			this.createBaseUrl(path),
-			"GET",
-			null,
-			this.headers
-		);
+		return requestCreateCommander(this, payload);
 	}
 	/**
 	 * Sends the given request to Trak-iT's RESTful API and awaits a result.
@@ -64,6 +61,6 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	 * @returns				A promise that resolves with the JSON response from the server.
 	 */
 	override requestRelay(request: Request): Promise<JsonObject> {
-		return fetchJsonObject(request);
+		return requestRelayCorsJson(request);
 	}
 }
