@@ -1,13 +1,5 @@
 ﻿import {
 	ErrorCode,
-	IPayListByAsset,
-	IPayListByBillingProfile,
-	IPayListByLabels,
-	IPayListByReferences,
-	IPayListByUser,
-	PayloadListByDate,
-	PayloadListById,
-	PayloadListByKey,
 	Payload,
 	Reply,
 	RepSelfGet
@@ -17,13 +9,9 @@ import {
 	JsonObject,
 	Machine,
 	nothing,
-	url,
-	utility
+	url
 } from '@trakit/objects';
 import { createClientErrorResponse } from './Functions';
-import { IPaySingle } from '@trakit/commands';
-import { IPayListByCompany } from '@trakit/commands';
-import { OBJECT_LIST_BY_BILLING_PROFILE, OBJECT_LIST_BY_COMPANY, OBJECT_LIST_BY_ASSET } from '../RESTful/Constants';
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.
@@ -51,7 +39,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 * @param path  Optional path to append to the base address.
 	 * @returns     The constructed URL string.
 	 */
-	protected createBaseUrl(path?: URL | url | nothing): URL {
+	_createBaseUrl(path?: URL | url | nothing): URL {
 		const route = this.baseAddress
 			? new URL(path ?? "", this.baseAddress)
 			: new URL(path as url),
