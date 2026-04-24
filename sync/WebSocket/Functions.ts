@@ -6,7 +6,7 @@ import { utility } from "@trakit/objects";
  * @param payload The payload being sent.
  * @returns The corresponding WebSocket command name.
  */
-export function payloadToCommandName(payload: Payload): string {
+export function makeCommandName(payload: Payload): string {
 	const action = payload.getAction(),
 		error = new Error("no command supported for " + payload.constructor.name, { cause: action });
 	switch (action.object as string) {

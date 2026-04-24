@@ -35,7 +35,7 @@ import {
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { MSG_SYNC } from "./Constants";
 import { TrakitEventSocketBroadcast, TrakitEventSocketClose, TrakitEventSocketMessage } from './Events';
-import { payloadToCommandName } from "./Functions";
+import { makeCommandName } from "./Functions";
 
 /**
  * Maximum time (in milliseconds) to wait before givin up on a command.
@@ -605,7 +605,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			const state = this.state;
 			switch (state) {
 				case TrakitSocketStatus.closed:
-					const endpoint = this.createBaseUrl();
+					const endpoint = this._createBaseUrl();
 					this.#socket = new WebSocket(
 						endpoint,
 						this.account.machine
@@ -685,7 +685,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 */
 	override requestCreate(payload: Payload): Promise<[string, JsonObject]> {
 		return Promise.resolve([
-			payloadToCommandName(payload),
+			makeCommandName(payload),
 			payload.toJSON(),
 		]);
 	}
