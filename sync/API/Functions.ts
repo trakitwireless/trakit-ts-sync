@@ -1,7 +1,38 @@
 import * as commands from "@trakit/commands";
-import { ErrorCode, IPayListByAsset, IPayListByBillingProfile, IPayListByCompany, IPayListByLabels, IPayListByReferences, IPayListByUser, IPaySingle, Payload, PayloadListByDate, PayloadListById, PayloadListByKey, Reply, RepSelfGet } from "@trakit/commands";
-import { codified, email, guid, JsonObject, JsonValue, nothing, SyncName, ulong, utility } from "@trakit/objects";
-import { HttpVerb, OBJECT_LIST_BY_ASSET, OBJECT_LIST_BY_BILLING_PROFILE, OBJECT_LIST_BY_COMPANY } from "../RESTful/Constants";
+import {
+	ErrorCode,
+	IPayListByAsset,
+	IPayListByBillingProfile,
+	IPayListByCompany,
+	IPayListByLabels,
+	IPayListByReferences,
+	IPayListByUser,
+	IPaySingle,
+	Payload,
+	PayloadListByDate,
+	PayloadListById,
+	PayloadListByKey,
+	Reply,
+	RepSelfGet
+} from "@trakit/commands";
+import {
+	codified,
+	email,
+	guid,
+	JsonObject,
+	JsonValue,
+	nothing,
+	SyncName,
+	ulong,
+	utility
+} from "@trakit/objects";
+import {
+	HttpVerb,
+	OBJECT_LIST_BY_ASSET,
+	OBJECT_LIST_BY_BILLING_PROFILE,
+	OBJECT_LIST_BY_COMPANY
+} from "../RESTful/Constants";
+import { TrakitBaseCommander } from "./TrakitBaseCommander";
 
 /**
  * Splits Pascal-case words into their components.
@@ -104,7 +135,7 @@ export function makeReplyClass(type: SyncName, suffix?: string | nothing): (new 
  * @param payload	The payload being sent.
  * @returns			A tuple containing the HTTP verb and route.
  */
-export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
+export function makeVerbRoute(payload: Payload): [HttpVerb, string] {
 	const action = payload.getAction();
 	let verb: HttpVerb = "GET",
 		query = new URLSearchParams,
@@ -252,6 +283,27 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
 }
 
 /**
+ * Constructs a CORS request for the given commander and payload.
+ * @param commander 
+ * @param payload 
+ * @returns 
+ */
+export async function requestCreateCommander(
+	commander: TrakitBaseCommander<Request>,
+	payload: Payload
+): Promise<Request> {
+	const [verb, path] = makeVerbRoute(payload);
+	return requestCreateCors(
+		commander.account,
+		commander._createBaseUrl(path),
+		verb,
+		verb === "GET"
+			? null
+			: JSON.stringify(payload.toJSON()),
+		commander.headers
+	);
+}
+/**
  * Constructs a CORS request for a Trak-iT API endpoint with the given account and request details.
  * This method handles authentication headers based on the account's Machine or User's credentials.
  * @param account 
@@ -261,7 +313,7 @@ export function payloadToVerbRoute(payload: Payload): [HttpVerb, string] {
  * @param defaultHeaders 
  * @returns 
  */
-export async function makeCorsRequest(
+export async function requestCreateCors(
 	account: RepSelfGet,
 	route: URL,
 	verb: HttpVerb = "GET",
@@ -307,15 +359,30 @@ export async function makeCorsRequest(
 	}
 	return new Request(route, init);
 }
+
+/**
+ * Issues a fetch request and returns the response.
+ * If the fetch fails, returns a standardized error response object.
+ * @param request 
+ * @returns 
+ */
+export async function requestRelayCors(request: Request): Promise<Response> {
+	try {
+		return fetch(request);
+	} catch (ex: Error | any) {
+		throw createClientErrorResponse(ex);
+	}
+}
 /**
  * Issues a fetch request and returns the response as a {@link JsonObject}.
  * If the fetch fails, returns a standardized error response object.
  * @param request 
  * @returns 
  */
-export async function fetchJsonObject(request: Request): Promise<JsonObject> {
+export async function requestRelayCorsJson(request: Request): Promise<JsonObject> {
 	try {
-		return (await (await fetch(request)).json()) as JsonObject;
+		const response = await requestRelayCors(request);
+		return (await response.json()) as JsonObject;
 	} catch (ex: Error | any) {
 		throw createClientErrorResponse(ex);
 	}
