@@ -31,6 +31,7 @@ export function makeCommandName(payload: Payload): string {
 				case "Contact":
 				case "Password":
 				case "Preferences":
+				case "State":
 					return "updateOwn" + action.filter;
 				default:
 					throw error;
