@@ -213,10 +213,6 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 
 	//#region Internal WebSocket control
 	/**
-	 * Counter used to correlate requests to responses.
-	 */
-	#requestId: number = 0;
-	/**
 	 * A collection of pending command Promises.
 	 * Each key is a reqId (except for connection and disconnection) and each value is a function invoked with a {@link Reply} object.
 	 */
@@ -400,23 +396,33 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this._handleAccount();
 				break;
 			case "sessionGeneralMerged":
-				this.#socketSync([, "userGeneral", "Merged"], this.#socketSelfGeneral(msgContent));
+				this.#socketSelfPartial({
+					user: msgContent,
+				});
 				this._handleAccount();
 				break;
 			case "sessionAdvancedMerged":
-				this.#socketSync([, "userAdvanced", "Merged"], this.#socketSelfAdvanced(msgContent));
+				this.#socketSelfPartial({
+					user: msgContent,
+				});
 				this._handleAccount();
 				break;
 			case "sessionAuthenticationMerged":
-				this.#socketSync([, "userAuthentication", "Merged"], msgContent);
+				this.#socketSelfPartial({
+					user: msgContent,
+				});
 				this._handleAccount();
 				break;
 			case "sessionStateMerged":
-				this.#socketSync([, "userState", "Merged"], msgContent);
+				this.#socketSelfPartial({
+					user: msgContent,
+				});
 				this._handleAccount();
 				break;
 			case "sessionMachineMerged":
-				this.#socketSync([, "machine", "Merged"], this.#socketSelfAdvanced(msgContent));
+				this.#socketSelfPartial({
+					machine: msgContent,
+				});
 				this._handleAccount();
 				break;
 			case "broadcast":
@@ -443,66 +449,35 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * @param msgContent The JSON object containing the account information.
 	 */
 	#socketSelf(msgContent: JsonObject): void {
-		if (msgContent.user) {
-			// raises contact sync event, then all group sync events, then user sync event
-			this.#socketSync(
-				[, "user", "Merged"],
-				this.#socketSelfAdvanced(
-					this.#socketSelfGeneral(
-						msgContent.user as JsonObject
-					)
-				)
-			);
-		}
-		if (msgContent.machine) {
-			// raises all group sync events, then machine sync event
-			this.#socketSync(
-				[, "machine", "Merged"],
-				this.#socketSelfAdvanced(
-					msgContent.machine as JsonObject
-				)
-			);
-		}
 		this.setAuth(new RepSelfGet(msgContent));
 		this.#socketOperable = this.account.errorCode === 0
 			&& !this.account.user?.passwordExpired;
+		this.account.store();
 	}
 	/**
-	 * Strips the `contact` object out of the `msgSelfGeneral` object, raises a sync event for the contact,
-	 * then returns a copy of the `msgSelfGeneral` with the `contact` replaced with the `id`,
-	 * so that the object can be used to raise a `UserGeneral` sync event.
-	 * @param msgSelfGeneral The JSON object containing the account information.
-	 * @returns A {@link UserGeneral} compatible JSON object with the updated account information.
+	 * Updates the account information based on the received message content,
+	 * but only updates the fields included in the message content,
+	 * instead of replacing the whole account information.
+	 * @param msgContent The JSON object containing the differential account information.
 	 */
-	#socketSelfGeneral(msgSelfGeneral: JsonObject): JsonObject {
-		if (msgSelfGeneral?.contact) {
-			const msgContact = msgSelfGeneral.contact as JsonObject;
-			this.#socketSync([, "contact", "Merged"], msgContact);
-			return {
-				...msgSelfGeneral,
-				contact: msgContact["id"],
-			};
-		}
-		return msgSelfGeneral;
-	}
-	/**
-	 * Strips the `groups` array out of the `msgSelfAdvanced` object, raises a sync event for each `UserGroup`,
-	 * then returns a copy of the `msgSelfAdvanced` with the `groups` array replaced with the `id` of each object,
-	 * so that the object can be used to raise a `UserAdvanced` or `Machine` sync event.
-	 * @param msgSelfAdvanced The JSON object containing the account information.
-	 * @returns A {@link UserAdvanced} compatible JSON object with the updated account information.
-	 */
-	#socketSelfAdvanced(msgSelfAdvanced: JsonObject): JsonObject {
-		if ((msgSelfAdvanced?.groups as JsonObject[])?.length) {
-			return {
-				...msgSelfAdvanced,
-				groups: (msgSelfAdvanced.groups as JsonObject[]).map(msgGroup => {
-					this.#socketSync([, "userGroup", "Merged"], msgGroup);
-					return msgGroup["id"];
-				}),
-			};
-		}
-		return msgSelfAdvanced;
+	#socketSelfPartial(msgContent: JsonObject): void {
+		const json = this.account.toJSON();
+		this.setAuth(new RepSelfGet({
+			...json,
+			user: msgContent?.user
+				? {
+					...json.user as JsonObject,
+					...msgContent.user as JsonObject,
+				}
+				: null,
+			machine: msgContent?.machine
+				? {
+					...json.machine as JsonObject,
+					...msgContent.machine as JsonObject,
+				}
+				: null,
+		}));
+		this.account.store();
 	}
 	/**
 	 * Constructs a {@link ReplySync} object based on the message name,
@@ -600,82 +575,91 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * If the underlying WebSocket is not closed (as in, any state of openning or being closed), the returned Promise will be rejected.
 	 */
 	open(): Promise<RepSelfGet> {
-		clearTimeout(this.#timerReconnect);
-		return new Promise<RepSelfGet>(async (resolve, reject) => {
-			const state = this.state;
-			switch (state) {
-				case TrakitSocketStatus.closed:
-					const endpoint = this.createBaseUrl();
-					this.#socket = new WebSocket(
-						endpoint,
-						this.account.machine
-							? (
-								this.account.machine.secret?.length
-									? "HMAC256#" + btoa(
-										this.account.machine.key
-										+ ":"
-										+ (await this.account.machine.createHmacSignature(endpoint))
-									)
-									: "MACHINE#" + btoa(
-										this.account.machine.key
-									)
-							)
-								.replaceAll("/", "|")
-								.replace(/=*$/, "")
-							: (
-								this.account.ghostId
-								|| undefined
-							)
-					);
-					this.#socket.onopen = (ev) => this.#socketOpen(ev);
-					this.#socket.onerror = (ev) => this.#socketError(ev);
-					this.#socket.onclose = (ev) => this.#socketClose(ev);
-					this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
-						(response["errorCode"] === 0 ? resolve : reject)(this.account);
-					});
-					break;
-				default:
-					reject(new RepSelfGet({
-						"errorCode": ErrorCode.unknown,
-						"message": "WebSocket not closed",
-						"errorDetails": {
-							"kind": "connection",
-							"connection": state,
-						}
-					}));
-					break;
-			}
-		});
+		let payloadPromise = this._commandPromises.get(CMD_CONNECTION) as Promise<RepSelfGet> | nothing;
+		if (!payloadPromise) {
+			clearTimeout(this.#timerReconnect);
+			this._commandPromises.set(CMD_CONNECTION, payloadPromise = new Promise<RepSelfGet>(async (resolve, reject) => {
+				const state = this.state;
+				switch (state) {
+					case TrakitSocketStatus.closed:
+						const endpoint = this.createBaseUrl();
+						this.#socket = new WebSocket(
+							endpoint,
+							this.account.machine
+								? (
+									this.account.machine.secret?.length
+										? "HMAC256#" + btoa(
+											this.account.machine.key
+											+ ":"
+											+ (await this.account.machine.createHmacSignature(endpoint))
+										)
+										: "MACHINE#" + btoa(
+											this.account.machine.key
+										)
+								)
+									.replaceAll("/", "|")
+									.replace(/=*$/, "")
+								: (
+									this.account.ghostId
+									|| undefined
+								)
+						);
+						this.#socket.onopen = (ev) => this.#socketOpen(ev);
+						this.#socket.onerror = (ev) => this.#socketError(ev);
+						this.#socket.onclose = (ev) => this.#socketClose(ev);
+						this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
+							(response["errorCode"] === 0 ? resolve : reject)(this.account);
+						});
+						break;
+					default:
+						reject(new RepSelfGet({
+							"errorCode": ErrorCode.unknown,
+							"message": "WebSocket not closed",
+							"errorDetails": {
+								"kind": "connection",
+								"connection": state,
+							}
+						}));
+						break;
+				}
+			}));
+		}
+		return payloadPromise;
 	}
 	/**
 	 * Closes the underlying WebSocket connection, and returns a Promise that resolves when the connection is confirmed to be closed.
 	 * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
 	 */
 	close(): Promise<Reply> {
-		return new Promise<Reply>((resolve, reject) => {
-			const state = this.state;
-			switch (state) {
-				case TrakitSocketStatus.opening:
-				case TrakitSocketStatus.open:
-					this.#socketOperable = false;	// prevent re-connect
-					this.reconnectEnabled = false;
-					this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
-						(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
-					});
-					this.#socket.close(1000, "Bye!");
-					break;
-				default:
-					reject(new Reply({
-						"errorCode": ErrorCode.unknown,
-						"message": "WebSocket not open",
-						"errorDetails": {
-							"kind": "connection",
-							"connection": state,
-						},
-					}));
-					break;
-			}
-		});
+		let payloadPromise = this._commandPromises.get(CMD_CONNECTION);
+		if (!payloadPromise) {
+			clearTimeout(this.#timerReconnect);
+			this._commandPromises.set(CMD_CONNECTION, payloadPromise = new Promise<Reply>((resolve, reject) => {
+				const state = this.state;
+				switch (state) {
+					case TrakitSocketStatus.opening:
+					case TrakitSocketStatus.open:
+						this.#socketOperable = false;	// prevent re-connect
+						this.reconnectEnabled = false;
+						this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
+							(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
+						});
+						this.#socket.close(1000, "Bye!");
+						break;
+					default:
+						reject(new Reply({
+							"errorCode": ErrorCode.unknown,
+							"message": "WebSocket not open",
+							"errorDetails": {
+								"kind": "connection",
+								"connection": state,
+							},
+						}));
+						break;
+				}
+			}));
+		}
+		return payloadPromise;
 	}
 
 	/**
@@ -705,7 +689,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			const state = this.state;
 			switch (state) {
 				case TrakitSocketStatus.open:
-					const reqId = ++this.#requestId,
+					const reqId = ++this._commandId,
 						timer = setTimeout(
 							() => this.#requestSettle(reqId, {
 								"reqId": reqId,
@@ -727,19 +711,20 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 					}
 					this.resetKeepAlive();
 					break;
-				case TrakitSocketStatus.closed:
+				default:
+					//case TrakitSocketStatus.closed:
 					this.open().then(() => this.requestRelay(request).then(resolve)).catch(reject);
 					break;
-				default:
-					reject({
-						"errorCode": ErrorCode.unknown,
-						"message": "Not connected",
-						"errorDetails": {
-							"kind": "connection",
-							"connection": state,
-						},
-					});
-					break;
+				//default:
+				//	reject({
+				//		"errorCode": ErrorCode.unknown,
+				//		"message": "Not connected",
+				//		"errorDetails": {
+				//			"kind": "connection",
+				//			"connection": state,
+				//		},
+				//	});
+				//	break;
 			}
 		});
 	}
