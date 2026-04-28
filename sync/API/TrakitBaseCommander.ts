@@ -99,10 +99,14 @@ export abstract class TrakitBaseCommander<TRequest> {
 	//#endregion Authorization
 
 	/**
+	 * Counter used to correlate requests to responses.
+	 */
+	protected _commandId: number = 0;
+	/**
 	 * A mapping of commands that are currently executing, to ensure that duplicate commands
 	 * with the same payload are not sent to the underlying service multiple times concurrently.
 	 */
-	_commandPromises = new Map<string, Promise<Reply>>();
+	protected _commandPromises = new Map<string, Promise<Reply>>();
 
 	/**
 	 * Sends a command to the underlying service, and returns a Promise that completes when a reply is received.
@@ -118,6 +122,7 @@ export abstract class TrakitBaseCommander<TRequest> {
 					response: any = null,
 					reply: TReply | null = null;
 				try {
+					payload.reqId = ++this._commandId;
 					request = await this.requestCreate(payload);
 				} catch (ex: Error | any) {
 					response = createClientErrorResponse(ex);
