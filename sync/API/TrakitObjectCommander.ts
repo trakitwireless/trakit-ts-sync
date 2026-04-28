@@ -445,19 +445,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param account The new account, and if not given will take the existing account object and re-create it.
 	 */
 	protected _handleAccount(account?: RepSelfGet | nothing) {
-		this.setAuth(account ?? new RepSelfGet({
-			serverTime: this.account.serverTime?.toISOString() ?? null,
-			ghostId: this.account.ghostId ?? null,
-			expiry: this.account.expiry?.toISOString() ?? null,
-			user: this.account.userLogin
-				? { "login": this.account.userLogin } as JsonObject
-				: null,
-			machine: this.account.machineKey
-				? { "key": this.account.machineKey } as JsonObject
-				: null,
-			sessionPolicy: this.account.sessionPolicy?.toJSON() ?? null,
-			passwordPolicy: this.account.passwordPolicy?.toJSON() ?? null,
-		}));
+		this.setAuth(account ?? new RepSelfGet(this.account.toJSON()));
 		this.fire("account", () => new TrakitEventAccount("account", this.account));
 	}
 	/**
@@ -585,7 +573,7 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 * @param userAgent	Optional string to identify the client software.
 	 * @returns The response, which contains a SelfUser when successful.
 	 */
-	public async login(username: string, password: string, userAgent?: string | nothing): Promise<RepSelfGet | null> {
+	public async login(username: string, password: string, userAgent?: string | nothing): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfLogin({
 			username: username,
 			password: password,
