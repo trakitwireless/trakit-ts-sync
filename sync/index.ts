@@ -33,7 +33,7 @@ import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSoc
 /**
  * Version number for this release.
  */
-export const version = '0.0.58';
+export const version = '0.0.60';
 
 /**
  * API exports
