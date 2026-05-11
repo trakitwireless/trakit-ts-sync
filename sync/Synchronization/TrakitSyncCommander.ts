@@ -100,7 +100,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 
 		const onOpen = (event: TrakitEvent) => this.#handleOpen((event as TrakitEventAccount).account),
 			onClose = (event: TrakitEvent) => this.#handleClose((event as TrakitEventSocketClose).reply),
-			onAccount = (event: TrakitEvent) => this.setAuth((event as TrakitEventAccount).account),
+			onAccount = (event: TrakitEvent) => this.#handleAccount((event as TrakitEventAccount).account),
 			onUplift = (event: TrakitEvent) => this.fire(event.type, () => event);
 
 		this._rest = new TrakitRestfulCommander(this.account, restAddress ?? TrakitRestfulCommander.URI_PROD);
@@ -220,6 +220,18 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		clearTimeout(this.#syncTimer);
 		// we don't remove any subscriptions, they remain until explicitly unsubscribed or expired
 		// they are re-subscribed when we reconnect in {@link #onOpen}
+	}
+	/**
+	 * Handles the `account` event from either source, and sets the autoConnect flag.
+	 * Updates the internal account state and raises the `onAccount` event.
+	 * @param account 
+	 */
+	#handleAccount(account: RepSelfGet) {
+		this.setAuth(account);
+		this.autoConnect = !!(
+			this.account.user?.login	// not checking ghostId because this is set after a login/logout command
+			|| this.account.machine?.key
+		);
 	}
 	//#endregion Events
 	//#region Sync
