@@ -28,7 +28,7 @@
   "homepage": "https://github.com/trakitwireless/trakit-ts-sync#readme",
   "description": "Trak-iT uses these object definitions to interact with all our APIs.",
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "rollup": "^4.35.0",
     "rollup-plugin-typescript2": "^0.37.0",
     "tsx": "^4.21.0",
@@ -36,6 +36,6 @@
   },
   "dependencies": {
     "@trakit/commands": "^0.0.35",
-    "@trakit/objects": "^0.0.34"
+    "@trakit/objects": "^0.0.35"
   }
 }
