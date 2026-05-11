@@ -8,8 +8,8 @@ const obfuscate = {
 	//   filename: '_publish/trakit-sync-worker.min.js',
 	// },
 	compress: {
-		drop_console: true,
-		drop_debugger: true,
+		drop_console: !true,
+		drop_debugger: !true,
 		hoist_funs: true,
 		module: true,
 		toplevel: true,
