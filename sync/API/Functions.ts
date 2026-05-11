@@ -387,3 +387,19 @@ export async function requestRelayCorsJson(request: Request): Promise<JsonObject
 		throw createClientErrorResponse(ex);
 	}
 }
+
+/**
+ * Utility function to get a value from a Map by key, or create and set it using a factory function if it doesn't exist.
+ * @param map The Map to get/set the value from/in.
+ * @param key The key to look up in the Map.
+ * @param factory A function that takes the key and returns a value to set if the key is not already in the Map.
+ * @returns The existing or newly created value associated with the key in the Map.
+ */
+export function MAP_GET_OR_SET<TKey>(map: Map<TKey, any>, key: TKey, factory: (key: TKey) => any): any {
+	if (!map.has(key)) {
+		const value = factory(key);
+		map.set(key, value);
+		return value;
+	}
+	return map.get(key);
+}
