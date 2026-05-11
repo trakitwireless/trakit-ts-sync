@@ -1,17 +1,6 @@
-﻿import {
-	ErrorCode,
-	Payload,
-	Reply,
-	RepSelfGet
-} from '@trakit/commands';
-import {
-	guid,
-	JsonObject,
-	Machine,
-	nothing,
-	url
-} from '@trakit/objects';
-import { createClientErrorResponse } from './Functions';
+﻿import { ErrorCode, Payload, Reply, RepSelfGet } from '@trakit/commands';
+import { guid, JsonObject, Machine, nothing, url } from '@trakit/objects';
+import { createClientErrorResponse, MAP_GET_OR_SET } from './Functions';
 
 /**
  * The base class used to help define interaction with all Trak-iT API services.
@@ -114,10 +103,10 @@ export abstract class TrakitBaseCommander<TRequest> {
 	 * @returns         A promise that settles based on the underlying service's response.
 	 */
 	command<TReply extends Reply>(payload: Payload): Promise<TReply> {
-		const payloadKey = payload.constructor.name + JSON.stringify(payload.toJSON());
-		let payloadPromise = this._commandPromises.get(payloadKey);
-		if (!payloadPromise) {
-			this._commandPromises.set(payloadKey, payloadPromise = new Promise(async (resolve, reject) => {
+		return MAP_GET_OR_SET(
+			this._commandPromises,
+			payload.constructor.name + JSON.stringify(payload.toJSON()),
+			(payloadKey) => new Promise(async (resolve, reject) => {
 				let request: TRequest | null = null,
 					response: any = null,
 					reply: TReply | null = null;
@@ -145,9 +134,8 @@ export abstract class TrakitBaseCommander<TRequest> {
 				}
 				(reply.errorCode === ErrorCode.success ? resolve : reject)(reply);
 				this._commandPromises.delete(payloadKey);
-			}));
-		}
-		return payloadPromise as Promise<TReply>;
+			})
+		);
 	}
 
 	/**

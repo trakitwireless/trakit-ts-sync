@@ -29,6 +29,7 @@ import { TrakitEventAccount } from "../API/Events";
 import {
 	createClientErrorResponse,
 	getJsonKeyValue,
+	MAP_GET_OR_SET,
 	makeObjectName,
 	makeReplyClass
 } from "../API/Functions";
@@ -583,91 +584,97 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * If the underlying WebSocket is not closed (as in, any state of openning or being closed), the returned Promise will be rejected.
 	 */
 	open(): Promise<RepSelfGet> {
-		let payloadPromise = this._commandPromises.get(CMD_CONNECTION) as Promise<RepSelfGet> | nothing;
-		if (!payloadPromise) {
-			clearTimeout(this.#timerReconnect);
-			this._commandPromises.set(CMD_CONNECTION, payloadPromise = new Promise<RepSelfGet>(async (resolve, reject) => {
-				const state = this.state;
-				switch (state) {
-					case TrakitSocketStatus.closed:
-						const endpoint = this.createBaseUrl();
-						this.#socket = new WebSocket(
-							endpoint,
-							this.account.machine
-								? (
-									this.account.machine.secret?.length
-										? "HMAC256#" + btoa(
-											this.account.machine.key
-											+ ":"
-											+ (await this.account.machine.createHmacSignature(endpoint))
-										)
-										: "MACHINE#" + btoa(
-											this.account.machine.key
-										)
-								)
-									.replaceAll("/", "|")
-									.replace(/=*$/, "")
-								: (
-									this.account.ghostId
-									|| undefined
-								)
-						);
-						this.#socket.onopen = (ev) => this.#socketOpen(ev);
-						this.#socket.onerror = (ev) => this.#socketError(ev);
-						this.#socket.onclose = (ev) => this.#socketClose(ev);
-						this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
-							(response["errorCode"] === 0 ? resolve : reject)(this.account);
-						});
-						break;
-					default:
-						reject(new RepSelfGet({
-							"errorCode": ErrorCode.unknown,
-							"message": "WebSocket not closed",
-							"errorDetails": {
-								"kind": "connection",
-								"connection": state,
-							}
-						}));
-						break;
-				}
-			}));
-		}
-		return payloadPromise;
+		return MAP_GET_OR_SET(
+			this._commandPromises,
+			CMD_CONNECTION,
+			(payloadKey) => {
+				clearTimeout(this.#timerReconnect);
+				return new Promise<RepSelfGet>(async (resolve, reject) => {
+					const state = this.state;
+					switch (state) {
+						case TrakitSocketStatus.closed:
+							const endpoint = this.createBaseUrl();
+							this.#socket = new WebSocket(
+								endpoint,
+								this.account.machine
+									? (
+										this.account.machine.secret?.length
+											? "HMAC256#" + btoa(
+												this.account.machine.key
+												+ ":"
+												+ (await this.account.machine.createHmacSignature(endpoint))
+											)
+											: "MACHINE#" + btoa(
+												this.account.machine.key
+											)
+									)
+										.replaceAll("/", "|")
+										.replace(/=*$/, "")
+									: (
+										this.account.ghostId
+										|| undefined
+									)
+							);
+							this.#socket.onopen = (ev) => this.#socketOpen(ev);
+							this.#socket.onerror = (ev) => this.#socketError(ev);
+							this.#socket.onclose = (ev) => this.#socketClose(ev);
+							this.#requestsPending.set(CMD_CONNECTION, (response: JsonObject) => {
+								(response["errorCode"] === 0 ? resolve : reject)(this.account);
+								this._commandPromises.delete(payloadKey);
+							});
+							break;
+						default:
+							reject(new RepSelfGet({
+								"errorCode": ErrorCode.unknown,
+								"message": "WebSocket not closed",
+								"errorDetails": {
+									"kind": "connection",
+									"connection": state,
+								}
+							}));
+							break;
+					}
+				});
+			}
+		);
 	}
 	/**
 	 * Closes the underlying WebSocket connection, and returns a Promise that resolves when the connection is confirmed to be closed.
 	 * If the underlying WebSocket is not open (as in, any state of openning or being closed), the returned Promise will be rejected.
 	 */
 	close(): Promise<Reply> {
-		let payloadPromise = this._commandPromises.get(CMD_CONNECTION);
-		if (!payloadPromise) {
-			clearTimeout(this.#timerReconnect);
-			this._commandPromises.set(CMD_CONNECTION, payloadPromise = new Promise<Reply>((resolve, reject) => {
-				const state = this.state;
-				switch (state) {
-					case TrakitSocketStatus.opening:
-					case TrakitSocketStatus.open:
-						this.#socketOperable = false;	// prevent re-connect
-						this.reconnectEnabled = false;
-						this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
-							(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
-						});
-						this.#socket.close(1000, "Bye!");
-						break;
-					default:
-						reject(new Reply({
-							"errorCode": ErrorCode.unknown,
-							"message": "WebSocket not open",
-							"errorDetails": {
-								"kind": "connection",
-								"connection": state,
-							},
-						}));
-						break;
-				}
-			}));
-		}
-		return payloadPromise;
+		return MAP_GET_OR_SET(
+			this._commandPromises,
+			CMD_DISCONNECTION,
+			(payloadKey) => {
+				clearTimeout(this.#timerReconnect);
+				return new Promise<Reply>((resolve, reject) => {
+					const state = this.state;
+					switch (state) {
+						case TrakitSocketStatus.opening:
+						case TrakitSocketStatus.open:
+							this.#socketOperable = false;	// prevent re-connect
+							this.reconnectEnabled = false;
+							this.#requestsPending.set(CMD_DISCONNECTION, (response: JsonObject) => {
+								(response["errorCode"] === 0 ? resolve : reject)(new Reply(response));
+								this._commandPromises.delete(payloadKey);
+							});
+							this.#socket.close(1000, "Bye!");
+							break;
+						default:
+							reject(new Reply({
+								"errorCode": ErrorCode.unknown,
+								"message": "WebSocket not open",
+								"errorDetails": {
+									"kind": "connection",
+									"connection": state,
+								},
+							}));
+							break;
+					}
+				});
+			}
+		);
 	}
 
 	/**
