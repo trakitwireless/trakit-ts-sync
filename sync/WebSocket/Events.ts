@@ -25,14 +25,19 @@ export class TrakitEventSocketMessage extends TrakitEvent {
 /**
  * Used when the Trak-iT WebSocket is closed, or an error occurs that causes the connection to close.
  */
-export class TrakitEventSocketClose extends TrakitEvent {
+export class TrakitEventSocketState extends TrakitEvent {
+	/**
+	 * Indicates whether the WebSocket connection is currently online (open) or offline (closed).
+	 */
+	readonly online: boolean;
 	/**
 	 * The reply contains the details and reason provided by the Trak-iT service when the WebSocket is closed.
 	 */
 	readonly reply: Reply;
 	
-	constructor(type: string, reply: Reply) {
+	constructor(type: string, online: boolean, reply: Reply) {
 		super(type);
+		this.online = online;
 		this.reply = reply;
 	}
 }
