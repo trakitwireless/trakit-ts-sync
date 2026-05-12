@@ -19,7 +19,7 @@ import { createClientErrorResponse, makePayloadClass } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { TrakitRestfulCommander } from "../RESTful/TrakitRestfulCommander";
 import { OBJECT_SUBSCRIPTIONS } from "../WebSocket/Constants";
-import { TrakitEventSocketClose } from "../WebSocket/Events";
+import { TrakitEventSocketState } from "../WebSocket/Events";
 import { SubscribedRegions } from "../WebSocket/SubscribedRegions";
 import { TrakitSocketCommander, TrakitSocketStatus } from "../WebSocket/TrakitSocketCommander";
 import { SUBS_TO_SYNCS, SYNCS_TO_SUBS } from "./Functions";
@@ -64,7 +64,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		return this._socket.state === TrakitSocketStatus.open;
 	}
 	/**
-	 * Address of the underlying Trak-iT WebSocket service.
+	 * Details of the underlying Trak-iT WebSocket service.
 	 */
 	get socketDetails() {
 		return {
@@ -98,8 +98,8 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	) {
 		super(account);
 
-		const onOpen = (event: TrakitEvent) => this.#handleOpen((event as TrakitEventAccount).account),
-			onClose = (event: TrakitEvent) => this.#handleClose((event as TrakitEventSocketClose).reply),
+		const onOpen = (event: TrakitEvent) => this.#handleOpen((event as TrakitEventSocketState)),
+			onClose = (event: TrakitEvent) => this.#handleClose((event as TrakitEventSocketState)),
 			onAccount = (event: TrakitEvent) => this.#handleAccount((event as TrakitEventAccount).account),
 			onUplift = (event: TrakitEvent) => this.fire(event.type, () => event);
 
@@ -196,7 +196,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Also restarts the subscription expirer, and raises the `onOpen` event.
 	 * @param account 
 	 */
-	#handleOpen(account: RepSelfGet) {
+	#handleOpen(event: TrakitEventSocketState) {
 		this.#syncRegions.forEach((current, companyId) => {
 			// remove all regions from in-sync list; ALL OF THEM.
 			// but, re-sync to the ones that were not going to expire
@@ -215,7 +215,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Finally, it raises the `onClose` event.
 	 * @param reply 
 	 */
-	#handleClose(reply: Reply) {
+	#handleClose(event: TrakitEventSocketState) {
 		// stop trying to remove expired subscriptions
 		clearTimeout(this.#syncTimer);
 		// we don't remove any subscriptions, they remain until explicitly unsubscribed or expired

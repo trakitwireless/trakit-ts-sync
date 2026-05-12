@@ -25,7 +25,7 @@ import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
 import { HttpVerb } from "./RESTful/Constants";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
-import { TrakitEventSocketClose, TrakitEventSocketMessage } from "./WebSocket/Events";
+import { TrakitEventSocketBroadcast, TrakitEventSocketMessage, TrakitEventSocketState } from "./WebSocket/Events";
 import { makeCommandName } from "./WebSocket/Functions";
 import { SubscribedRegions } from "./WebSocket/SubscribedRegions";
 import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSocketCommander";
@@ -33,7 +33,7 @@ import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSoc
 /**
  * Version number for this release.
  */
-export const version = '0.0.60';
+export const version = '0.0.61';
 
 /**
  * API exports
@@ -76,7 +76,8 @@ export {
  * Synchronization exports
  */
 export {
-	TrakitEventSocketClose,
+	TrakitEventSocketBroadcast,
 	TrakitEventSocketMessage,
+	TrakitEventSocketState,
 	TrakitSyncCommander
 };
