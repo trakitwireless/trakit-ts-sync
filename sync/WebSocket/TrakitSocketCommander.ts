@@ -29,13 +29,13 @@ import { TrakitEventAccount } from "../API/Events";
 import {
 	createClientErrorResponse,
 	getJsonKeyValue,
-	MAP_GET_OR_SET,
 	makeObjectName,
-	makeReplyClass
+	makeReplyClass,
+	MAP_GET_OR_SET
 } from "../API/Functions";
 import { TrakitObjectCommander } from "../API/TrakitObjectCommander";
 import { MSG_SYNC } from "./Constants";
-import { TrakitEventSocketBroadcast, TrakitEventSocketClose, TrakitEventSocketMessage } from './Events';
+import { TrakitEventSocketBroadcast, TrakitEventSocketMessage, TrakitEventSocketState } from './Events';
 import { makeCommandName } from "./Functions";
 
 /**
@@ -161,10 +161,10 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	/**
 	 * Gets invoked any time the WebSocket connection is established and the `connectionResponse` message is received.
 	 */
-	_handleOpen(this: TrakitSocketCommander, account: RepSelfGet): any {
+	_handleOpen(this: TrakitSocketCommander, reply: RepSelfGet): any {
 		const handlers = this._handlers.get("open");
 		if (handlers?.length) {
-			const event = new TrakitEventAccount("open", account);
+			const event = new TrakitEventSocketState("open", this.#socketReady, reply);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -174,7 +174,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleClose(this: TrakitSocketCommander, reply: Reply) {
 		const handlers = this._handlers.get("close");
 		if (handlers?.length) {
-			const event = new TrakitEventSocketClose("close", reply);
+			const event = new TrakitEventSocketState("close", this.#socketReady, reply);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
@@ -196,7 +196,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	_handleError(this: TrakitSocketCommander, reply: Reply) {
 		const handlers = this._handlers.get("error");
 		if (handlers?.length) {
-			const event = new TrakitEventSocketClose("error", reply);
+			const event = new TrakitEventSocketState("error", false, reply);
 			handlers.forEach(handler => handler.call(this, event));
 		}
 	}
