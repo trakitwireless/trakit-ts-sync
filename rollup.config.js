@@ -26,7 +26,7 @@ const obfuscate = {
 
 export default [
 	{
-		input: './sync/index.ts',
+		input: './src/index.ts',
 		output: [
 			{
 				file: 'dist/trakit-sync.min.js',
