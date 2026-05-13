@@ -1,0 +1,1 @@
+{"version":3,"file":"Functions.d.ts","sourceRoot":"","sources":["../../sync/Synchronization/Functions.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,kBAAkB,CAAC;AACpD,OAAO,EAAE,QAAQ,EAAE,MAAM,iBAAiB,CAAC;AAI3C;;;;GAIG;AACH,wBAAgB,aAAa,CAAC,KAAK,EAAE,QAAQ,EAAE,GAAG,gBAAgB,EAAE,CAGnE;AACD;;;;GAIG;AACH,wBAAgB,aAAa,CAAC,aAAa,EAAE,gBAAgB,EAAE,GAAG,QAAQ,EAAE,CAmB3E"}
