@@ -5,7 +5,7 @@ import terser from '@rollup/plugin-terser';
 const obfuscate = {
 	ecma: 2020,
 	// sourceMap: {
-	//   filename: '_publish/trakit-sync-worker.min.js',
+	//   filename: 'dist/trakit-sync-worker.min.js',
 	// },
 	compress: {
 		drop_console: !true,
@@ -29,7 +29,7 @@ export default [
 		input: './sync/index.ts',
 		output: [
 			{
-				file: '_publish/trakit-sync.min.js',
+				file: 'dist/trakit-sync.min.js',
 				format: 'es',
 				exports: 'named',
 				plugins: [terser(obfuscate)]
