@@ -427,7 +427,9 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				this._handleAccount();
 				break;
 			case "sessionPoliciesMerged":
-				this.#socketSelfPartial(msgContent);
+				this.#socketSelfPartial({
+					policy: msgContent,
+				});
 				this._handleAccount();
 				break;
 			case "broadcast":
@@ -477,14 +479,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				: null,
 			machine: msgContent?.machine
 				?? json.machine,
-			sessionPolicy: msgContent?.sessionPolicy
-				?? json.sessionPolicy,
-			passwordPolicy: msgContent?.passwordPolicy
-				?? json.passwordPolicy,
-			multiFactorPolicy: msgContent?.multiFactorPolicy
-				?? json.multiFactorPolicy,
-			ssoPolicy: msgContent?.ssoPolicy
-				?? json.ssoPolicy,
+			policy: msgContent?.policies
+				?? json.policies,
 		}));
 		this.account.store();
 	}
