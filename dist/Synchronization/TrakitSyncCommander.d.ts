@@ -19,12 +19,6 @@ export declare class TrakitSyncCommander extends TrakitObjectCommander<any> {
      */
     protected _rest: TrakitRestfulCommander;
     /**
-     * When true, the Trak-iT WebSocket will automatically attempt to establish a connection.
-     * This value defaults to true if the commander is instantiated with a `ghostId`.
-     */
-    get autoConnect(): boolean;
-    set autoConnect(value: boolean);
-    /**
      * Indicates whether the Trak-iT WebSocket is currently connected.
      */
     get socketOnline(): boolean;
