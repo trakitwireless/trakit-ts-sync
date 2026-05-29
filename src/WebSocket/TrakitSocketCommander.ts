@@ -586,8 +586,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			(payloadKey) => {
 				clearTimeout(this.#timerReconnect);
 				return new Promise<RepSelfGet>(async (resolve, reject) => {
-					const state = this.state;
-					switch (state) {
+					switch (this.state) {
 						case TrakitSocketStatus.closed:
 							const endpoint = this.createBaseUrl();
 							this.#socket = new WebSocket(
@@ -625,7 +624,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 								"message": "WebSocket not closed",
 								"errorDetails": {
 									"kind": "connection",
-									"connection": state,
+									"connection": this.state,
 								}
 							}));
 							break;
@@ -645,8 +644,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			(payloadKey) => {
 				clearTimeout(this.#timerReconnect);
 				return new Promise<Reply>((resolve, reject) => {
-					const state = this.state;
-					switch (state) {
+					switch (this.state) {
 						case TrakitSocketStatus.opening:
 						case TrakitSocketStatus.open:
 							this.#socketOperable = false;	// prevent re-connect
@@ -663,7 +661,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 								"message": "WebSocket not open",
 								"errorDetails": {
 									"kind": "connection",
-									"connection": state,
+									"connection": this.state,
 								},
 							}));
 							break;
@@ -697,8 +695,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 			params = request[1] || {};
 		return new Promise((resolve, reject) => {
 			// get the socket state inside the resolver because it could be invoked multiple times.
-			const state = this.state;
-			switch (state) {
+			switch (this.state) {
 				case TrakitSocketStatus.open:
 					const reqId = ++this._commandId,
 						timer = setTimeout(
@@ -732,7 +729,7 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 				//		"message": "Not connected",
 				//		"errorDetails": {
 				//			"kind": "connection",
-				//			"connection": state,
+				//			"connection": this.state,
 				//		},
 				//	});
 				//	break;

@@ -45,19 +45,6 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	protected _rest: TrakitRestfulCommander;
 
 	/**
-	 * When true, the Trak-iT WebSocket will automatically attempt to establish a connection.
-	 * This value defaults to true if the commander is instantiated with a `ghostId`.
-	 */
-	get autoConnect(): boolean {
-		return this._socket.reconnectEnabled;
-	}
-	set autoConnect(value: boolean) {
-		this._socket.reconnectEnabled = !!value;
-		if (value && this._socket.state === TrakitSocketStatus.closed) {
-			this._socket.open();
-		}
-	}
-	/**
 	 * Indicates whether the Trak-iT WebSocket is currently connected.
 	 */
 	get socketOnline(): boolean {
@@ -117,11 +104,9 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 		for (const type of ["open", "close", "broadcast"]) {
 			this._socket.on(type, onUplift);
 		}
-
-		this.autoConnect = !!(
-			this.account.ghostId
-			|| this.account.machine?.key
-		);
+		if (this.account.ghostId || this.account.machine?.key) {
+			this._socket.open();
+		}
 	}
 	/**
 	 * Disposes of the Trak-iT WebSocket connection, and cleans up references.
@@ -146,7 +131,21 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	): void {
 		super.setAuth(account);
 		this._rest?.setAuth(this.account);
-		this._socket?.setAuth(this.account);
+		if (this._socket) {
+			this._socket.setAuth(this.account);
+			switch (this._socket.state) {
+				case TrakitSocketStatus.open:
+					if (!(this.account.ghostId || this.account.machine?.key)) {
+						this._socket.close();
+					}
+					break;
+				case TrakitSocketStatus.closed:
+					if (this.account.ghostId || this.account.machine?.key) {
+						this._socket.open();
+					}
+					break;
+			}
+		}
 	}
 
 	/**
@@ -226,13 +225,7 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 	 * Updates the internal account state and raises the `onAccount` event.
 	 * @param account 
 	 */
-	#handleAccount(account: RepSelfGet) {
-		this.setAuth(account);
-		this.autoConnect = !!(
-			this.account.user?.login	// not checking ghostId because this is set after a login/logout command
-			|| this.account.machine?.key
-		);
-	}
+	#handleAccount(account: RepSelfGet) { this.setAuth(account); }
 	//#endregion Events
 	//#region Sync
 	/**
