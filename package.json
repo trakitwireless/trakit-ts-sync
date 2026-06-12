@@ -26,7 +26,7 @@
     "url": "https://github.com/trakitwireless/trakit-ts-sync/issues"
   },
   "homepage": "https://github.com/trakitwireless/trakit-ts-sync#readme",
-  "description": "Trak-iT uses these object definitions to interact with all our APIs.",
+  "description": "TypeScript library for synchronizing objects using the Trak-iT APIs.",
   "devDependencies": {
     "@rollup/plugin-terser": "^1.0.0",
     "rollup": "^4.35.0",
