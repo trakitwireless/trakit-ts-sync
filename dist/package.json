@@ -1,7 +1,7 @@
 {
   "name": "@trakit/sync",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "./trakit-sync.min.js",
   "types": "./index.d.ts",
   "scripts": {
@@ -26,7 +26,7 @@
     "url": "https://github.com/trakitwireless/trakit-ts-sync/issues"
   },
   "homepage": "https://github.com/trakitwireless/trakit-ts-sync#readme",
-  "description": "Trak-iT uses these object definitions to interact with all our APIs.",
+  "description": "TypeScript library for synchronizing objects using the Trak-iT APIs.",
   "devDependencies": {
     "@rollup/plugin-terser": "^1.0.0",
     "rollup": "^4.35.0",
@@ -35,7 +35,7 @@
     "vitest": "^4.0.7"
   },
   "dependencies": {
-    "@trakit/commands": "^0.1.1",
+    "@trakit/commands": "^0.1.2",
     "@trakit/objects": "^0.1.2"
   }
 }
