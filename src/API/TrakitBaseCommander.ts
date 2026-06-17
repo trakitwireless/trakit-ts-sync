@@ -77,9 +77,9 @@ export abstract class TrakitBaseCommander<TRequest> {
 			});
 		} else if ((account as any)?.machine?.key || (account as any)?.ghostId) {
 			this.setAuth(new RepSelfGet({
+				...((account as any).toJSON?.() ?? account),
 				errorCode: ErrorCode.success,
 				message: `Authenticated via ${(account as any)?.machine?.key ? "Machine" : "Session"}`,
-				...((account as any).toJSON?.() ?? account),
 			}));
 		} else {
 			this.setAuth(new RepSelfGet);

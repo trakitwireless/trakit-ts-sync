@@ -567,8 +567,8 @@ export class TrakitSocketCommander extends TrakitObjectCommander<[string, JsonOb
 	 * Disconnects the underlying WebSocket, unbinds all event-handlers, and clears any circular binds.
 	 */
 	override dispose(): void {
+		super.dispose();
 		this.close().finally(() => {
-			super.dispose();
 			// drop it like it's hot
 			(this.#socket as any) =
 				(this.#requestsPending as any) = null;
