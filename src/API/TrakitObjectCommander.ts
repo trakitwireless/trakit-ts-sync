@@ -181,6 +181,8 @@
 	PaySelfLogout,
 	PaySelfPassword,
 	PaySelfPreferences,
+	PaySelfRecoverComplete,
+	PaySelfRecoverStart,
 	PaySelfState,
 	PaySessionDelete,
 	PaySessionListByCompany,
@@ -354,6 +356,8 @@
 	RepSelfGet,
 	RepSelfLogout,
 	RepSelfPassword,
+	RepSelfRecoverComplete,
+	RepSelfRecoverStart,
 	RepSessionDelete,
 	RepSessionListByCompany,
 	RepSessionListByUser,
@@ -414,6 +418,7 @@ import {
 	SyncName,
 	SystemsOfUnits,
 	Timezone,
+	uint,
 	ulong,
 	url,
 	User,
@@ -575,8 +580,8 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 	 */
 	public async login(username: string, password: string, userAgent?: string | nothing): Promise<RepSelfGet> {
 		const reply = await this.command<RepSelfGet>(new PaySelfLogin({
-			username: username,
-			password: password,
+			username,
+			password,
 			userAgent: userAgent ?? null,
 		}));
 		this._handleAccount(reply);
@@ -692,6 +697,31 @@ export abstract class TrakitObjectCommander<TRequest> extends TrakitBaseCommande
 			options: options instanceof Map
 				? serialization.fromMap(options) as JsonObject
 				: options ?? null,
+		}));
+	}
+
+	/**
+	 * Begins the password recovery process for a {@link User} who has forgotten their password.
+	 * @param username	The email address of the {@link User} who has forgotten their password.
+	 * @param key		Optional key in the {@link User}'s {@link Contact.emails} address list to use for recovery.
+	 * @param query		Optional query string used for logging and template replacement in the email.
+	 */
+	public recoverStart(username: email, key?: string | nothing, query?: string | nothing): Promise<RepSelfRecoverStart> {
+		return this.command<RepSelfRecoverStart>(new PaySelfRecoverStart({
+			username,
+			key: key ?? null,
+			query: query ?? null,
+		}));
+	}
+	/**
+	 * Completes the password recovery process for a {@link User} who has forgotten their password.
+	 * @param guid		The unique identifier for the recovery process.
+	 * @param length	The length of the new password.
+	 */
+	public recoverComplete(guid: guid, length?: uint | nothing): Promise<RepSelfRecoverComplete> {
+		return this.command<RepSelfRecoverComplete>(new PaySelfRecoverComplete({
+			guid,
+			length: length ?? null,
 		}));
 	}
 	//#endregion Self
