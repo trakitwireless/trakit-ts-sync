@@ -136,12 +136,12 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			switch (this._socket.state) {
 				case TrakitSocketStatus.open:
 					if (!(this.account.ghostId || this.account.machine?.key)) {
-						this._socket.close();
+						this._socket.close().catch(() => this.setAuth());
 					}
 					break;
 				case TrakitSocketStatus.closed:
 					if (this.account.ghostId || this.account.machine?.key) {
-						this._socket.open();
+						this._socket.open().catch(() => this.setAuth());
 					}
 					break;
 			}
