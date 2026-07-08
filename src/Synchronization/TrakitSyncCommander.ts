@@ -267,18 +267,13 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			current = this.#getCurrentSync(companyId),
 			requested = SYNCS_TO_SUBS(types).filter(sub => !current.regions.includes(sub));
 		if (requested.length > 0) {
-			// remove expiration from any requested subscriptions, not new subscriptions
-			// some subscriptions may have been requested to be removed before re-synching
-			// do this right away so they don't get accidentally expired while waiting for the subscribe command to resolve
-			current.preserveRegions(requested);
-
 			// send subscribe command to Trak-iT WebSocket for any out-of-sync regions
 			const subscribed = await this._socket.subscribe(companyId, requested);
-
-			// any unsuccessful regions are expired immediately, which will remove them from the in-sync list
-			// and cause them to be re-requested on the next sync attempt (like when switching sections)
+			// any regions that were successfully subscribed to are preserved in the in-sync list
+			current.preserveRegions(requested);
+			// any unsuccessful regions are purged immediately from the in-sync list
+			// so they will get re-requested on the next sync attempt (like when switching sections)
 			current.expireRegions((subscribed.denied ?? []).concat(subscribed.invalid as SubscriptionType[] ?? []), true);
-
 			// once subscriptions are made, find the SyncNames that need to be requested
 			SUBS_TO_SYNCS(subscribed.merged as SubscriptionType[] ?? []).forEach(type => {
 				const SyncPayload = makePayloadClass(
