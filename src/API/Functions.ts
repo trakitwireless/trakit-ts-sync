@@ -102,6 +102,9 @@ export function makeObjectName(typeName: string): SyncName {
 		case "CompanyLabels":
 			typeName = "CompanyStyle";
 			break;
+		case "PlaceGeneral":
+			typeName = "Place";
+			break;
 		default:
 			typeName = utility.singularize(typeName);
 			break;
