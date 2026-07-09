@@ -267,6 +267,11 @@ export class TrakitSyncCommander extends TrakitObjectCommander<any> {
 			current = this.#getCurrentSync(companyId),
 			requested = SYNCS_TO_SUBS(types).filter(sub => !current.regions.includes(sub));
 		if (requested.length > 0) {
+			// cancel any subscriptions about to expire, but don't remove them from the request
+			// this lets the underlying .command() preserve the Promise for double calls (stupid ReactJS),
+			// and the WebSocket doesn't mind, and it will also send double requests to the RESTful service
+			// but those will also be preserved by the .command() promise.
+			current.getExpiring().forEach(sub => requested.includes(sub) && current.preserveRegion(sub));
 			// send subscribe command to Trak-iT WebSocket for any out-of-sync regions
 			const subscribed = await this._socket.subscribe(companyId, requested);
 			// any regions that were successfully subscribed to are preserved in the in-sync list

@@ -28,7 +28,7 @@ export class SubscribedRegions {
 	getExpired(): SubscriptionType[] {
 		const now = new Date,
 			regions: SubscriptionType[] = [];
-		for (let [region, expiry] of this.#regions) {
+		for (const [region, expiry] of this.#regions) {
 			if (expiry && expiry < now) {
 				regions.push(region);
 			}
@@ -48,7 +48,7 @@ export class SubscribedRegions {
 	 */
 	getExpiring(): SubscriptionType[] {
 		const regions: SubscriptionType[] = [];
-		for (let [region, expiry] of this.#regions) {
+		for (const [region, expiry] of this.#regions) {
 			if (expiry) {
 				regions.push(region);
 			}
@@ -109,7 +109,7 @@ export class SubscribedRegions {
 	 */
 	reset(): SubscriptionType[] {
 		const regions: SubscriptionType[] = [];
-		for (let [region, expiry] of this.#regions) {
+		for (const [region, expiry] of this.#regions) {
 			if (!expiry) {
 				regions.push(region);
 			}
