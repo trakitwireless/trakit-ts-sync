@@ -9,6 +9,7 @@ import {
 	IPayListByUser,
 	IPaySingle,
 	Payload,
+	PayloadListBy,
 	PayloadListByDate,
 	PayloadListById,
 	PayloadListByKey,
@@ -222,6 +223,9 @@ export function makeVerbRoute(payload: Payload): [HttpVerb, string] {
 							case "User":	// IPayListByUser
 								route = `users/${encodeURIComponent((payload as any as IPayListByUser).user.login)}/${route}`;
 								break;
+						}
+						if (utility.isntNaN((payload as any as PayloadListBy)?.limit)) {
+							query.set("limit", (payload as any as PayloadListBy).limit as any as string);
 						}
 						// type IPayListByDate
 						if (utility.isntNaN((payload as any as PayloadListByDate)?.after?.valueOf())) {
