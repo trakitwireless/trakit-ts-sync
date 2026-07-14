@@ -1,17 +1,23 @@
 import {
+	PayAssetAdvancedAudit,
 	Payload,
+	RepAssetAdvancedAudit,
 	RepSelfGet
 } from "@trakit/commands";
 import {
+	AssetAdvanced,
+	datetime,
 	guid,
 	JsonObject,
 	Machine,
 	nothing,
-	url
+	uint,
+	ulong,
+	url,
 } from "@trakit/objects";
 import {
+	requestCreateCommander,
 	requestRelayCorsJson,
-	requestCreateCommander
 } from "../API/Functions";
 import { TrakitBaseCommander } from "../API/TrakitBaseCommander";
 
@@ -63,4 +69,51 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	override requestRelay(request: Request): Promise<JsonObject> {
 		return requestRelayCorsJson(request);
 	}
+
+	//override command<TReply extends Reply>(payload: Payload): Promise<TReply> {
+	//	// TODO: check if it's already saved and just return that?
+	//	// TODO: save it somehow so we don't re-poll all the time?
+	//	return super.command<TReply>(payload);
+	//}
+
+	//#region Assets/Advanced
+	/**
+	 * 
+	 * @param asset 
+	 * @returns 
+	 */
+	pollAssetAdvanced(asset: AssetAdvanced, limit?: ulong | nothing) {
+		return this.pageAssetAdvanced(asset.id, {
+			before: asset.position?.date
+				?? [...asset.attributes.values()].reduce(
+					(latest, attr) => attr.dts > latest ? attr.dts : latest,	// in case the server timestamp is out of sync with the client
+					new Date
+				),
+			highest: asset.v[0],
+			limit,
+		});
+	}
+	/**
+	 * 
+	 * @param id 
+	 * @param constraints.after
+	 * @param constraints.before
+	 * @param constraints.lowest
+	 * @param constraints.highest
+	 * @param constraints.limit
+	 * @returns 
+	 */
+	pageAssetAdvanced(id: ulong, constraints?: {
+		after?: Date | datetime;
+		before?: Date | datetime;
+		lowest?: uint | nothing;
+		highest?: uint | nothing;
+		limit?: ulong | nothing;
+	}) {
+		return this.command<RepAssetAdvancedAudit>(new PayAssetAdvancedAudit({
+			...constraints as JsonObject,
+			asset: { id },
+		}));
+	}
+	//#endregion Assets/Advanced
 }
