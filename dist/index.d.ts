@@ -8,6 +8,8 @@ import { TrakitEvent, TrakitEventAccount, TrakitEventDelete, TrakitEventList, Tr
 import { createClientErrorResponse, makeVerbRoute, requestCreateCommander, requestCreateCors, requestRelayCorsJson } from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
+import { AuditConstraints } from "./Audit/AuditConstraints";
+import { TrakitAuditCommander } from "./Audit/TrakitAuditCommander";
 import { HttpVerb } from "./RESTful/Constants";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
@@ -18,7 +20,7 @@ import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSoc
 /**
  * Version number for this release.
  */
-export declare const version = "0.1.9";
+export declare const version = "0.1.10";
 /**
  * API exports
  */
@@ -35,4 +37,8 @@ export { makeCommandName, SubscribedRegions, TrakitSocketCommander, TrakitSocket
  * Synchronization exports
  */
 export { TrakitEventSocketBroadcast, TrakitEventSocketMessage, TrakitEventSocketState, TrakitSyncCommander };
+/**
+ * Audit service exports
+ */
+export { TrakitAuditCommander, type AuditConstraints };
 //# sourceMappingURL=index.d.ts.map
