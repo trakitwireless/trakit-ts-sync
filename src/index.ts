@@ -22,13 +22,22 @@ import {
 } from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
+import { AuditConstraints } from "./Audit/AuditConstraints";
+import { TrakitAuditCommander } from "./Audit/TrakitAuditCommander";
 import { HttpVerb } from "./RESTful/Constants";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
 import { TrakitSyncCommander } from "./Synchronization/TrakitSyncCommander";
-import { TrakitEventSocketBroadcast, TrakitEventSocketMessage, TrakitEventSocketState } from "./WebSocket/Events";
+import {
+    TrakitEventSocketBroadcast,
+    TrakitEventSocketMessage,
+    TrakitEventSocketState,
+} from "./WebSocket/Events";
 import { makeCommandName } from "./WebSocket/Functions";
 import { SubscribedRegions } from "./WebSocket/SubscribedRegions";
-import { TrakitSocketCommander, TrakitSocketStatus } from "./WebSocket/TrakitSocketCommander";
+import {
+    TrakitSocketCommander,
+    TrakitSocketStatus,
+} from "./WebSocket/TrakitSocketCommander";
 
 /**
  * Version number for this release.
@@ -80,4 +89,12 @@ export {
 	TrakitEventSocketMessage,
 	TrakitEventSocketState,
 	TrakitSyncCommander
+};
+
+/**
+ * Audit service exports
+ */
+export {
+	TrakitAuditCommander,
+	type AuditConstraints
 };

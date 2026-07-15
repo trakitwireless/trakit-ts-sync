@@ -20,6 +20,7 @@ import {
 	requestRelayCorsJson,
 } from "../API/Functions";
 import { TrakitBaseCommander } from "../API/TrakitBaseCommander";
+import { AuditConstraints } from "./AuditConstraints";
 
 /**
  * Uses Trak-iT's RESTful service to access and manipulate Trak-iT API objects.
@@ -82,8 +83,8 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	 * @param asset 
 	 * @returns 
 	 */
-	pollAssetAdvanced(asset: AssetAdvanced, limit?: ulong | nothing) {
-		return this.pageAssetAdvanced(asset.id, {
+	beginAssetAdvanced(asset: AssetAdvanced, limit?: ulong | nothing) {
+		return this.auditAssetAdvanced(asset.id, {
 			before: asset.position?.date
 				?? [...asset.attributes.values()].reduce(
 					(latest, attr) => attr.dts > latest ? attr.dts : latest,	// in case the server timestamp is out of sync with the client
@@ -95,24 +96,14 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	}
 	/**
 	 * 
-	 * @param id 
-	 * @param constraints.after
-	 * @param constraints.before
-	 * @param constraints.lowest
-	 * @param constraints.highest
-	 * @param constraints.limit
+	 * @param assetId 
+	 * @param constraints
 	 * @returns 
 	 */
-	pageAssetAdvanced(id: ulong, constraints?: {
-		after?: Date | datetime;
-		before?: Date | datetime;
-		lowest?: uint | nothing;
-		highest?: uint | nothing;
-		limit?: ulong | nothing;
-	}) {
+	auditAssetAdvanced(assetId: ulong, constraints?: AuditConstraints) {
 		return this.command<RepAssetAdvancedAudit>(new PayAssetAdvancedAudit({
 			...constraints as JsonObject,
-			asset: { id },
+			asset: { id: assetId },
 		}));
 	}
 	//#endregion Assets/Advanced
