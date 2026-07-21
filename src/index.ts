@@ -42,7 +42,7 @@ import {
 /**
  * Version number for this release.
  */
-export const version = '0.1.10';
+export const version = '0.1.11';
 
 /**
  * API exports

@@ -3,10 +3,6 @@ import { codified, email, guid, JsonObject, JsonValue, nothing, SyncName, ulong 
 import { HttpVerb } from "../RESTful/Constants";
 import { TrakitBaseCommander } from "./TrakitBaseCommander";
 /**
- * Splits Pascal-case words into their components.
- */
-export declare const SPLITTER: RegExp;
-/**
  * Creates a standardized error response.
  * @param ex The error to include in the response.
  * @returns A standardized error response object.

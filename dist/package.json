@@ -1,7 +1,7 @@
 {
   "name": "@trakit/sync",
   "type": "module",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "main": "./trakit-sync.min.js",
   "types": "./index.d.ts",
   "scripts": {
