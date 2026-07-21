@@ -38,7 +38,7 @@ import { TrakitBaseCommander } from "./TrakitBaseCommander";
 /**
  * Splits Pascal-case words into their components.
  */
-export const SPLITTER = /[A-Z][a-z]+/;
+const SPLITTER = /[A-Z][a-z]+/g;
 
 /**
  * Creates a standardized error response.
