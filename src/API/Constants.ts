@@ -28,5 +28,7 @@ export const OBJECT_COMPOUNDS: { [key in SyncName | string]: SyncName[] } = {
 	"User": [
 		"UserGeneral",
 		"UserAdvanced",
+		"UserAuthentication",
+		"UserState",
 	],
 };

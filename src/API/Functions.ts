@@ -68,6 +68,8 @@ export function getJsonKeyName(type: SyncName) {
 		case "User":
 		case "UserGeneral":
 		case "UserAdvanced":
+		case "UserAuthentication":
+		case "UserState":
 			return "login";
 		case "ProviderRegistration":
 			return "code";
