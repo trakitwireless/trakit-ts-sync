@@ -8,7 +8,7 @@ import { TrakitEvent, TrakitEventAccount, TrakitEventDelete, TrakitEventList, Tr
 import { createClientErrorResponse, makeVerbRoute, requestCreateCommander, requestCreateCors, requestRelayCorsJson } from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
-import { AuditConstraints } from "./Audit/AuditConstraints";
+import { AuditConstraints, AuditIdOwnerConstraints } from "./Audit/AuditConstraints";
 import { TrakitAuditCommander } from "./Audit/TrakitAuditCommander";
 import { HttpVerb } from "./RESTful/Constants";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
@@ -40,5 +40,5 @@ export { TrakitEventSocketBroadcast, TrakitEventSocketMessage, TrakitEventSocket
 /**
  * Audit service exports
  */
-export { TrakitAuditCommander, type AuditConstraints };
+export { TrakitAuditCommander, type AuditConstraints, type AuditIdOwnerConstraints, };
 //# sourceMappingURL=index.d.ts.map

@@ -1,5 +1,5 @@
 import { Payload, RepAssetAdvancedAudit, RepSelfGet } from "@trakit/commands";
-import { AssetAdvanced, guid, JsonObject, Machine, nothing, ulong, url } from "@trakit/objects";
+import { guid, JsonObject, Machine, nothing, ulong, url } from "@trakit/objects";
 import { TrakitBaseCommander } from "../API/TrakitBaseCommander";
 import { AuditConstraints } from "./AuditConstraints";
 /**
@@ -42,12 +42,6 @@ export declare class TrakitAuditCommander extends TrakitBaseCommander<Request> {
      * @returns				A promise that resolves with the JSON response from the server.
      */
     requestRelay(request: Request): Promise<JsonObject>;
-    /**
-     *
-     * @param asset
-     * @returns
-     */
-    beginAssetAdvanced(asset: AssetAdvanced, limit?: ulong | nothing): Promise<RepAssetAdvancedAudit>;
     /**
      *
      * @param assetId

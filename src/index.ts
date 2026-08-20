@@ -22,7 +22,7 @@ import {
 } from "./API/Functions";
 import { TrakitBaseCommander } from "./API/TrakitBaseCommander";
 import { TrakitObjectCommander } from "./API/TrakitObjectCommander";
-import { AuditConstraints } from "./Audit/AuditConstraints";
+import { AuditConstraints ,AuditIdOwnerConstraints} from "./Audit/AuditConstraints";
 import { TrakitAuditCommander } from "./Audit/TrakitAuditCommander";
 import { HttpVerb } from "./RESTful/Constants";
 import { TrakitRestfulCommander } from "./RESTful/TrakitRestfulCommander";
@@ -96,5 +96,6 @@ export {
  */
 export {
 	TrakitAuditCommander,
-	type AuditConstraints
+	type AuditConstraints,
+	type AuditIdOwnerConstraints,
 };

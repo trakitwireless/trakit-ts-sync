@@ -80,22 +80,6 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	//#region Assets/Advanced
 	/**
 	 * 
-	 * @param asset 
-	 * @returns 
-	 */
-	beginAssetAdvanced(asset: AssetAdvanced, limit?: ulong | nothing) {
-		return this.auditAssetAdvanced(asset.id, {
-			before: asset.position?.date
-				?? [...asset.attributes.values()].reduce(
-					(latest, attr) => attr.dts > latest ? attr.dts : latest,	// in case the server timestamp is out of sync with the client
-					new Date
-				),
-			highest: asset.v[0],
-			limit,
-		});
-	}
-	/**
-	 * 
 	 * @param assetId 
 	 * @param constraints
 	 * @returns 
@@ -103,7 +87,7 @@ export class TrakitAuditCommander extends TrakitBaseCommander<Request> {
 	auditAssetAdvanced(assetId: ulong, constraints?: AuditConstraints) {
 		return this.command<RepAssetAdvancedAudit>(new PayAssetAdvancedAudit({
 			...constraints as JsonObject,
-			asset: { id: assetId },
+			assetAdvanced: { id: assetId },
 		}));
 	}
 	//#endregion Assets/Advanced
